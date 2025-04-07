@@ -20,8 +20,14 @@ services:
     container_name: go-backend
     ports:
       - '8080:8080'
+    volumes:
+      - ./backend:/app
+    environment:
+      - AIR_ENV=development
+    stdin_open: true   
+    tty: true  
     depends_on:
-      - postgres
+      - postgres       
 
   frontend:
     build:

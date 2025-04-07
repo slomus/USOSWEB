@@ -1,12 +1,12 @@
-FROM golang:1.23
+FROM golang:1.23-alpine
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+RUN go install github.com/air-verse/air@latest
+
+COPY go.* ./
 RUN go mod download
 
-COPY . .
-RUN go build -o /go-app
-
 EXPOSE 8080
-CMD ["/go-app"]
+
+ENTRYPOINT ["air", "-c", ".air.toml"]
