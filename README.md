@@ -6,5 +6,5 @@ docker-compose up --build
 ```
 ### or if you to run build in detached mode
 ```bash
-docker-composer up -d --build
+docker-compose up -d --build
 ```
