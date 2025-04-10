@@ -39,5 +39,13 @@ services:
     depends_on:
       - backend
 
+  migrate:
+    image: migrate/migrate
+    container_name: go-migrate
+    volumes:
+      - ./backend/app/migrate/migrations:/migrations
+    depends_on:
+    - postgres
+
 volumes:
   postgres_data:
