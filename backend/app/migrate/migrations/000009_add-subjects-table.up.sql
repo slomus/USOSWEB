@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS subjects(
+  subject_id serial PRIMARY KEY,
+  alias VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  ECTS FLOAT NOT NULL,
+  description TEXT NOT NULL,
+  syllabus TEXT NOT NULL
+);
