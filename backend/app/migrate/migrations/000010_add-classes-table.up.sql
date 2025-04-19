@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS classes(
   group_nr INTEGER NOT NULL,
   current_capacity INTEGER NOT NULL,
   capacity INTEGER NOT NULL,
-  classroom INTEGER NOT NULL,
+  classroom VARCHAR(255) NOT NULL,
   building_id INTEGER NOT NULL REFERENCES buildings(building_id),
   subject_id INTEGER NOT NULL REFERENCES subjects(subject_id)
 );
