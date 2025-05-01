@@ -1,14 +1,12 @@
-module github.com/slomus/USOSWEB/backend
+module github.com/slomus/USOSWEB/src/backend
 
 go 1.22.0
 
 toolchain go1.23.8
 
-replace github.com/slomus/USOSWEB/backend => ./
+replace github.com/slomus/USOSWEB/src/backend => ./
 
-replace github.com/slomus/USOSWEB/backend/configs => ./configs
-
-replace github.com/slomus/USOSWEB/backend/db => ./db
+replace github.com/slomus/USOSWEB/src/backend/configs => ./configs
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect

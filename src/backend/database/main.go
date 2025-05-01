@@ -1,15 +1,14 @@
-package main
+package database
 
 import (
 	"log"
 	"os"
 
-	_ "github.com/lib/pq"
 	"github.com/golang-migrate/migrate/v4"
 	postgresMigrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/slomus/USOSWEB/backend/configs"
-	"github.com/slomus/USOSWEB/backend/db"
+	_ "github.com/lib/pq"
+	"github.com/slomus/USOSWEB/src/backend/configs"
 )
 
 func main() {

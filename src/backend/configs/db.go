@@ -1,11 +1,11 @@
-package db
+package configs
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 
-	_"github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 type PostgresConfig struct {

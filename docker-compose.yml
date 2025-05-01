@@ -13,39 +13,62 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: go-backend
-    ports:
-      - '8080:8080'
-    volumes:
-      - ./backend:/app
-    environment:
-      - AIR_ENV=development
-    stdin_open: true   
-    tty: true  
-    depends_on:
-      - postgres       
-
   frontend:
     build:
-      context: ./frontend
+      context: ./src/frontend
       dockerfile: Dockerfile
-    container_name: nextjs-frontend
     ports:
-      - '3000:3000'
-    depends_on:
-      - backend
-
-  migrate:
-    image: migrate/migrate
-    container_name: go-migrate
+      - "3000:3000"
     volumes:
-      - ./backend/app/migrate/migrations:/migrations
-    depends_on:
-    - postgres
+      - ./src/frontend:/app
+    environment:
+      - NODE_ENV=development
 
+
+  calendar:
+    build:
+      context: ./src/backend
+      dockerfile: Modules/Calendar/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - ENV=development
+    depends_on:
+      - postgres
+  messaging:
+    build:
+      context: ./src/backend
+      dockerfile: Modules/Messaging/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - ENV=development
+    depends_on:
+      - postgres
+  common:
+    build:
+      context: ./src/backend
+      dockerfile: Modules/Common/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - ENV=development
+    depends_on:
+      - postgres
+  migrate:
+    build:
+      context: ./src/backend
+      dockerfile: Database/Dockerfile
+    environment:
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
+      DB_NAME: ${DB_NAME:-mydb}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+    depends_on:
+      - postgres
+    entrypoint: ["/app/migrate"]
+  
 volumes:
   postgres_data:
