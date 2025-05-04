@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS users(
    bank_account_nr VARCHAR (26) UNIQUE,
    active BOOLEAN,
    activation_date TIMESTAMP NOT NULL,
-   deactivation_date TIMESTAMP, 
+   deactivation_date TIMESTAMP 
 );

@@ -1,4 +1,4 @@
-version: '3.8'
+version: '5.8'
 
 services:
   postgres:
@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: mydb
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -18,7 +18,7 @@ services:
       context: ./src/frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./src/frontend:/app
     environment:
@@ -28,9 +28,9 @@ services:
   calendar:
     build:
       context: ./src/backend
-      dockerfile: Modules/Calendar/Dockerfile
+      dockerfile: modules/calendar/Dockerfile
     ports:
-      - "3001:3001"
+      - "3002:3001"
     environment:
       - ENV=development
     depends_on:
@@ -38,9 +38,9 @@ services:
   messaging:
     build:
       context: ./src/backend
-      dockerfile: Modules/Messaging/Dockerfile
+      dockerfile: modules/messaging/Dockerfile
     ports:
-      - "3002:3002"
+      - "3003:3002"
     environment:
       - ENV=development
     depends_on:
@@ -48,17 +48,20 @@ services:
   common:
     build:
       context: ./src/backend
-      dockerfile: Modules/Common/Dockerfile
+      dockerfile: modules/common/Dockerfile
     ports:
-      - "3003:3003"
+      - "3005:3003"
     environment:
       - ENV=development
     depends_on:
       - postgres
+
   migrate:
+    env_file:
+      ./src/backend/.env
     build:
       context: ./src/backend
-      dockerfile: Database/Dockerfile
+      dockerfile: database/Dockerfile
     environment:
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
@@ -68,6 +71,7 @@ services:
       DB_SSLMODE: ${DB_SSLMODE:-disable}
     depends_on:
       - postgres
+    command: up
     entrypoint: ["/app/migrate"]
   
 volumes:
