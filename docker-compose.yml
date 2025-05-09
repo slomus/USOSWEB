@@ -18,7 +18,7 @@ services:
       context: ./src/frontend
       dockerfile: Dockerfile
     ports:
-      - "3001:3000"
+      - "3000:3000"
     volumes:
       - ./src/frontend:/app
       - /app/node_modules
@@ -31,7 +31,7 @@ services:
       context: ./src/backend
       dockerfile: modules/calendar/Dockerfile
     ports:
-      - "3002:3001"
+      - "3001:3001"
     environment:
       - ENV=development
     depends_on:
@@ -41,7 +41,7 @@ services:
       context: ./src/backend
       dockerfile: modules/messaging/Dockerfile
     ports:
-      - "3003:3002"
+      - "3002:3002"
     environment:
       - ENV=development
     depends_on:
@@ -51,7 +51,7 @@ services:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
-      - "3005:3003"
+      - "3003:3003"
     environment:
       - ENV=development
     depends_on:
