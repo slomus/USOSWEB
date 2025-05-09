@@ -1,4 +1,4 @@
-package database
+package main 
 
 import (
 	"log"
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	pgConfig := db.PostgresConfig{
+	pgConfig := configs.PostgresConfig{
 		Host:     configs.Envs.DBHost,
 		Port:     configs.Envs.DBPort,
 		User:     configs.Envs.DBUser,
@@ -21,7 +21,7 @@ func main() {
 		SSLMode:  configs.Envs.DBSSLMode,
 	}
 
-	dbConn, err := db.NewPostgresStorage(pgConfig)
+	dbConn, err := configs.NewPostgresStorage(pgConfig)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://app/migrate/migrations",
+		"file:///app/migrations",
 		"postgres",
 		driver,
 	)

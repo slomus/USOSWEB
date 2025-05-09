@@ -1,4 +1,4 @@
-version: '3.8'
+version: '5.8'
 
 services:
   postgres:
@@ -21,6 +21,7 @@ services:
       - "3000:3000"
     volumes:
       - ./src/frontend:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
 
@@ -28,7 +29,7 @@ services:
   calendar:
     build:
       context: ./src/backend
-      dockerfile: Modules/Calendar/Dockerfile
+      dockerfile: modules/calendar/Dockerfile
     ports:
       - "3001:3001"
     environment:
@@ -38,7 +39,7 @@ services:
   messaging:
     build:
       context: ./src/backend
-      dockerfile: Modules/Messaging/Dockerfile
+      dockerfile: modules/messaging/Dockerfile
     ports:
       - "3002:3002"
     environment:
@@ -48,17 +49,20 @@ services:
   common:
     build:
       context: ./src/backend
-      dockerfile: Modules/Common/Dockerfile
+      dockerfile: modules/common/Dockerfile
     ports:
       - "3003:3003"
     environment:
       - ENV=development
     depends_on:
       - postgres
+
   migrate:
+    env_file:
+      ./src/backend/.env
     build:
       context: ./src/backend
-      dockerfile: Database/Dockerfile
+      dockerfile: database/Dockerfile
     environment:
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
@@ -68,6 +72,7 @@ services:
       DB_SSLMODE: ${DB_SSLMODE:-disable}
     depends_on:
       - postgres
+    command: up
     entrypoint: ["/app/migrate"]
   
 volumes:
