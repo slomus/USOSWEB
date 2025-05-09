@@ -13,6 +13,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  api-gateway:
+    build:
+      context: ./src/backend
+      dockerfile: modules/api-gateway/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - ENV=development
+    depends_on:
+      - postgres
+
   frontend:
     build:
       context: ./src/frontend
@@ -36,6 +47,7 @@ services:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
   messaging:
     build:
       context: ./src/backend
@@ -46,6 +58,7 @@ services:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
   common:
     build:
       context: ./src/backend
@@ -56,6 +69,7 @@ services:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
 
   migrate:
     env_file:

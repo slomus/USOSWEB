@@ -15,6 +15,12 @@ postgres-up:
 postgres-down:
 	docker-compose down postgres
 
+gateway-up:
+	docker-compose up api-gateway
+
+gateway-down:
+	docker-compose down api-gateway
+
 calendar-up:
 	docker-compose up calendar
 
