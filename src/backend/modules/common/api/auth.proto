@@ -4,6 +4,7 @@ package modules.common.api;
 
 option go_package = "github.com/slomus/USOSWEB/src/backend/common/gen/auth;auth";
 
+import "google/api/annotations.proto";
 // Wiadomości
 
 message LoginRequest {
@@ -24,9 +25,21 @@ message ResetPasswordResponse {
   string message = 2;
 }
 
+message HelloRequest {}
+
+message HelloResponse { string message = 1; }
+
 // Serwis
 
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+}
+
+service AuthHello {
+  rpc SayHello(HelloRequest) returns (HelloResponse) {
+    option (google.api.http) = {
+      get : "/api/hello"
+    };
+  }
 }
