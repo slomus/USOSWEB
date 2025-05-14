@@ -2,8 +2,9 @@ syntax = "proto3";
 
 package modules.common.api;
 
-option go_package = "modules/common/gen/auth";
+option go_package = "github.com/slomus/USOSWEB/src/backend/common/gen/auth;auth";
 
+import "google/api/annotations.proto";
 // Wiadomości
 
 message LoginRequest {
@@ -17,18 +18,28 @@ message LoginResponse {
   int64 expires_in = 3;
 }
 
-message ResetPasswordRequest {
-  string email = 1;
-}
+message ResetPasswordRequest { string email = 1; }
 
 message ResetPasswordResponse {
   bool success = 1;
   string message = 2;
 }
 
+message HelloRequest {}
+
+message HelloResponse { string message = 1; }
+
 // Serwis
 
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+}
+
+service AuthHello {
+  rpc SayHello(HelloRequest) returns (HelloResponse) {
+    option (google.api.http) = {
+      get : "/api/hello"
+    };
+  }
 }
