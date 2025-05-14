@@ -1,12 +1,8 @@
-module github.com/slomus/USOSWEB
+module github.com/slomus/USOSWEB/src/backend
 
 go 1.23.0
 
 toolchain go1.24.2
-
-replace github.com/slomus/USOSWEB/src/backend => ./
-
-replace github.com/slomus/USOSWEB/src/backend/configs => ./configs
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.2

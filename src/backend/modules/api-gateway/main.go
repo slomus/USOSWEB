@@ -6,7 +6,7 @@ import (
     "net/http"
     "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
     "google.golang.org/grpc"
-    pb "usosweb/src/backend/modules/common/gen/auth" 
+    pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth" 
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
     "log"
     "net"
 
-    pb "github.com/slomus/USOSWEB/src/backend/common/gen/auth"
+    pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
     "google.golang.org/grpc"
 )
 
@@ -13,8 +13,8 @@ type server struct {
     pb.UnimplementedAuthHelloServer
 }
 
-func (s server) SayHello(ctx context.Context, reqpb.HelloRequest) (*pb.HelloResponse, error) {
-    return &pb.HelloResponse{Message: "Hello from Common!"}, nil
+func (s server) SayHello(ctx context.Context, helloRequest *pb.HelloRequest) (*pb.HelloResponse, error) {
+	return &pb.HelloResponse{Message: "Hello from Common!"}, nil
 }
 
 func main() {
