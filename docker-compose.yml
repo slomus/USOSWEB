@@ -1,4 +1,4 @@
-version: '5.8'
+version: '6.8'
 
 services:
   postgres:
@@ -9,9 +9,20 @@ services:
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: mydb
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  api-gateway:
+    build:
+      context: ./src/backend
+      dockerfile: modules/api-gateway/Dockerfile
+    ports:
+      - "8080:8083"
+    environment:
+      - ENV=development
+    depends_on:
+      - postgres
 
   frontend:
     build:
@@ -21,9 +32,12 @@ services:
       - "3000:3000"
     volumes:
       - ./src/frontend:/app
+      - /app/.next
       - /app/node_modules
     environment:
       - NODE_ENV=development
+    stdin_open: true
+    tty: true
 
 
   calendar:
@@ -31,31 +45,34 @@ services:
       context: ./src/backend
       dockerfile: modules/calendar/Dockerfile
     ports:
-      - "3001:3001"
+      - "3003:3001"
     environment:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
   messaging:
     build:
       context: ./src/backend
       dockerfile: modules/messaging/Dockerfile
     ports:
-      - "3002:3002"
+      - "3004:3002"
     environment:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
   common:
     build:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
-      - "3003:3003"
+      - "3004:3004"
     environment:
       - ENV=development
     depends_on:
       - postgres
+      - api-gateway
 
   migrate:
     env_file:
@@ -65,7 +82,7 @@ services:
       dockerfile: database/Dockerfile
     environment:
       DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
+      DB_PORT: ${DB_PORT:-5431}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
       DB_NAME: ${DB_NAME:-mydb}
