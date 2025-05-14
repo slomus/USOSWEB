@@ -18,7 +18,7 @@ services:
       context: ./src/backend
       dockerfile: modules/api-gateway/Dockerfile
     ports:
-      - "8080:8083"
+      - "8083:8083"
     environment:
       - ENV=development
     depends_on:
@@ -45,7 +45,7 @@ services:
       context: ./src/backend
       dockerfile: modules/calendar/Dockerfile
     ports:
-      - "3003:3001"
+      - "3001:3001"
     environment:
       - ENV=development
     depends_on:
@@ -56,7 +56,7 @@ services:
       context: ./src/backend
       dockerfile: modules/messaging/Dockerfile
     ports:
-      - "3004:3002"
+      - "3002:3002"
     environment:
       - ENV=development
     depends_on:
