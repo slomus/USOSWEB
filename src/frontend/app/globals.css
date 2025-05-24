@@ -18,11 +18,3 @@
     --foreground: #DFD4CA;
   }
 }
-
-div {
-  margin: 20px;
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: center;
-}

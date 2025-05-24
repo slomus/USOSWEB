@@ -67,9 +67,15 @@ services:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
-      - "3004:3004"
-    environment:
+      - "3004:3003"
+    environment: #FIX: THIS IS HORRIBLE
       - ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=mydb
+      - DB_SSLMODE=disable
     depends_on:
       - postgres
       - api-gateway
@@ -82,7 +88,7 @@ services:
       dockerfile: database/Dockerfile
     environment:
       DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5431}
+      DB_PORT: ${DB_PORT:-5432}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
       DB_NAME: ${DB_NAME:-mydb}

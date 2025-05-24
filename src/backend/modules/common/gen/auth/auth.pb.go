@@ -466,11 +466,11 @@ const file_auth_proto_rawDesc = "" +
 	"\fHelloRequest\")\n" +
 	"\rHelloResponse\x12\x18\n" +
 	"\amessage\x18\n" +
-	" \x01(\tR\amessage2\xd0\x02\n" +
+	" \x01(\tR\amessage2\xee\x02\n" +
 	"\vAuthService\x12h\n" +
 	"\x05Login\x12 .modules.common.api.LoginRequest\x1a!.modules.common.api.LoginResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/auth/login\x12t\n" +
-	"\bRegister\x12#.modules.common.api.RegisterRequest\x1a$.modules.common.api.RegisterResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/auth/register\x12a\n" +
-	"\fRefreshToken\x12'.modules.common.api.RefreshTokenRequest\x1a(.modules.common.api.RefreshTokenResponse2p\n" +
+	"\bRegister\x12#.modules.common.api.RegisterRequest\x1a$.modules.common.api.RegisterResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/auth/register\x12\x7f\n" +
+	"\fRefreshToken\x12'.modules.common.api.RefreshTokenRequest\x1a(.modules.common.api.RefreshTokenResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/auth/refresh2p\n" +
 	"\tAuthHello\x12c\n" +
 	"\bSayHello\x12 .modules.common.api.HelloRequest\x1a!.modules.common.api.HelloResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/api/helloB<Z:github.com/slomus/USOSWEB/src/backend/common/gen/auth;authb\x06proto3"
