@@ -2,8 +2,12 @@ package main
 
 import (
     "context"
+		"crypto/rand"
+		"database/sql"
+		"encoding/hex"
     "log"
     "net"
+
 
     pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
     "google.golang.org/grpc"
