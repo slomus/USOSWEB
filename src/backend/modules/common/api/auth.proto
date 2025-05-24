@@ -21,7 +21,7 @@ message LoginResponse {
 
 message RegisterRequest {
   string name = 11;
-  string passowrd = 12;
+  string password = 12;
 }
 
 message RegisterResponse {
@@ -30,13 +30,14 @@ message RegisterResponse {
   int64 user_id = 12;
 }
 
-message ResetPasswordRequest {
-  string email = 10;
+message RefreshTokenRequest {
+  string refresh_token = 10;
 }
 
-message ResetPasswordResponse {
-  bool success = 10;
-  string message = 20;
+message RefreshTokenResponse {
+  string access_token = 10;
+  string refresh_token = 11;
+  int64 expires_in = 12;
 }
 
 message HelloRequest {}
@@ -48,17 +49,21 @@ message HelloResponse {
 // Serwis
 
 service AuthService {
-  rpc Login(LoginRequest) returns (LoginResponse);
-  option (google.api.http) = {
-    post: "/api/auth/login"
-    body: "*"
-  };
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/auth/login"
+      body: "*"
+    };
+  }
 
-  rpc Register(RegisterRequest) returns (RegisterResponse);
-  option (google.api.http) = {
-    post: "api/auth/register"
-    body: "*"
-  };
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/auth/register"
+      body: "*"
+    };
+  }
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }
 
 service AuthHello {
