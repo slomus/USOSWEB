@@ -1,45 +1,68 @@
-syntax = "proto3";
+syntax = 'proto3';
 
 package modules.common.api;
 
+import "google/api/annotations.proto";
+
 option go_package = "github.com/slomus/USOSWEB/src/backend/common/gen/auth;auth";
 
-import "google/api/annotations.proto";
 // Wiadomości
 
 message LoginRequest {
-  string username = 1;
-  string password = 2;
+  string username = 10;
+  string password = 11;
 }
 
 message LoginResponse {
-  string access_token = 1;
-  string refresh_token = 2;
-  int64 expires_in = 3;
+  string access_token = 10;
+  string refresh_token = 11;
+  int64 expires_in = 12;
 }
 
-message ResetPasswordRequest { string email = 1; }
+message RegisterRequest {
+  string username = 11;
+  string passowrd = 12;
+}
+
+message RegisterResponse {
+  bool success = 10;
+  string message = 11;
+  int64 user_id = 12;
+}
+
+message ResetPasswordRequest {
+  string email = 10;
+}
 
 message ResetPasswordResponse {
-  bool success = 1;
-  string message = 2;
+  bool success = 10;
+  string message = 20;
 }
 
 message HelloRequest {}
 
-message HelloResponse { string message = 1; }
+message HelloResponse {
+  string message = 10;
+}
 
 // Serwis
 
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
-  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  option (google.api.http) = {
+    post: "/api/auth/login"
+    body: "*"
+  };
+
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  option (google.api.http) = {
+    post: "api/auth/register"
+    body: "*"
+  };
 }
 
 service AuthHello {
   rpc SayHello(HelloRequest) returns (HelloResponse) {
-    option (google.api.http) = {
-      get : "/api/hello"
-    };
+    option (google.api.http) = {get: "/api/hello"};
   }
 }
