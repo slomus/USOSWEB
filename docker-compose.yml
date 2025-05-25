@@ -12,6 +12,12 @@ services:
       - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+        test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5432"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 30s
 
   api-gateway:
     build:
@@ -77,8 +83,10 @@ services:
       - DB_NAME=mydb
       - DB_SSLMODE=disable
     depends_on:
-      - postgres
-      - api-gateway
+      postgres:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
 
   migrate:
     env_file:

@@ -16,7 +16,6 @@ func GenerateTokens(userID int64) (accessToken, refreshToken string, err error) 
 	accessTokenDuration := time.Duration(configs.Envs.JWTAccessTokenExpiry) * time.Minute
 	refreshTokenDuration := time.Duration(configs.Envs.JWTRefreshTokenExpiry) * time.Minute
 
-	// Generate access token
 	accessClaims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
