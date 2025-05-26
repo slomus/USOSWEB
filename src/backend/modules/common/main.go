@@ -49,7 +49,7 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Print("Hash error: %v", err)
+		log.Printf("Hash error: %v", err)
 		return &pb.RegisterResponse{
 			Success: false,
 			Message: "Password error",
