@@ -51,3 +51,28 @@ migrate:
 migrate-create:
 	@read -p "Migration name: " name; \
 	docker run --rm -v "$$(pwd)/src/backend/Database/migrations:/migrations" migrate/migrate create -ext sql -dir /migrations -seq $$name
+
+
+db-build: 
+	docker-compose down -v
+	docker-compose rm -f migrate || true
+	docker images | grep 'usosweb.*migrate' | awk '{print $$3}' | xargs -r docker rmi -f || true
+	docker-compose build --no-cache migrate
+	docker-compose up -d postgres 
+	@timeout 10 bash -c 'until docker-compose exec postgres pg_isready -h localhost -p 5432 > /dev/null 2>&1; do echo "Czekam na PostgreSQL"; sleep 2; done' || echo "Timeout - PostgreSQL może nie być gotowy"
+	docker-compose run --rm migrate up
+	docker-compose --profile seeder run --rm seeder
+
+
+db-reset:
+	docker-compose down -v
+	docker-compose up -d postgres
+	@echo "Czekam na PostgreSQL"
+	@sleep 10
+	docker-compose run migrate
+	docker-compose --profile seeder run seeder
+
+
+db-seed:
+	docker-compose --profile seeder build --no-cache seeder || echo "Seeder używa postgres image - OK"
+	docker-compose --profile seeder run --rm seeder
