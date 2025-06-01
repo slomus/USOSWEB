@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Button from './components/button';
-import Input from './components/input';
+import Button from "./components/button";
+import Input from "./components/input";
 
 export default function Home() {
   const [message, setMessage] = useState("");
   const router = useRouter();
 
-  const API_BASE = "http://localhost:8083"
+  const API_BASE = "http://localhost:8083";
 
   const handleClick = async (event) => {
     event.preventDefault();
     const form = event.target.form;
     const formData = new FormData(form);
-    const name = formData.get('name');
-    const password = formData.get('password');
+    const name = formData.get("name");
+    const password = formData.get("password");
 
     try {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -28,15 +28,15 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (response.ok) { // w warunku powinno jeszcze byc && data.access_token, ale ze wzgledu na brak strony rejestracji, brakuje hashowania hasel
+      if (response.ok) {
+        // w warunku powinno jeszcze byc && data.access_token, ale ze wzgledu na brak strony rejestracji, brakuje hashowania hasel
         // i backend zwraca pusty loginResponse{}, FIX: po napisaniu strony rejestracji/sprawdzenia czy endpoint api/auth/registration dziala, nalezy ten warunek dodac
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        router.push("/dashboard");
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        router.push("/StudentMainPage");
       } else {
         setMessage("Nieprawidłowe dane logowania.");
       }
-
     } catch (error) {
       setMessage("Błąd podczas logowania.");
       console.error("Błąd:", error);
@@ -48,7 +48,12 @@ export default function Home() {
       <header className="flex justify-between items-center px-6 py-4">
         {/* Logo + tekst */}
         <div className="flex items-center gap-3">
-          <Image src="/logouniwersytet.png" alt="Logo" width={100} height={100} />
+          <Image
+            src="/logouniwersytet.png"
+            alt="Logo"
+            width={100}
+            height={100}
+          />
         </div>
         {/* Linki */}
         <nav className="hidden md:flex gap-6 text-sm text-white/80">
@@ -75,7 +80,9 @@ export default function Home() {
                 className="w-full bg-transparent border-none focus:outline-none"
                 required
               />
-              <span className="material-symbols-outlined text-gray-398 px-2">person</span>
+              <span className="material-symbols-outlined text-gray-398 px-2">
+                person
+              </span>
             </div>
             <div className="rounded border border-teal-798 p-2 shadow-md bg-transparent flex items-center">
               <Input
@@ -85,7 +92,9 @@ export default function Home() {
                 className="w-full bg-transparent border-none focus:outline-none"
                 required
               />
-              <span className="material-symbols-outlined text-gray-398 px-2">visibility_off</span>
+              <span className="material-symbols-outlined text-gray-398 px-2">
+                visibility_off
+              </span>
             </div>
             <Button
               type="submit"
@@ -97,7 +106,9 @@ export default function Home() {
           </form>
 
           {message && (
-            <div className="mt-2 text-center text-sm text-gray-300">{message}</div>
+            <div className="mt-2 text-center text-sm text-gray-300">
+              {message}
+            </div>
           )}
 
           <div className="mt-4 text-center text-sm text-gray-400">
