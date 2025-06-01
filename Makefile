@@ -58,7 +58,7 @@ db-build:
 	docker-compose rm -f migrate || true
 	docker images | grep 'usosweb.*migrate' | awk '{print $$3}' | xargs -r docker rmi -f || true
 	docker-compose build --no-cache migrate
-	docker-compose up postgres -d
+	docker-compose up -d postgres 
 	@timeout 10 bash -c 'until docker-compose exec postgres pg_isready -h localhost -p 5432 > /dev/null 2>&1; do echo "Czekam na PostgreSQL"; sleep 2; done' || echo "Timeout - PostgreSQL może nie być gotowy"
 	docker-compose run --rm migrate up
 	docker-compose --profile seeder run --rm seeder
@@ -66,7 +66,7 @@ db-build:
 
 db-reset:
 	docker-compose down -v
-	docker-compose up postgres -d
+	docker-compose up -d postgres
 	@echo "Czekam na PostgreSQL"
 	@sleep 10
 	docker-compose run migrate
