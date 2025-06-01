@@ -19,6 +19,40 @@ services:
         retries: 5
         start_period: 30s
 
+  migrate:
+    env_file:
+      ./src/backend/.env
+    build:
+      context: ./src/backend
+      dockerfile: database/Dockerfile
+    environment:
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
+      DB_NAME: ${DB_NAME:-mydb}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+    depends_on:
+      - postgres
+    command: up
+    entrypoint: ["/app/migrate"]
+
+  seeder:
+      image: postgres:latest
+      environment:
+        PGPASSWORD: mysecretpassword
+      volumes:
+        - ./src/backend/database/seeds:/seeds
+      depends_on:
+        postgres:
+          condition: service_healthy
+      command: >
+        bash -c "psql -h postgres -U postgres -d mydb -f /seeds/mock_data.sql"
+      restart: "no"
+      profiles:
+        - seeder
+
+
   api-gateway:
     build:
       context: ./src/backend
@@ -57,6 +91,7 @@ services:
     depends_on:
       - postgres
       - api-gateway
+
   messaging:
     build:
       context: ./src/backend
@@ -88,23 +123,6 @@ services:
       api-gateway:
         condition: service_started
 
-  migrate:
-    env_file:
-      ./src/backend/.env
-    build:
-      context: ./src/backend
-      dockerfile: database/Dockerfile
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-mysecretpassword}
-      DB_NAME: ${DB_NAME:-mydb}
-      DB_SSLMODE: ${DB_SSLMODE:-disable}
-    depends_on:
-      - postgres
-    command: up
-    entrypoint: ["/app/migrate"]
-  
+ 
 volumes:
   postgres_data:

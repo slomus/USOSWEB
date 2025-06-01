@@ -28,8 +28,7 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) { // w warunku powinno jeszcze byc && data.access_token, ale ze wzgledu na brak strony rejestracji, brakuje hashowania hasel
-        // i backend zwraca pusty loginResponse{}, FIX: po napisaniu strony rejestracji/sprawdzenia czy endpoint api/auth/registration dziala,
-        // nalezy ten warunek dodac
+        // i backend zwraca pusty loginResponse{}, FIX: po napisaniu strony rejestracji/sprawdzenia czy endpoint api/auth/registration dziala, nalezy ten warunek dodac
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         router.push("/dashboard");
