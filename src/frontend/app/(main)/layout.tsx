@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import TopBar from "@/app/components/TopBar";
+import Footer from "../components/Footer";
 
 export default function MainLayout({
   children,
@@ -10,8 +11,8 @@ export default function MainLayout({
   return (
     <div>
       <TopBar />
-
       {children}
+      <Footer />
     </div>
   );
 }
