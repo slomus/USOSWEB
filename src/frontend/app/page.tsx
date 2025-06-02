@@ -10,7 +10,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const router = useRouter();
 
-  const API_BASE = "http://localhost:30083";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
   const handleClick = async (event) => {
     event.preventDefault();

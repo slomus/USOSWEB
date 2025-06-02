@@ -30,7 +30,7 @@ const AuthTestPage = () => {
     hello: false
   });
 
-  const API_BASE = 'http://localhost:30083';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
 
   // Helper function to update loading state
   const setLoadingState = (action, state) => {
