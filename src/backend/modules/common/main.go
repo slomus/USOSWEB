@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net"
+	"time"
 
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
@@ -25,6 +26,8 @@ type server struct {
 	pb.UnimplementedAuthServiceServer
 	db *sql.DB
 }
+
+const SECONDS = 60
 
 // NOTE: hello endpoint
 func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
@@ -109,7 +112,7 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		return &pb.LoginResponse{}, nil
 	}
 
-	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * 60 // w sekundach
+	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * SECONDS // w sekundach
 
 	return &pb.LoginResponse{
 		AccessToken:  accessToken,
@@ -120,9 +123,30 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 // NOTE: RefreshToken endpoint
 func (s *server) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+
+	var isBlacklisted bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", req.RefreshToken).Scan(&isBlacklisted)
+	if err != nil {
+		log.Printf("Blacklist check error: %v", err)
+		return &pb.RefreshTokenResponse{}, nil
+	}
+
+	if isBlacklisted {
+		log.Printf("Attempted use of blacklisted refresh token")
+		return &pb.RefreshTokenResponse{}, nil
+	}
+
 	claims, err := auth.ValidateToken(req.RefreshToken)
 	if err != nil {
 		return &pb.RefreshTokenResponse{}, nil
+	}
+
+	_, err = s.db.Exec(
+		"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
+		req.RefreshToken, time.Now(),
+	)
+	if err != nil {
+		log.Printf("Failed to blacklist old refresh token: %v", err)
 	}
 
 	accessToken, refreshToken, err := auth.GenerateTokens(claims.UserID)
@@ -131,12 +155,49 @@ func (s *server) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) 
 		return &pb.RefreshTokenResponse{}, nil
 	}
 
-	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * 60 // w sekundach
+	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * SECONDS // w sekundach
 
 	return &pb.RefreshTokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    expiresIn,
+	}, nil
+}
+
+// NOTE: Logout endpoint
+func (s *server) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+	if req.RefreshToken == "" {
+		return &pb.LogoutResponse{
+			Success: false,
+			Message: "Refresh token is required",
+		}, nil
+	}
+
+	_, err := s.db.Exec(
+		"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
+		req.RefreshToken, time.Now(),
+	)
+	if err != nil {
+		log.Printf("Failed to blacklist refresh token: %v", err)
+		return &pb.LogoutResponse{
+			Success: false,
+			Message: "Logout failed",
+		}, nil
+	}
+
+	if req.AccessToken != "" {
+		_, err = s.db.Exec(
+			"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
+			req.AccessToken, time.Now(),
+		)
+		if err != nil {
+			log.Printf("Failed to blacklist access token: %v", err)
+		}
+	}
+
+	return &pb.LogoutResponse{
+		Success: true,
+		Message: "Successfully logged out",
 	}, nil
 }
 
@@ -167,7 +228,7 @@ func main() {
 	}
 
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(middleware.AuthInterceptor),
+		grpc.UnaryInterceptor(middleware.AuthInterceptorWithDB(db)),
 	)
 	authServer := &server{db: db}
 

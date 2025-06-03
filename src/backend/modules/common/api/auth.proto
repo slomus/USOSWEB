@@ -19,6 +19,16 @@ message LoginResponse {
   int64 expires_in = 12;
 }
 
+message LogoutRequest {
+  string refresh_token = 10;
+  string access_token = 11;
+}
+
+message LogoutResponse {
+  bool success = 10;
+  string message = 11;
+}
+
 message RegisterRequest {
   string name = 11;
   string password = 12;
@@ -52,6 +62,13 @@ service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse) {
     option (google.api.http) = {
       post: "/api/auth/login"
+      body: "*"
+    };
+  }
+
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/auth/logout"
       body: "*"
     };
   }

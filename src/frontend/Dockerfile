@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-COPY next.config.js* ./
+COPY next.config.ts* ./
 COPY tsconfig.json* ./
 
 RUN npm ci 
