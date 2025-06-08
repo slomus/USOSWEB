@@ -18,10 +18,7 @@ export default function Navigation() {
   ];
 
   return (
-    <nav
-      className="absolute left-0 w-64 bg-[#403E3C] text-[#DFD4CA] px-4 py-6 shadow-md overflow-y-auto"
-      style={{ top: "72px", height: "calc(100vh - 72px)" }}
-    >
+    <nav className="fixed top-[72px] left-0 w-64 bg-[#403E3C] text-[#DFD4CA] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40">
       <ul className="space-y-3">
         {menuItems.map((item, index) => (
           <li key={index}>
