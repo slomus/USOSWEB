@@ -1,6 +1,6 @@
 export default function StudentMainPage() {
   return (
-    <main className="min-h-screen px-6 py-6 text-[#DFD4CA] bg-[#121212]">
+    <main className="min-h-screen px-6 py-6 text-[var(--color-text)] bg-[var(--color-bg)]">
       {/* Główna siatka */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Lewa kolumna – plan zajęć */}
@@ -63,7 +63,7 @@ export default function StudentMainPage() {
           ujawnił redaktor. Nikt tego nie chce nawet na złomie – oświadczył
           mężczyzna.
         </p>
-
+        <div className="border-t-2 border-[#327f7a] w-1/3 mx-auto mb-4 mt-4"></div>
         <h3 className="text-lg font-bold text-center mb-2">
           JENDAK GO PRZYJĘLI!!! 0,50 zł za kilogram - nie ma tragedii
         </h3>

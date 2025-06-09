@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Button from "./components/button";
-import Input from "./components/input";
+import Button from "@/app/components/button";
+import Input from "@/app/components/input";
+import ThemeToggleButton from "@/app/components/ThemeToggleButton";
+import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Home() {
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -29,8 +32,6 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        // w warunku powinno jeszcze byc && data.access_token, ale ze wzgledu na brak strony rejestracji, brakuje hashowania hasel
-        // i backend zwraca pusty loginResponse{}, FIX: po napisaniu strony rejestracji/sprawdzenia czy endpoint api/auth/registration dziala, nalezy ten warunek dodac
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
         router.push("/StudentMainPage");
@@ -42,8 +43,9 @@ export default function Home() {
       console.error("Błąd:", error);
     }
   };
+
   return (
-    <div className="min-h-screen bg-[#1a1a1a] text-[#DFD4CA] relative">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] relative">
       {/* Górny pasek */}
       <header className="flex justify-between items-center px-6 py-4">
         {/* Logo + tekst */}
@@ -56,13 +58,13 @@ export default function Home() {
           />
         </div>
         {/* Linki */}
-        <nav className="hidden md:flex gap-6 text-sm text-white/80">
+        <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
           <a href="#">o aplikacji</a>
           <a href="#">dokumentacja</a>
-          <a href="#">zmień motyw</a>
+          <ThemeToggleButton />
         </nav>
         {/* Hamburger (opcjonalnie) */}
-        <div className="md:hidden text-teal-600 text-3xl">☰</div>
+        <div className="md:hidden text-[var(--color-accent)] text-3xl">☰</div>
       </header>
 
       {/* Formularz */}
@@ -80,38 +82,45 @@ export default function Home() {
                 className="w-full bg-transparent border-none focus:outline-none"
                 required
               />
-              <span className="material-symbols-outlined text-gray-398 px-2">
-                person
+              <span className="text-(var[--text-color]) text-2xl px-2">
+                <FaUser />
               </span>
             </div>
             <div className="rounded border border-teal-798 p-2 shadow-md bg-transparent flex items-center">
               <Input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password..."
                 className="w-full bg-transparent border-none focus:outline-none"
                 required
               />
-              <span className="material-symbols-outlined text-gray-398 px-2">
-                visibility_off
+              <span
+                className="px-2 text-2xl cursor-pointer"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                tabIndex={0}
+                role="button"
+              >
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
               </span>
             </div>
+
             <Button
               type="submit"
               onClick={handleClick}
-              className="w-full flex items-center justify-center gap0 bg-teal-700 hover:bg-teal-600 transition"
+              className="w-full flex items-center justify-center gap0 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition"
             >
               Login
             </Button>
           </form>
 
           {message && (
-            <div className="mt-2 text-center text-sm text-gray-300">
+            <div className="mt-2 text-center text-sm text-[var(--color-accent2)]">
               {message}
             </div>
           )}
 
-          <div className="mt-4 text-center text-sm text-gray-400">
+          <div className="mt-4 text-center text-sm text-[var(--color-text)]">
             Nie pamiętasz hasła?
           </div>
         </div>
