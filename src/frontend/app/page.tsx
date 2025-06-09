@@ -15,9 +15,9 @@ export default function Home() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
-  const handleClick = async (event) => {
+  const handleClick = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.target.form;
+    const form = event.currentTarget;
     const formData = new FormData(form);
     const name = formData.get("name");
     const password = formData.get("password");
@@ -74,7 +74,7 @@ export default function Home() {
             Zaloguj się do systemu USOSWEB
           </h4>
 
-          <form className="space-y-2">
+          <form className="space-y-2" onSubmit={handleClick}>
             <div className="rounded border border-teal-798 p-2 shadow-md bg-transparent flex items-center">
               <Input
                 name="name"
@@ -107,7 +107,6 @@ export default function Home() {
 
             <Button
               type="submit"
-              onClick={handleClick}
               className="w-full flex items-center justify-center gap0 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition"
             >
               Login

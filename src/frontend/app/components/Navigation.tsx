@@ -2,8 +2,9 @@
 import Link from "next/link";
 import ThemeToggleButton from "./ThemeToggleButton";
 import { motion } from "framer-motion";
+import { Transition } from "framer-motion";
 
-export default function Navigation({ transition }: { transition: any }) {
+export default function Navigation({ transition }: { transition: Transition }) {
   const menuItems = [
     { label: "Strona główna", href: "#" },
     { label: "Plan zajęć", href: "#" },

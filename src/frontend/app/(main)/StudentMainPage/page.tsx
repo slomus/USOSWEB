@@ -69,8 +69,8 @@ export default function StudentMainPage() {
         </h3>
         <p className="text-sm text-center max-w-3xl mx-auto text-[#9C9793]">
           W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
-          się, że mimo wszystko cieszy się z oddania auta na szrot "Panie i tak
-          by tego nikt nie kupił" odpowiedział na pytanie dlaczego poszedł na
+          się, że mimo wszystko cieszy się z oddania auta na szrot &quot;Panie i tak
+          by tego nikt nie kupił&quot; odpowiedział na pytanie dlaczego poszedł na
           żyletki.
         </p>
       </section>
