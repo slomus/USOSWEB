@@ -11,18 +11,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-        test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5432"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-        start_period: 30s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   migrate:
-    env_file:
-      ./src/backend/.env
     build:
       context: ./src/backend
       dockerfile: database/Dockerfile
+    env_file:
+      - ./src/backend/.env
     environment:
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
@@ -31,25 +31,25 @@ services:
       DB_NAME: ${DB_NAME:-mydb}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: up
     entrypoint: ["/app/migrate"]
 
   seeder:
-      image: postgres:latest
-      environment:
-        PGPASSWORD: mysecretpassword
-      volumes:
-        - ./src/backend/database/seeds:/seeds
-      depends_on:
-        postgres:
-          condition: service_healthy
-      command: >
-        bash -c "psql -h postgres -U postgres -d mydb -f /seeds/mock_data.sql"
-      restart: "no"
-      profiles:
-        - seeder
-
+    image: postgres:latest
+    environment:
+      PGPASSWORD: mysecretpassword
+    volumes:
+      - ./src/backend/database/seeds:/seeds
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "psql -h postgres -U postgres -d mydb -f /seeds/mock_data.sql"
+    restart: "no"
+    profiles:
+      - seeder
 
   api-gateway:
     build:
@@ -60,7 +60,8 @@ services:
     environment:
       - ENV=development
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -78,7 +79,6 @@ services:
     stdin_open: true
     tty: true
 
-
   calendar:
     build:
       context: ./src/backend
@@ -88,8 +88,10 @@ services:
     environment:
       - ENV=development
     depends_on:
-      - postgres
-      - api-gateway
+      postgres:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
 
   messaging:
     build:
@@ -100,15 +102,18 @@ services:
     environment:
       - ENV=development
     depends_on:
-      - postgres
-      - api-gateway
+      postgres:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+
   common:
     build:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
       - "3004:3003"
-    environment: #FIX: THIS IS HORRIBLE
+    environment:
       - ENV=development
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -122,6 +127,5 @@ services:
       api-gateway:
         condition: service_started
 
- 
 volumes:
   postgres_data:

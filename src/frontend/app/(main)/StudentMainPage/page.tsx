@@ -1,5 +1,8 @@
+import ProtectedPage from '@/app/components/ProtectedPage';
 export default function StudentMainPage() {
+  // Komponent głównej strony studenta, który wykorzystuje hook do odświeżania tokena
   return (
+    <ProtectedPage>
     <main className="min-h-screen px-6 py-6 text-[var(--color-text)] bg-[var(--color-bg)]">
       {/* Główna siatka */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -75,5 +78,6 @@ export default function StudentMainPage() {
         </p>
       </section>
     </main>
+    </ProtectedPage>
   );
 }

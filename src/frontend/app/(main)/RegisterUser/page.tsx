@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "@/app/components/button";
 import Input from "@/app/components/input";
@@ -11,7 +10,6 @@ import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 export default function Home() {
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
@@ -23,7 +21,7 @@ export default function Home() {
     const password = formData.get("password");
 
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, password }),
@@ -31,13 +29,9 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (response.ok && data.accessToken) {
-        console.log("Zalogowano użytkownika:", data);
-        localStorage.setItem("access_token", data.accessToken);
-        localStorage.setItem("refresh_token", data.refreshToken);
-        router.push("/StudentMainPage");
+      if (response.ok) {
+        console.log("Zarejestrowano użytkownika:", data);
       } else {
-        console.error("Błąd logowania:", data);
         setMessage("Nieprawidłowe dane logowania.");
       }
     } catch (error) {

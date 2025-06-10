@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from 'next/navigation';
 
 export default function TopBar({
   isNavVisible,
@@ -52,6 +53,34 @@ export default function TopBar({
   // Wpisywanie w inpucie
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
+  };
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+    const refreshToken = localStorage.getItem('refresh_token');
+    const accessToken = localStorage.getItem('access_token');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `${accessToken}`,
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.ok) {
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('access_token');
+        router.push('/');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   return (
@@ -150,7 +179,7 @@ export default function TopBar({
         >
           {isNavVisible ? "Ukryj nawigację" : "Pokaż nawigację"}
         </button>
-        <button className="bg-[#8B2E2F] hover:bg-red-800 text-white text-xs px-3 py-1 rounded">
+        <button className="bg-[#8B2E2F] hover:bg-red-800 text-white text-xs px-3 py-1 rounded" onClick={handleLogout}>
           Logout
         </button>
         <Image
