@@ -1,0 +1,60 @@
+acb1ebbb986d | 2025-06-14 23:16:21.252 | info | Starting API Gateway
+acb1ebbb986d | 2025-06-14 23:16:21.252 | info | Registering AuthService endpoints
+acb1ebbb986d | 2025-06-14 23:16:21.253 | info | AuthService endpoints registered successfully
+acb1ebbb986d | 2025-06-14 23:16:21.256 | info | Registering AuthHello endpoints
+acb1ebbb986d | 2025-06-14 23:16:21.256 | info | AuthHello endpoints registered successfully
+acb1ebbb986d | 2025-06-14 23:16:21.256 | info | API Gateway configured with endpoints:
+acb1ebbb986d | 2025-06-14 23:16:21.257 | info |   POST /api/auth/login
+acb1ebbb986d | 2025-06-14 23:16:21.257 | info |   POST /api/auth/register
+acb1ebbb986d | 2025-06-14 23:16:21.257 | info |   POST /api/auth/refresh
+acb1ebbb986d | 2025-06-14 23:16:21.258 | info |   POST /api/auth/logout
+acb1ebbb986d | 2025-06-14 23:16:21.258 | info |   GET  /api/hello
+acb1ebbb986d | 2025-06-14 23:16:21.258 | info | Starting HTTP server on port :8083
+acb1ebbb986d | 2025-06-14 23:16:21.258 | info | Gateway ready to handle requests
+698cabc673be | 2025-06-14 23:21:39.665 | info | Starting API Gateway
+698cabc673be | 2025-06-14 23:21:39.667 | info | Registering AuthService endpoints
+698cabc673be | 2025-06-14 23:21:39.667 | info | AuthService endpoints registered successfully
+698cabc673be | 2025-06-14 23:21:39.667 | info | Registering AuthHello endpoints
+698cabc673be | 2025-06-14 23:21:39.667 | info | AuthHello endpoints registered successfully
+698cabc673be | 2025-06-14 23:21:39.667 | info | API Gateway configured with endpoints:
+698cabc673be | 2025-06-14 23:21:39.667 | info |   POST /api/auth/login
+698cabc673be | 2025-06-14 23:21:39.667 | info |   POST /api/auth/register
+698cabc673be | 2025-06-14 23:21:39.667 | info |   POST /api/auth/refresh
+698cabc673be | 2025-06-14 23:21:39.667 | info |   POST /api/auth/logout
+698cabc673be | 2025-06-14 23:21:39.667 | info |   GET  /api/hello
+698cabc673be | 2025-06-14 23:21:39.667 | info | Starting HTTP server on port :8083
+698cabc673be | 2025-06-14 23:21:39.667 | info | Gateway ready to handle requests
+698cabc673be | 2025-06-14 23:25:32.031 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:25:32.031 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+698cabc673be | 2025-06-14 23:25:32.033 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:25:32.067 | info | Request completed: POST /api/auth/login -> 200 in 33ms
+698cabc673be | 2025-06-14 23:27:45.998 | info | Incoming request: POST /api/auth/register from 172.18.0.1
+698cabc673be | 2025-06-14 23:27:46.063 | info | Request completed: POST /api/auth/register -> 200 in 65ms
+698cabc673be | 2025-06-14 23:27:49.719 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:27:49.719 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+698cabc673be | 2025-06-14 23:27:49.728 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:27:49.827 | info | Request completed: POST /api/auth/login -> 200 in 98ms
+698cabc673be | 2025-06-14 23:28:07.019 | info | Incoming request: OPTIONS /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:07.019 | info | Request completed: OPTIONS /api/auth/logout -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:07.022 | info | Incoming request: POST /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:07.024 | info | Request completed: POST /api/auth/logout -> 200 in 2ms
+698cabc673be | 2025-06-14 23:28:10.832 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:10.832 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:10.835 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:10.906 | info | Request completed: POST /api/auth/login -> 200 in 71ms
+698cabc673be | 2025-06-14 23:28:16.768 | info | Incoming request: OPTIONS /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:16.769 | info | Request completed: OPTIONS /api/auth/logout -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:16.773 | info | Incoming request: POST /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:16.775 | info | Request completed: POST /api/auth/logout -> 200 in 1ms
+698cabc673be | 2025-06-14 23:28:20.131 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:20.131 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:20.142 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:20.218 | info | Request completed: POST /api/auth/login -> 200 in 76ms
+698cabc673be | 2025-06-14 23:28:30.975 | info | Incoming request: OPTIONS /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:30.976 | info | Request completed: OPTIONS /api/auth/logout -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:30.978 | info | Incoming request: POST /api/auth/logout from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:30.980 | info | Request completed: POST /api/auth/logout -> 200 in 2ms
+698cabc673be | 2025-06-14 23:28:34.046 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:34.046 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+698cabc673be | 2025-06-14 23:28:34.065 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+698cabc673be | 2025-06-14 23:28:34.151 | info | Request completed: POST /api/auth/login -> 200 in 85ms

@@ -7,6 +7,7 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
+	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -14,6 +15,8 @@ import (
 	"net"
 	"time"
 )
+
+var appLog = logger.NewLogger("auth-service")
 
 type server struct {
 	pb.UnimplementedAuthServiceServer
@@ -195,6 +198,8 @@ func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloR
 }
 
 func main() {
+	appLog.LogInfo("Starting Auth Service")
+
 	pgConfig := configs.PostgresConfig{
 		Host:     configs.Envs.DBHost,
 		Port:     configs.Envs.DBPort,
@@ -206,16 +211,21 @@ func main() {
 
 	db, err := configs.NewPostgresStorage(pgConfig)
 	if err != nil {
+		appLog.LogError("Failed to connect to database", err)
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
 	if err := db.Ping(); err != nil {
+		appLog.LogError("Failed to ping database", err)
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
+	appLog.LogInfo("Database connection established")
+
 	lis, err := net.Listen("tcp", ":3003")
 	if err != nil {
+		appLog.LogError("Failed to listen on port :3003", err)
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
@@ -227,8 +237,9 @@ func main() {
 	pb.RegisterAuthHelloServer(s, authServer)
 	pb.RegisterAuthServiceServer(s, authServer)
 
-	log.Println("gRPC server running on port :3003")
+	appLog.LogInfo("Auth Service running on port :3003")
 	if err := s.Serve(lis); err != nil {
+		appLog.LogError("Failed to start gRPC server", err)
 		log.Fatalf("failed to serve: %v", err)
 	}
 }

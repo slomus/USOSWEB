@@ -1,0 +1,12 @@
+b7f9abdadb1e | 2025-06-14 23:16:21.204 | info | Starting database migration service
+b7f9abdadb1e | 2025-06-14 23:16:21.204 | info | Migration command: up
+b7f9abdadb1e | 2025-06-14 23:16:21.204 | info | Connecting to database: postgres:5432/mydb
+c37e05c33051 | 2025-06-14 23:21:39.705 | info | Starting database migration service
+c37e05c33051 | 2025-06-14 23:21:39.705 | info | Migration command: up
+c37e05c33051 | 2025-06-14 23:21:39.705 | info | Connecting to database: postgres:5432/mydb
+c37e05c33051 | 2025-06-14 23:21:39.718 | info | Database connection established
+c37e05c33051 | 2025-06-14 23:21:39.733 | info | Database has no migrations applied yet
+c37e05c33051 | 2025-06-14 23:21:39.733 | info | Running UP migrations...
+c37e05c33051 | 2025-06-14 23:21:39.910 | info | UP migrations completed successfully
+c37e05c33051 | 2025-06-14 23:21:39.911 | info | Final migration version: 21 (dirty: false)
+c37e05c33051 | 2025-06-14 23:21:39.911 | info | Migration service completed in 205ms
