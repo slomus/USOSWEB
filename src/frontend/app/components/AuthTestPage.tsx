@@ -1,229 +1,175 @@
-"use client"
-
+'use client'
 import React, { useState } from 'react';
 
-const AuthTestPage = () => {
-  // Form states
-  const [registerForm, setRegisterForm] = useState({ name: '', password: '' });
-  const [loginForm, setLoginForm] = useState({ name: '', password: '' });
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  expiresIn?: number; // Only expiration time from backend
+}
 
-  // Auth state
-  const [tokens, setTokens] = useState({
-    accessToken: '',
-    refreshToken: '',
-    expiresIn: 0
+interface AuthState {
+  isAuthenticated: boolean;
+  expiresIn: number | null;
+}
+
+const AuthTestPage: React.FC = () => {
+  const [authState, setAuthState] = useState<AuthState>({
+    isAuthenticated: false,
+    expiresIn: null
   });
 
-  // Response states for displaying results
-  const [responses, setResponses] = useState({
-    register: null,
-    login: null,
-    refresh: null,
-    hello: null
-  });
-
-  // Loading states
   const [loading, setLoading] = useState({
-    register: false,
     login: false,
+    register: false,
     refresh: false,
     hello: false
   });
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
+  const [responses, setResponses] = useState({
+    login: null as AuthResponse | null,
+    register: null as AuthResponse | null,
+    refresh: null as AuthResponse | null,
+    hello: null as any
+  });
 
-  // Helper function to update loading state
-  const setLoadingState = (action, state) => {
-    setLoading(prev => ({ ...prev, [action]: state }));
-  };
+  const [loginForm, setLoginForm] = useState({ name: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ name: '', password: '' });
 
-  // Helper function to update response state
-  const setResponseState = (action, response) => {
-    setResponses(prev => ({ ...prev, [action]: response }));
-  };
+  // API call helper with credentials: 'include' for cookies
+  const apiCall = async (endpoint: string, method: string = 'GET', body?: any) => {
+    const config: RequestInit = {
+      method,
+      credentials: 'include', // CRITICAL: Include cookies in requests
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
 
-  // Register function
-  const handleRegister = async () => {
-    if (!registerForm.name || !registerForm.password) {
-      setResponseState('register', { error: 'Name and password are required' });
-      return;
+    if (body) {
+      config.body = JSON.stringify(body);
     }
 
-    setLoadingState('register', true);
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerForm)
-      });
+    return fetch(`http://localhost:8083${endpoint}`, config);
+  };
 
+  const handleLogin = async () => {
+    setLoading(prev => ({ ...prev, login: true }));
+    try {
+      const response = await apiCall('/api/auth/login', 'POST', loginForm);
       const data = await response.json();
-      setResponseState('register', { success: response.ok, data, status: response.status });
+
+      setResponses(prev => ({ ...prev, login: data }));
+
+      if (data.success && data.expiresIn) {
+        setAuthState({
+          isAuthenticated: true,
+          expiresIn: data.expiresIn
+        });
+
+        // Optional: Set expiration timer
+        setTimeout(() => {
+          setAuthState(prev => ({ ...prev, isAuthenticated: false }));
+        }, data.expiresIn * 1000);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+    setLoading(prev => ({ ...prev, login: false }));
+  };
+
+  const handleRegister = async () => {
+    setLoading(prev => ({ ...prev, register: true }));
+    try {
+      const response = await apiCall('/api/auth/register', 'POST', registerForm);
+      const data = await response.json();
+      setResponses(prev => ({ ...prev, register: data }));
+    } catch (error) {
+      console.error('Register error:', error);
+    }
+    setLoading(prev => ({ ...prev, register: false }));
+  };
+
+  const handleRefreshToken = async () => {
+    setLoading(prev => ({ ...prev, refresh: true }));
+    try {
+      const response = await apiCall('/api/auth/refresh', 'POST');
+      const data = await response.json();
+
+      setResponses(prev => ({ ...prev, refresh: data }));
+
+      if (data.success && data.expiresIn) {
+        setAuthState({
+          isAuthenticated: true,
+          expiresIn: data.expiresIn
+        });
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+    }
+    setLoading(prev => ({ ...prev, refresh: false }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await apiCall('/api/auth/logout', 'POST');
+      const data = await response.json();
 
       if (data.success) {
-        setRegisterForm({ name: '', password: '' });
-      }
-    } catch (error) {
-      setResponseState('register', { error: error.message });
-    } finally {
-      setLoadingState('register', false);
-    }
-  };
-
-  // Login function
-  const handleLogin = async () => {
-    if (!loginForm.name || !loginForm.password) {
-      setResponseState('login', { error: 'Name and password are required' });
-      return;
-    }
-
-    setLoadingState('login', true);
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm)
-      });
-
-      const data = await response.json();
-      setResponseState('login', { success: response.ok, data, status: response.status });
-
-      if (response.ok && data.access_token) {
-        setTokens({
-          accessToken: data.access_token,
-          refreshToken: data.refresh_token,
-          expiresIn: data.expires_in
-        });
-        setLoginForm({ name: '', password: '' });
-      }
-    } catch (error) {
-      setResponseState('login', { error: error.message });
-    } finally {
-      setLoadingState('login', false);
-    }
-  };
-
-  // Refresh token function
-  const handleRefreshToken = async () => {
-    if (!tokens.refreshToken) {
-      setResponseState('refresh', { error: 'No refresh token available. Please login first.' });
-      return;
-    }
-
-    setLoadingState('refresh', true);
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: tokens.refreshToken })
-      });
-
-      const data = await response.json();
-      setResponseState('refresh', { success: response.ok, data, status: response.status });
-
-      if (response.ok && data.access_token) {
-        setTokens({
-          accessToken: data.access_token,
-          refreshToken: data.refresh_token,
-          expiresIn: data.expires_in
+        setAuthState({
+          isAuthenticated: false,
+          expiresIn: null
         });
       }
     } catch (error) {
-      setResponseState('refresh', { error: error.message });
-    } finally {
-      setLoadingState('refresh', false);
+      console.error('Logout error:', error);
     }
   };
 
-  // Test hello endpoint
-  const handleTestHello = async () => {
-    setLoadingState('hello', true);
+  const handleHello = async () => {
+    setLoading(prev => ({ ...prev, hello: true }));
     try {
-      const response = await fetch(`${API_BASE}/api/hello`);
+      const response = await apiCall('/api/hello');
       const data = await response.json();
-      setResponseState('hello', { success: response.ok, data, status: response.status });
+      setResponses(prev => ({ ...prev, hello: data }));
     } catch (error) {
-      setResponseState('hello', { error: error.message });
-    } finally {
-      setLoadingState('hello', false);
+      console.error('Hello error:', error);
     }
+    setLoading(prev => ({ ...prev, hello: false }));
   };
 
-  // Simple response display
-  const ResponseDisplay = ({ title, response }) => {
-    if (!response) return null;
-
-    const isSuccess = response.success || (!response.error && !response.success);
-    const bgColor = isSuccess ? '#d4edda' : '#f8d7da';
-    const textColor = isSuccess ? '#155724' : '#721c24';
-
-    return (
-      <div style={{ padding: '10px', backgroundColor: bgColor, color: textColor, border: '1px solid', marginTop: '10px', borderRadius: '5px' }}>
-        <h4>{title} {response.status && `(${response.status})`}</h4>
-        <pre style={{ fontSize: '12px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {response.error || JSON.stringify(response.data, null, 2)}
-        </pre>
-      </div>
-    );
-  };
-
-  const buttonStyle = {
-    padding: '10px 15px',
-    margin: '5px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '14px'
-  };
-
-  const inputStyle = {
-    padding: '8px',
-    margin: '5px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    width: '200px'
-  };
-
-  const sectionStyle = {
-    border: '1px solid #ddd',
-    padding: '20px',
-    margin: '20px 0',
-    borderRadius: '8px',
-    backgroundColor: '#f9f9f9'
-  };
+  // Component styles (same as before)
+  const containerStyle = { padding: '20px', fontFamily: 'Arial, sans-serif' };
+  const sectionStyle = { marginBottom: '30px', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' };
+  const inputStyle = { margin: '5px', padding: '8px', width: '200px' };
+  const buttonStyle = { margin: '10px', padding: '10px 15px', cursor: 'pointer' };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Auth System Test Page</h1>
-      <p>Test your authentication endpoints</p>
+    <div style={containerStyle}>
+      <h1>🍪 Cookie-Based Authentication Test</h1>
 
-      {/* Connection Test */}
-      <div style={sectionStyle}>
-        <h2>1. Connection Test</h2>
-        <button
-          onClick={handleTestHello}
-          disabled={loading.hello}
-          style={{ ...buttonStyle, backgroundColor: loading.hello ? '#ccc' : '#007bff', color: 'white' }}
-        >
-          {loading.hello ? 'Testing...' : 'Test Hello Endpoint'}
-        </button>
-        <ResponseDisplay title="Hello Response" response={responses.hello} />
+      {/* Auth Status */}
+      <div style={{ ...sectionStyle, backgroundColor: authState.isAuthenticated ? '#d4edda' : '#f8d7da' }}>
+        <h2>Authentication Status</h2>
+        <p><strong>Status:</strong> {authState.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}</p>
+        {authState.expiresIn && (
+          <p><strong>Token expires in:</strong> {authState.expiresIn} seconds</p>
+        )}
       </div>
 
-      {/* Registration */}
+      {/* Register */}
       <div style={sectionStyle}>
-        <h2>2. Register New User</h2>
+        <h2>1. Register User</h2>
         <div>
           <input
             type="text"
-            placeholder="Name (required)"
+            placeholder="Name"
             value={registerForm.name}
             onChange={(e) => setRegisterForm(prev => ({ ...prev, name: e.target.value }))}
             style={inputStyle}
           />
           <input
             type="password"
-            placeholder="Password (required)"
+            placeholder="Password"
             value={registerForm.password}
             onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
             style={inputStyle}
@@ -236,12 +182,11 @@ const AuthTestPage = () => {
         >
           {loading.register ? 'Registering...' : 'Register User'}
         </button>
-        <ResponseDisplay title="Registration Response" response={responses.register} />
       </div>
 
       {/* Login */}
       <div style={sectionStyle}>
-        <h2>3. Login User</h2>
+        <h2>2. Login User</h2>
         <div>
           <input
             type="text"
@@ -265,41 +210,53 @@ const AuthTestPage = () => {
         >
           {loading.login ? 'Logging in...' : 'Login'}
         </button>
-        <ResponseDisplay title="Login Response" response={responses.login} />
       </div>
 
-      {/* Token Management */}
+      {/* Actions */}
       <div style={sectionStyle}>
-        <h2>4. Token Management</h2>
-
-        <div style={{ backgroundColor: '#e9ecef', padding: '15px', marginBottom: '15px', borderRadius: '5px' }}>
-          <h3>Current Tokens:</h3>
-          <div style={{ fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-            <p><strong>Access Token:</strong> {tokens.accessToken || 'None'}</p>
-            <p><strong>Refresh Token:</strong> {tokens.refreshToken || 'None'}</p>
-            <p><strong>Expires In:</strong> {tokens.expiresIn ? `${tokens.expiresIn} seconds` : 'N/A'}</p>
-          </div>
-        </div>
-
+        <h2>3. Actions</h2>
         <button
           onClick={handleRefreshToken}
-          disabled={loading.refresh || !tokens.refreshToken}
-          style={{ ...buttonStyle, backgroundColor: (loading.refresh || !tokens.refreshToken) ? '#ccc' : '#6f42c1', color: 'white' }}
+          disabled={loading.refresh}
+          style={{ ...buttonStyle, backgroundColor: loading.refresh ? '#ccc' : '#6f42c1', color: 'white' }}
         >
           {loading.refresh ? 'Refreshing...' : 'Refresh Token'}
         </button>
-        <ResponseDisplay title="Token Refresh Response" response={responses.refresh} />
+
+        <button
+          onClick={handleLogout}
+          style={{ ...buttonStyle, backgroundColor: '#dc3545', color: 'white' }}
+        >
+          Logout
+        </button>
+
+        <button
+          onClick={handleHello}
+          disabled={loading.hello}
+          style={{ ...buttonStyle, backgroundColor: loading.hello ? '#ccc' : '#17a2b8', color: 'white' }}
+        >
+          {loading.hello ? 'Loading...' : 'Test Protected Route'}
+        </button>
+      </div>
+
+      {/* Responses */}
+      <div style={sectionStyle}>
+        <h2>4. Responses</h2>
+        <pre style={{ backgroundColor: '#f8f9fa', padding: '10px', overflow: 'auto' }}>
+          {JSON.stringify(responses, null, 2)}
+        </pre>
       </div>
 
       {/* Instructions */}
       <div style={{ backgroundColor: '#d1ecf1', padding: '15px', border: '1px solid #bee5eb', borderRadius: '5px' }}>
-        <h3>Testing Steps:</h3>
-        <ol>
-          <li>Test "Hello" endpoint first</li>
-          <li>Register a new user</li>
-          <li>Login with same credentials</li>
-          <li>Test token refresh</li>
-        </ol>
+        <h3>🍪 Cookie-Based Benefits:</h3>
+        <ul>
+          <li>✅ No manual token management</li>
+          <li>✅ HTTP-only cookies protect against XSS</li>
+          <li>✅ Automatic cookie inclusion in requests</li>
+          <li>✅ Only expiration time exposed to frontend</li>
+          <li>✅ Backend has full control over tokens</li>
+        </ul>
       </div>
     </div>
   );

@@ -26,15 +26,14 @@ export default function Home() {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ name, password }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.accessToken) {
+      if (response.ok && data.message === "Login successful") {
         console.log("Zalogowano użytkownika:", data);
-        localStorage.setItem("access_token", data.accessToken);
-        localStorage.setItem("refresh_token", data.refreshToken);
         router.push("/StudentMainPage");
       } else {
         console.error("Błąd logowania:", data);

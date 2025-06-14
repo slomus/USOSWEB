@@ -14,9 +14,8 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string access_token = 10;
-  string refresh_token = 11;
-  int64 expires_in = 12;
+  string message = 10;
+  int64 expires_in = 11;
 }
 
 message LogoutRequest {
@@ -45,9 +44,8 @@ message RefreshTokenRequest {
 }
 
 message RefreshTokenResponse {
-  string access_token = 10;
-  string refresh_token = 11;
-  int64 expires_in = 12;
+  string message = 10;
+  int64 expires_in = 11;
 }
 
 message HelloRequest {}

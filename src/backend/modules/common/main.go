@@ -3,192 +3,172 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
-	"net"
-	"time"
-
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"log"
+	"net"
+	"time"
 )
 
-type User struct {
-	ID       int64
-	Name     string
-	Password string
-}
-
 type server struct {
-	pb.UnimplementedAuthHelloServer
 	pb.UnimplementedAuthServiceServer
+	pb.UnimplementedAuthHelloServer
 	db *sql.DB
 }
 
-const SECONDS = 60
-
-// NOTE: hello endpoint
-func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	return &pb.HelloResponse{Message: "Czesc tu common"}, nil
+type TokenContext struct {
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int32
 }
 
-// NOTE: register endpoint
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	if req.Name == "" || req.Password == "" {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: "Name and password are required",
-		}, nil
-	}
-
-	var exists bool
-	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE name = $1)", req.Name).Scan(&exists)
-	if err != nil {
-		log.Printf("Database error: %v", err)
-		return &pb.RegisterResponse{Success: false, Message: "User already exists"}, nil
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("Hash error: %v", err)
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "Password error",
+			Message: "Failed to hash password",
 		}, nil
 	}
 
-	var userID int64
+	var userID int
 	err = s.db.QueryRow(
-		"INSERT INTO users (name, password) VALUES ($1, $2) RETURNING user_id", req.Name, string(hashedPassword),
+		"INSERT INTO users (name, password) VALUES ($1, $2) RETURNING user_id",
+		req.Name, string(hashedPassword),
 	).Scan(&userID)
+
 	if err != nil {
-		log.Printf("Insert error: %v", err)
+		log.Printf("Failed to create user: %v", err)
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "Insert error",
+			Message: "User registration failed",
 		}, nil
 	}
 
 	return &pb.RegisterResponse{
 		Success: true,
-		Message: "User registered",
-		UserId:  userID,
+		Message: "User registered successfully",
+		UserId:  int64(userID),
 	}, nil
 }
 
-//NOTE: Login endpoint
-
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	if req.Name == "" || req.Password == "" {
-		return &pb.LoginResponse{
-			AccessToken:  "",
-			RefreshToken: "",
-			ExpiresIn:    0,
-		}, nil
-	}
-
-	var user User
+	var userID int
 	var hashedPassword string
-	err := s.db.QueryRow(
-		"SELECT user_id, name, password FROM users WHERE name = $1", req.Name,
-	).Scan(&user.ID, &user.Name, &hashedPassword)
-	if err == sql.ErrNoRows {
-		return &pb.LoginResponse{}, nil
-	} else if err != nil {
-		log.Printf("DB error: %v", err)
-		return &pb.LoginResponse{}, nil
+	err := s.db.QueryRow("SELECT user_id, password FROM users WHERE name = $1", req.Name).Scan(&userID, &hashedPassword)
+	if err != nil {
+		return &pb.LoginResponse{
+			Message:   "Invalid credentials",
+			ExpiresIn: 0,
+		}, nil
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
-		return &pb.LoginResponse{}, nil
+		return &pb.LoginResponse{
+			Message:   "Invalid credentials",
+			ExpiresIn: 0,
+		}, nil
 	}
 
-	accessToken, refreshToken, err := auth.GenerateTokens(user.ID)
+	accessToken, refreshToken, err := auth.GenerateTokens(int64(userID))
 	if err != nil {
-		log.Printf("Token generattion error: %v", err)
-		return &pb.LoginResponse{}, nil
+		return &pb.LoginResponse{
+			Message:   "Token generation failed",
+			ExpiresIn: 0,
+		}, nil
 	}
-
-	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * SECONDS // w sekundach
+	md := metadata.Pairs(
+		"x-access-token", accessToken,
+		"x-refresh-token", refreshToken,
+		"x-expires-in", "3600",
+	)
+	grpc.SendHeader(ctx, md)
 
 	return &pb.LoginResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    expiresIn,
+		Message:   "Login successful",
+		ExpiresIn: 3600,
 	}, nil
 }
 
-// NOTE: RefreshToken endpoint
 func (s *server) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+	claims, err := pb.ValidateToken(req.RefreshToken)
+	if err != nil {
+		return &pb.RefreshTokenResponse{
+			Message:   "Invalid refresh token",
+			ExpiresIn: 0,
+		}, nil
+	}
 
 	var isBlacklisted bool
-	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", req.RefreshToken).Scan(&isBlacklisted)
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", req.RefreshToken).Scan(&isBlacklisted)
 	if err != nil {
 		log.Printf("Blacklist check error: %v", err)
-		return &pb.RefreshTokenResponse{}, nil
+	} else if isBlacklisted {
+		return &pb.RefreshTokenResponse{
+			Message:   "Token has been invalidated",
+			ExpiresIn: 0,
+		}, nil
 	}
 
-	if isBlacklisted {
-		log.Printf("Attempted use of blacklisted refresh token")
-		return &pb.RefreshTokenResponse{}, nil
-	}
-
-	claims, err := auth.ValidateToken(req.RefreshToken)
+	newAccessToken, _, err := auth.GenerateTokens(claims.UserID)
 	if err != nil {
-		return &pb.RefreshTokenResponse{}, nil
+		return &pb.RefreshTokenResponse{
+			Message:   "Token generation failed",
+			ExpiresIn: 0,
+		}, nil
 	}
 
-	_, err = s.db.Exec(
-		"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
-		req.RefreshToken, time.Now(),
+	md := metadata.Pairs(
+		"x-access-token", newAccessToken,
+		"x-expires-in", "3600",
 	)
-	if err != nil {
-		log.Printf("Failed to blacklist old refresh token: %v", err)
-	}
-
-	accessToken, refreshToken, err := auth.GenerateTokens(claims.UserID)
-	if err != nil {
-		log.Printf("Token refresh error: %v", err)
-		return &pb.RefreshTokenResponse{}, nil
-	}
-
-	expiresIn := int64(configs.Envs.JWTAccessTokenExpiry) * SECONDS // w sekundach
+	grpc.SendHeader(ctx, md)
 
 	return &pb.RefreshTokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    expiresIn,
+		Message:   "Token refreshed successfully",
+		ExpiresIn: 3600,
 	}, nil
 }
 
-// NOTE: Logout endpoint
 func (s *server) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
-	if req.RefreshToken == "" {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
 		return &pb.LogoutResponse{
 			Success: false,
-			Message: "Refresh token is required",
+			Message: "No metadata found",
 		}, nil
 	}
 
-	_, err := s.db.Exec(
-		"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
-		req.RefreshToken, time.Now(),
-	)
-	if err != nil {
-		log.Printf("Failed to blacklist refresh token: %v", err)
-		return &pb.LogoutResponse{
-			Success: false,
-			Message: "Logout failed",
-		}, nil
+	var accessToken, refreshToken string
+
+	if tokens := md.Get("authorization"); len(tokens) > 0 {
+		accessToken = tokens[0]
 	}
 
-	if req.AccessToken != "" {
-		_, err = s.db.Exec(
+	if rTokens := md.Get("refresh_token"); len(rTokens) > 0 {
+		refreshToken = rTokens[0]
+	}
+
+	if refreshToken != "" {
+		_, err := s.db.Exec(
 			"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
-			req.AccessToken, time.Now(),
+			refreshToken, time.Now(),
+		)
+		if err != nil {
+			log.Printf("Failed to blacklist refresh token: %v", err)
+		}
+	}
+
+	if accessToken != "" {
+		_, err := s.db.Exec(
+			"INSERT INTO token_blacklist (token, blacklisted_at) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING",
+			accessToken, time.Now(),
 		)
 		if err != nil {
 			log.Printf("Failed to blacklist access token: %v", err)
@@ -201,8 +181,20 @@ func (s *server) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutR
 	}, nil
 }
 
-func main() {
+func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return &pb.HelloResponse{
+			Message: "Hello, anonymous user",
+		}, nil
+	}
 
+	return &pb.HelloResponse{
+		Message: "Hello, authenticated user",
+	}, nil
+}
+
+func main() {
 	pgConfig := configs.PostgresConfig{
 		Host:     configs.Envs.DBHost,
 		Port:     configs.Envs.DBPort,
@@ -239,5 +231,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
 }

@@ -76,9 +76,8 @@ func (x *LoginRequest) GetPassword() string {
 
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,10,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,11,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	ExpiresIn     int64                  `protobuf:"varint,12,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
+	Message       string                 `protobuf:"bytes,10,opt,name=message,proto3" json:"message,omitempty"`
+	ExpiresIn     int64                  `protobuf:"varint,11,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -113,16 +112,9 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginResponse) GetAccessToken() string {
+func (x *LoginResponse) GetMessage() string {
 	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
-func (x *LoginResponse) GetRefreshToken() string {
-	if x != nil {
-		return x.RefreshToken
+		return x.Message
 	}
 	return ""
 }
@@ -396,9 +388,8 @@ func (x *RefreshTokenRequest) GetRefreshToken() string {
 
 type RefreshTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,10,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,11,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	ExpiresIn     int64                  `protobuf:"varint,12,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
+	Message       string                 `protobuf:"bytes,10,opt,name=message,proto3" json:"message,omitempty"`
+	ExpiresIn     int64                  `protobuf:"varint,11,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -433,16 +424,9 @@ func (*RefreshTokenResponse) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *RefreshTokenResponse) GetAccessToken() string {
+func (x *RefreshTokenResponse) GetMessage() string {
 	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
-func (x *RefreshTokenResponse) GetRefreshToken() string {
-	if x != nil {
-		return x.RefreshToken
+		return x.Message
 	}
 	return ""
 }
@@ -543,13 +527,12 @@ const file_auth_proto_rawDesc = "" +
 	"\fLoginRequest\x12\x12\n" +
 	"\x04name\x18\n" +
 	" \x01(\tR\x04name\x12\x1a\n" +
-	"\bpassword\x18\v \x01(\tR\bpassword\"v\n" +
-	"\rLoginResponse\x12!\n" +
-	"\faccess_token\x18\n" +
-	" \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\v \x01(\tR\frefreshToken\x12\x1d\n" +
+	"\bpassword\x18\v \x01(\tR\bpassword\"H\n" +
+	"\rLoginResponse\x12\x18\n" +
+	"\amessage\x18\n" +
+	" \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
-	"expires_in\x18\f \x01(\x03R\texpiresIn\"W\n" +
+	"expires_in\x18\v \x01(\x03R\texpiresIn\"W\n" +
 	"\rLogoutRequest\x12#\n" +
 	"\rrefresh_token\x18\n" +
 	" \x01(\tR\frefreshToken\x12!\n" +
@@ -568,13 +551,12 @@ const file_auth_proto_rawDesc = "" +
 	"\auser_id\x18\f \x01(\x03R\x06userId\":\n" +
 	"\x13RefreshTokenRequest\x12#\n" +
 	"\rrefresh_token\x18\n" +
-	" \x01(\tR\frefreshToken\"}\n" +
-	"\x14RefreshTokenResponse\x12!\n" +
-	"\faccess_token\x18\n" +
-	" \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\v \x01(\tR\frefreshToken\x12\x1d\n" +
+	" \x01(\tR\frefreshToken\"O\n" +
+	"\x14RefreshTokenResponse\x12\x18\n" +
+	"\amessage\x18\n" +
+	" \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
-	"expires_in\x18\f \x01(\x03R\texpiresIn\"\x0e\n" +
+	"expires_in\x18\v \x01(\x03R\texpiresIn\"\x0e\n" +
 	"\fHelloRequest\")\n" +
 	"\rHelloResponse\x12\x18\n" +
 	"\amessage\x18\n" +

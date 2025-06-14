@@ -58,22 +58,19 @@ export default function TopBar({
 
   const handleLogout = async () => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
-    const refreshToken = localStorage.getItem('refresh_token');
-    const accessToken = localStorage.getItem('access_token');
 
     try {
       const response = await fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `${accessToken}`,
         },
-        body: JSON.stringify({ refreshToken }),
+        credentials: 'include',
+        body: JSON.stringify({}),
       });
 
       if (response.ok) {
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('access_token');
+        console.log('Logout successful');
         router.push('/');
       } else {
         console.error('Logout failed');

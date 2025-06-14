@@ -16,7 +16,8 @@ func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 
 		if info.FullMethod == "/modules.common.api.AuthService/Login" ||
-			info.FullMethod == "/modules.common.api.AuthService/Register" {
+			info.FullMethod == "/modules.common.api.AuthService/Register" ||
+			info.FullMethod == "/modules.common.api.AuthService/Logout" {
 			return handler(ctx, req)
 		}
 
@@ -25,12 +26,21 @@ func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "missing credentials")
 		}
 
-		tokens := md.Get("authorization")
-		if len(tokens) == 0 {
-			return nil, status.Error(codes.Unauthenticated, "authorization token required")
-		}
+		var token string
 
-		token := tokens[0]
+		if info.FullMethod == "/modules.common.api.AuthService/RefreshToken" {
+			refreshTokens := md.Get("refresh_token")
+			if len(refreshTokens) == 0 || refreshTokens[0] == "" {
+				return nil, status.Error(codes.Unauthenticated, "refresh token required")
+			}
+			token = refreshTokens[0]
+		} else {
+			tokens := md.Get("authorization")
+			if len(tokens) == 0 || tokens[0] == "" {
+				return nil, status.Error(codes.Unauthenticated, "access token required")
+			}
+			token = tokens[0]
+		}
 
 		var isBlacklisted bool
 		err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", token).Scan(&isBlacklisted)
