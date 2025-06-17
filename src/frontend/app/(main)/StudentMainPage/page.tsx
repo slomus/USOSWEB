@@ -1,8 +1,7 @@
-import ProtectedPage from '@/app/components/ProtectedPage';
+//import { fetchWithAuth } from "@/app/wrappers/fetchWithAuth";
 export default function StudentMainPage() {
   // Komponent głównej strony studenta, który wykorzystuje hook do odświeżania tokena
   return (
-    <ProtectedPage>
     <main className="min-h-screen px-6 py-6 text-[var(--color-text)] bg-[var(--color-bg)]">
       {/* Główna siatka */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -11,6 +10,30 @@ export default function StudentMainPage() {
           <div className="text-[#9C9793] text-center">
             <p className="text-lg">
               [Tu będzie widok kalendarza / planu zajęć]
+              {/*Przykład użycia fetchWithAuth(odkomentować import) do pobrania profilu użytkownika:
+              const UserProfile = () => {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetchWithAuth('/api/user');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        }
+      } catch (error) {
+        // Dodatkowa obsługa błędów (opcjonalnie)
+        console.error(error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  if (!user) return <div>Ładowanie...</div>;
+  return <div>Witaj, {user.name}!</div>;
+};*/}
             </p>
           </div>
         </div>
@@ -72,12 +95,11 @@ export default function StudentMainPage() {
         </h3>
         <p className="text-sm text-center max-w-3xl mx-auto text-[#9C9793]">
           W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
-          się, że mimo wszystko cieszy się z oddania auta na szrot &quot;Panie i tak
-          by tego nikt nie kupił&quot; odpowiedział na pytanie dlaczego poszedł na
-          żyletki.
+          się, że mimo wszystko cieszy się z oddania auta na szrot &quot;Panie i
+          tak by tego nikt nie kupił&quot; odpowiedział na pytanie dlaczego
+          poszedł na żyletki.
         </p>
       </section>
     </main>
-    </ProtectedPage>
   );
 }
