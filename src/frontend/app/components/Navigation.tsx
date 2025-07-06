@@ -12,7 +12,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Kalendarz", href: "#" },
     { label: "Oceny", href: "#" },
     { label: "Wnioski", href: "#" },
-    { label: "Kierunek", href: "#" },
+    { label: "Kierunek", href: "/field" },
     { label: "Rejestracja na przedmioty", href: "#" },
     { label: "Egzaminy i zaliczenia", href: "#" },
     { label: "Zarządzanie kontem", href: "#" },

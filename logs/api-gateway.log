@@ -58,3 +58,63 @@ acb1ebbb986d | 2025-06-14 23:16:21.258 | info | Gateway ready to handle requests
 698cabc673be | 2025-06-14 23:28:34.046 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
 698cabc673be | 2025-06-14 23:28:34.065 | info | Incoming request: POST /api/auth/login from 172.18.0.1
 698cabc673be | 2025-06-14 23:28:34.151 | info | Request completed: POST /api/auth/login -> 200 in 85ms
+6ec106bbce71 | 2025-07-06 20:05:30.854 | info | Starting API Gateway
+6ec106bbce71 | 2025-07-06 20:05:30.861 | info | Registering AuthService endpoints
+6ec106bbce71 | 2025-07-06 20:05:30.865 | info | AuthService endpoints registered successfully
+6ec106bbce71 | 2025-07-06 20:05:30.868 | info | Registering AuthHello endpoints
+6ec106bbce71 | 2025-07-06 20:05:30.870 | info | AuthHello endpoints registered successfully
+6ec106bbce71 | 2025-07-06 20:05:30.872 | info | API Gateway configured with endpoints:
+6ec106bbce71 | 2025-07-06 20:05:30.874 | info |   POST /api/auth/login
+6ec106bbce71 | 2025-07-06 20:05:30.875 | info |   POST /api/auth/register
+6ec106bbce71 | 2025-07-06 20:05:30.877 | info |   POST /api/auth/refresh
+6ec106bbce71 | 2025-07-06 20:05:30.878 | info |   POST /api/auth/logout
+6ec106bbce71 | 2025-07-06 20:05:30.881 | info |   GET  /api/hello
+6ec106bbce71 | 2025-07-06 20:05:30.883 | info | Starting HTTP server on port :8083
+6ec106bbce71 | 2025-07-06 20:05:30.884 | info | Gateway ready to handle requests
+6ec106bbce71 | 2025-07-06 20:08:39.631 | info | Incoming request: POST /api/auth/register from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:08:39.884 | info | Request completed: POST /api/auth/register -> 200 in 252ms
+6ec106bbce71 | 2025-07-06 20:09:47.123 | info | Incoming request: POST /api/auth/register from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:09:47.229 | info | Request completed: POST /api/auth/register -> 200 in 106ms
+6ec106bbce71 | 2025-07-06 20:10:33.515 | info | Incoming request: POST /api/auth/register from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:10:33.519 | info | Request completed: POST /api/auth/register -> 400 in 3ms
+6ec106bbce71 | 2025-07-06 20:12:02.493 | info | Incoming request: POST /api/auth/register from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:02.603 | info | Request completed: POST /api/auth/register -> 200 in 110ms
+6ec106bbce71 | 2025-07-06 20:12:33.221 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:33.221 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+6ec106bbce71 | 2025-07-06 20:12:33.229 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:33.320 | info | Request completed: POST /api/auth/login -> 200 in 91ms
+6ec106bbce71 | 2025-07-06 20:12:37.345 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:37.490 | info | Request completed: POST /api/auth/login -> 200 in 145ms
+6ec106bbce71 | 2025-07-06 20:12:38.622 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:38.623 | info | Request completed: OPTIONS /api/auth/login -> 200 in 1ms
+6ec106bbce71 | 2025-07-06 20:12:38.628 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:38.796 | info | Request completed: POST /api/auth/login -> 200 in 167ms
+6ec106bbce71 | 2025-07-06 20:12:38.811 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:38.925 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:38.974 | info | Request completed: POST /api/auth/login -> 200 in 162ms
+6ec106bbce71 | 2025-07-06 20:12:39.074 | info | Request completed: POST /api/auth/login -> 200 in 149ms
+6ec106bbce71 | 2025-07-06 20:12:39.091 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:39.261 | info | Request completed: POST /api/auth/login -> 200 in 170ms
+6ec106bbce71 | 2025-07-06 20:12:39.691 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:39.864 | info | Request completed: POST /api/auth/login -> 200 in 173ms
+6ec106bbce71 | 2025-07-06 20:12:40.324 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 20:12:40.526 | info | Request completed: POST /api/auth/login -> 200 in 202ms
+6ec106bbce71 | 2025-07-06 21:28:08.060 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 21:28:08.069 | info | Request completed: OPTIONS /api/auth/login -> 200 in 11ms
+6ec106bbce71 | 2025-07-06 21:28:08.079 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 21:28:08.405 | info | Request completed: POST /api/auth/login -> 200 in 325ms
+6ec106bbce71 | 2025-07-06 21:28:11.420 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+6ec106bbce71 | 2025-07-06 21:28:11.732 | info | Request completed: POST /api/auth/login -> 200 in 312ms
+d72b0738ca25 | 2025-07-06 21:40:50.564 | info | Starting API Gateway
+d72b0738ca25 | 2025-07-06 21:40:50.567 | info | Registering AuthService endpoints
+d72b0738ca25 | 2025-07-06 21:40:50.571 | info | AuthService endpoints registered successfully
+d72b0738ca25 | 2025-07-06 21:40:50.572 | info | Registering AuthHello endpoints
+d72b0738ca25 | 2025-07-06 21:40:50.572 | info | AuthHello endpoints registered successfully
+d72b0738ca25 | 2025-07-06 21:40:50.573 | info | API Gateway configured with endpoints:
+d72b0738ca25 | 2025-07-06 21:40:50.573 | info |   POST /api/auth/login
+d72b0738ca25 | 2025-07-06 21:40:50.576 | info |   POST /api/auth/register
+d72b0738ca25 | 2025-07-06 21:40:50.577 | info |   POST /api/auth/refresh
+d72b0738ca25 | 2025-07-06 21:40:50.579 | info |   POST /api/auth/logout
+d72b0738ca25 | 2025-07-06 21:40:50.581 | info |   GET  /api/hello
+d72b0738ca25 | 2025-07-06 21:40:50.584 | info | Starting HTTP server on port :8083
+d72b0738ca25 | 2025-07-06 21:40:50.584 | info | Gateway ready to handle requests

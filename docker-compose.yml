@@ -78,9 +78,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./src/frontend:/app
-      - /app/.next
+      - ./src/frontend:/app:cached
       - /app/node_modules
+
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8083

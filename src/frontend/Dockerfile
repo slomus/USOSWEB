@@ -6,7 +6,7 @@ COPY package*.json ./
 COPY next.config.ts* ./
 COPY tsconfig.json* ./
 
-RUN npm ci 
+RUN npm install
 
 COPY . .
 
