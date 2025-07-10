@@ -13,11 +13,13 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
+	messagingpb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"github.com/slomus/USOSWEB/src/backend/pkg/validation"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -254,9 +256,14 @@ func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordReque
 		}, nil
 	}
 
-	// TODO: Send email via messaging service
-	// For now, log the reset token
-	appLog.LogInfo(fmt.Sprintf("Password reset token generated for %s: %s", email, resetToken))
+	// Send email via messaging service
+	emailSent := sendPasswordResetEmail(email, resetToken)
+	if !emailSent {
+		appLog.LogWarn(fmt.Sprintf("Failed to send password reset email to: %s", email))
+		// Don't return error to user for security reasons
+	} else {
+		appLog.LogInfo(fmt.Sprintf("Password reset email sent successfully to: %s", email))
+	}
 
 	return &pb.ForgotPasswordResponse{
 		Success: true,
@@ -367,6 +374,63 @@ func generateResetToken() string {
 	bytes := make([]byte, 32)
 	rand.Read(bytes)
 	return fmt.Sprintf("%x", bytes)
+}
+
+// sendPasswordResetEmail wysyła email z linkiem do resetowania hasła przez Messaging Service
+func sendPasswordResetEmail(email, resetToken string) bool {
+	// Połączenie z Messaging Service
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:%s", configs.Envs.MessagingServiceHost, configs.Envs.MessagingServicePort),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		appLog.LogError("Failed to connect to messaging service", err)
+		return false
+	}
+	defer conn.Close()
+
+	client := messagingpb.NewMessagingServiceClient(conn)
+
+	// Tworzenie linku do resetowania hasła
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", configs.Envs.PublicHost, resetToken)
+
+	// Zawartość emaila
+	emailSubject := "Reset hasła - USOSWEB"
+	emailBody := fmt.Sprintf(`
+Witaj!
+
+Otrzymałeś tę wiadomość, ponieważ zostało zgłoszone żądanie resetowania hasła dla Twojego konta w systemie USOSWEB.
+
+Aby zresetować hasło, kliknij poniższy link:
+%s
+
+Link będzie ważny przez 1 godzinę.
+
+Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
+
+Pozdrawiamy,
+Zespół USOSWEB
+`, resetLink)
+
+	// Wysłanie emaila
+	response, err := client.SendEmail(context.Background(), &messagingpb.SendEmailRequest{
+		To:      email,
+		From:    "noreply@usosweb.edu.pl",
+		Subject: emailSubject,
+		Body:    emailBody,
+	})
+
+	if err != nil {
+		appLog.LogError("Failed to call messaging service", err)
+		return false
+	}
+
+	if !response.Success {
+		appLog.LogWarn(fmt.Sprintf("Messaging service failed to send email: %s", response.Message))
+		return false
+	}
+
+	return true
 }
 
 func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
