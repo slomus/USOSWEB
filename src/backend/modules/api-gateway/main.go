@@ -178,6 +178,8 @@ func main() {
 		"POST /api/auth/register",
 		"POST /api/auth/refresh",
 		"POST /api/auth/logout",
+		"POST /api/auth/forgot-password",
+		"POST /api/auth/reset-password",
 		"GET  /api/hello",
 	}
 

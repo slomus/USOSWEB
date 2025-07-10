@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -183,6 +185,133 @@ func (s *server) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutR
 		Success: true,
 		Message: "Successfully logged out",
 	}, nil
+}
+
+func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*pb.ForgotPasswordResponse, error) {
+	// Check if user exists
+	var userID int
+	var email string
+	err := s.db.QueryRow("SELECT user_id, email FROM users WHERE email = $1", req.Email).Scan(&userID, &email)
+	if err != nil {
+		// Return success even if user doesn't exist for security
+		return &pb.ForgotPasswordResponse{
+			Success: true,
+			Message: "If email exists, reset instructions have been sent",
+		}, nil
+	}
+
+	// Generate reset token
+	resetToken := generateResetToken()
+	expiresAt := time.Now().Add(1 * time.Hour) // 1 hour expiry
+
+	// Store reset token
+	_, err = s.db.Exec(
+		"INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
+		userID, resetToken, expiresAt,
+	)
+	if err != nil {
+		log.Printf("Failed to store reset token: %v", err)
+		return &pb.ForgotPasswordResponse{
+			Success: false,
+			Message: "Failed to process password reset",
+		}, nil
+	}
+
+	// TODO: Send email via messaging service
+	// For now, log the reset token
+	log.Printf("Password reset token for %s: %s", email, resetToken)
+
+	return &pb.ForgotPasswordResponse{
+		Success: true,
+		Message: "If email exists, reset instructions have been sent",
+	}, nil
+}
+
+func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
+	// Validate reset token
+	var userID int
+	var expiresAt time.Time
+	var used bool
+	err := s.db.QueryRow(
+		"SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = $1",
+		req.Token,
+	).Scan(&userID, &expiresAt, &used)
+
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Invalid or expired reset token",
+		}, nil
+	}
+
+	if used {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Reset token has already been used",
+		}, nil
+	}
+
+	if time.Now().After(expiresAt) {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Reset token has expired",
+		}, nil
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Failed to process password reset",
+		}, nil
+	}
+
+	// Update password and mark token as used
+	tx, err := s.db.Begin()
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Failed to process password reset",
+		}, nil
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE users SET password = $1 WHERE user_id = $2", string(hashedPassword), userID)
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Failed to update password",
+		}, nil
+	}
+
+	_, err = tx.Exec("UPDATE password_reset_tokens SET used = TRUE WHERE token = $1", req.Token)
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Failed to mark token as used",
+		}, nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: "Failed to complete password reset",
+		}, nil
+	}
+
+	return &pb.ResetPasswordResponse{
+		Success: true,
+		Message: "Password has been reset successfully",
+	}, nil
+}
+
+func generateResetToken() string {
+	// Generate a random 32-byte token
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	return fmt.Sprintf("%x", bytes)
 }
 
 func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {

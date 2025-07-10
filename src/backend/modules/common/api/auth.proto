@@ -48,6 +48,25 @@ message RefreshTokenResponse {
   int64 expires_in = 11;
 }
 
+message ForgotPasswordRequest {
+  string email = 10;
+}
+
+message ForgotPasswordResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+message ResetPasswordRequest {
+  string token = 10;
+  string new_password = 11;
+}
+
+message ResetPasswordResponse {
+  bool success = 10;
+  string message = 11;
+}
+
 message HelloRequest {}
 
 message HelloResponse {
@@ -81,6 +100,20 @@ service AuthService {
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
     option (google.api.http) = {
       post: "/api/auth/refresh"
+      body: "*"
+    };
+  }
+
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/auth/forgot-password"
+      body: "*"
+    };
+  }
+
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/auth/reset-password"
       body: "*"
     };
   }
