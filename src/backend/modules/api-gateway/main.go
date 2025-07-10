@@ -1,0 +1,196 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
+	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
+	"net/http"
+	"strings"
+	"time"
+)
+
+var appLog = logger.NewLogger("api-gateway")
+
+func loggingMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		clientIP := getClientIP(r)
+		userAgent := r.Header.Get("User-Agent")
+
+		appLog.LogInfo(fmt.Sprintf("Incoming request: %s %s from %s", r.Method, r.URL.Path, clientIP))
+		appLog.LogDebug(fmt.Sprintf("Request headers: Content-Type=%s, User-Agent=%s",
+			r.Header.Get("Content-Type"), userAgent))
+
+		wrappedWriter := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		h.ServeHTTP(wrappedWriter, r)
+
+		duration := time.Since(start).Milliseconds()
+		appLog.LogInfo(fmt.Sprintf("Request completed: %s %s -> %d in %dms",
+			r.Method, r.URL.Path, wrappedWriter.statusCode, duration))
+	})
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func getClientIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return strings.Split(forwarded, ",")[0]
+	}
+
+	realIP := r.Header.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
+	}
+
+	return strings.Split(r.RemoteAddr, ":")[0]
+}
+
+func allowCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			appLog.LogDebug(fmt.Sprintf("CORS request from origin: %s", origin))
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if r.Method == "OPTIONS" {
+			appLog.LogDebug(fmt.Sprintf("CORS preflight request: %s %s", r.Method, r.URL.Path))
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func extractTokensFromCookies(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if cookie, err := r.Cookie("access_token"); err == nil {
+			appLog.LogDebug("Access token extracted from cookie")
+			md := metadata.Pairs("authorization", cookie.Value)
+			ctx = metadata.NewIncomingContext(ctx, md)
+		}
+
+		if r.URL.Path == "/api/auth/refresh" {
+			if cookie, err := r.Cookie("refresh_token"); err == nil {
+				appLog.LogDebug("Refresh token extracted from cookie")
+				md, _ := metadata.FromIncomingContext(ctx)
+				if md == nil {
+					md = metadata.New(nil)
+				} else {
+					md = md.Copy()
+				}
+				md.Set("refresh_token", cookie.Value)
+				ctx = metadata.NewIncomingContext(ctx, md)
+			} else {
+				appLog.LogWarn("Refresh endpoint called but no refresh token cookie found")
+			}
+		}
+
+		h.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func customHeaderMatcher(key string) (string, bool) {
+	switch strings.ToLower(key) {
+	case "x-access-token", "x-refresh-token", "x-expires-in":
+		return key, true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
+}
+
+func customMetadataAnnotator(ctx context.Context, req *http.Request) metadata.MD {
+	return metadata.New(nil)
+}
+
+func main() {
+	appLog.LogInfo("Starting API Gateway")
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	appLog.LogDebug("Configuring gRPC-Gateway multiplexer")
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(customHeaderMatcher),
+		runtime.WithOutgoingHeaderMatcher(customHeaderMatcher),
+		runtime.WithMetadata(customMetadataAnnotator),
+		runtime.WithForwardResponseOption(func(ctx context.Context, w http.ResponseWriter, resp proto.Message) error {
+			if md, ok := runtime.ServerMetadataFromContext(ctx); ok {
+				if headerMD := md.HeaderMD; headerMD != nil {
+					newCtx := metadata.NewIncomingContext(ctx, headerMD)
+					return TokenCookieInterceptor(newCtx, w, resp)
+				}
+			}
+			return TokenCookieInterceptor(ctx, w, resp)
+		}),
+	)
+
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+
+	appLog.LogInfo("Registering AuthService endpoints")
+	authServiceEndpoint := "common:3003"
+
+	appLog.LogDebug(fmt.Sprintf("Connecting to AuthService at: %s", authServiceEndpoint))
+	err := pb.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register AuthService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("AuthService endpoints registered successfully")
+	appLog.LogInfo("Registering AuthHello endpoints")
+	err = pb.RegisterAuthHelloHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register AuthHello gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("AuthHello endpoints registered successfully")
+
+	handler := loggingMiddleware(allowCORS(extractTokensFromCookies(mux)))
+
+	appLog.LogInfo("API Gateway configured with endpoints:")
+	endpoints := []string{
+		"POST /api/auth/login",
+		"POST /api/auth/register",
+		"POST /api/auth/refresh",
+		"POST /api/auth/logout",
+		"GET  /api/hello",
+	}
+
+	for _, endpoint := range endpoints {
+		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))
+	}
+
+	port := ":8083"
+	appLog.LogInfo(fmt.Sprintf("Starting HTTP server on port %s", port))
+	appLog.LogInfo("Gateway ready to handle requests")
+
+	if err := http.ListenAndServe(port, handler); err != nil {
+		appLog.LogError("Failed to start HTTP server", err)
+		panic(err)
+	}
+}

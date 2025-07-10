@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #dfd4ca;
+  --color-bg-secondary: #9c9793;
+  --color-text: #202120;
+  --color-text-secondary: #403e3c;
+  --color-accent: #3a6a68;
+  --color-accent2: #8b2e2f;
+}
+
+[data-theme="dark"] {
+  --color-bg: #202120;
+  --color-bg-secondary: #403e3c;
+  --color-text: #dfd4ca;
+  --color-text-secondary: #9c9793;
+  --color-accent: #3a6a68;
+  --color-accent-hover: #4b7b79;
+  --color-accent2: #8b2e2f;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-input-decoration-container,
+input[type="password"]::-webkit-input-password-toggle-button {
+  display: none !important;
+}
