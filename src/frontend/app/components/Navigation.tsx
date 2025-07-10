@@ -8,7 +8,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
   const menuItems = [
     { label: "Strona główna", href: "#" },
     { label: "Plan zajęć", href: "#" },
-    { label: "Wiadomości", href: "#" },
+    { label: "Wiadomości", href: "/messages" },
     { label: "Kalendarz", href: "#" },
     { label: "Oceny", href: "#" },
     { label: "Wnioski", href: "#" },

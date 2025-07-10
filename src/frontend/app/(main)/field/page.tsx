@@ -1,30 +1,17 @@
-"use client";
-
-import TopBar from "@/app/components/TopBar";
-import Navigation from "@/app/components/Navigation";
-import Footer from "@/app/components/Footer";
-import { useState } from "react";
 
 export default function KierunekPage() {
-  const [isNavVisible, setIsNavVisible] = useState(true);
-
   return (
-    <div className="flex min-h-screen bg-[#202120] text-[#DFD4CA]">
-      {/* Sidebar */}
-      {isNavVisible && <Navigation />}
+    <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col">
-        <TopBar isNavVisible={isNavVisible} setIsNavVisible={setIsNavVisible} />
 
-        {/* Page content */}
         <main className="p-6 max-w-6xl mx-auto w-full pt-24">
-          <h1 className="text-4xl font-bold mb-8 border-b border-[#3A6A68] pb-4">
-            🎓 Informacje o kierunku
+          <h1 className="text-4xl font-bold mb-8 border-b border-[var(--color-accent)] pb-4">
+            Informacje o kierunku
           </h1>
 
-          {/* Informacje o kierunku */}
-          <section className="bg-[#403E3C] p-6 rounded-2xl shadow-lg mb-10">
+          {/* Sekcja informacji o kierunku */}
+          <section className="bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-lg mb-10">
             <div className="grid md:grid-cols-2 gap-6">
               <InfoRow label="Uniwersytet" value="Uniwersytet Michała Wielkiego" />
               <InfoRow label="Kolegium" value="Kolegium II" />
@@ -41,7 +28,7 @@ export default function KierunekPage() {
             <div className="mt-6">
               <a
                 href="/plan-zajec"
-                className="inline-block text-sm px-4 py-2 bg-[#3A6A68] text-white rounded-lg shadow hover:bg-[#295c5b] transition"
+                className="inline-block text-sm px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg shadow hover:bg-[var(--color-accent-hover)] transition"
               >
                 Zobacz plan zajęć
               </a>
@@ -50,23 +37,23 @@ export default function KierunekPage() {
 
           {/* Filtry wyszukiwania */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">🔍 Wyszukaj innego kierunku</h2>
-            <div className="grid md:grid-cols-3 gap-4 bg-[#403E3C] p-6 rounded-2xl shadow-md mb-6">
+            <h2 className="text-2xl font-semibold mb-4">Wyszukaj innego kierunku</h2>
+            <div className="grid md:grid-cols-3 gap-4 bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-md mb-6">
               <input
                 type="text"
                 placeholder="Szukaj po nazwie kierunku"
-                className="p-2 rounded-md bg-[#6B6160] text-white placeholder-[#DFD4CA] border border-[#9C9793]"
+                className="p-2 rounded-md bg-[var(--color-text-secondary)] text-white placeholder-[var(--color-text)] border border-[var(--color-text-secondary)]"
               />
-              <select className="p-2 rounded-md bg-[#6B6160] text-white border border-[#9C9793]">
+              <select className="p-2 rounded-md bg-[var(--color-text-secondary)] text-white border border-[var(--color-text-secondary)]">
                 <option>Wybierz kolegium</option>
                 <option>Kolegium I</option>
                 <option>Kolegium II</option>
               </select>
-              <select className="p-2 rounded-md bg-[#6B6160] text-white border border-[#9C9793]">
+              <select className="p-2 rounded-md bg-[var(--color-text-secondary)] text-white border border-[var(--color-text-secondary)]">
                 <option>Wybierz wydział</option>
                 <option>Wydział Informatyki</option>
               </select>
-              <select className="p-2 rounded-md bg-[#6B6160] text-white border border-[#9C9793]">
+              <select className="p-2 rounded-md bg-[var(--color-text-secondary)] text-white border border-[var(--color-text-secondary)]">
                 <option>Tryb studiów</option>
                 <option>Stacjonarne</option>
                 <option>Niestacjonarne</option>
@@ -74,22 +61,20 @@ export default function KierunekPage() {
               <input
                 type="text"
                 placeholder="Moduł / specjalność"
-                className="p-2 rounded-md bg-[#6B6160] text-white placeholder-[#DFD4CA] border border-[#9C9793]"
+                className="p-2 rounded-md bg-[var(--color-text-secondary)] text-white placeholder-[var(--color-text)] border border-[var(--color-text-secondary)]"
               />
             </div>
 
             <div className="mt-2">
               <a
                 href="/plan-zajec?filter=on"
-                className="inline-block px-4 py-2 bg-[#3A6A68] text-white rounded-lg hover:bg-[#295c5b] transition"
+                className="inline-block px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition"
               >
                 Wyszukaj
               </a>
             </div>
           </section>
         </main>
-
-        <Footer />
       </div>
     </div>
   );
@@ -98,8 +83,8 @@ export default function KierunekPage() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-[#9C9793] uppercase tracking-wide">{label}</p>
-      <p className="text-base font-semibold text-[#DFD4CA]">{value}</p>
+      <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">{label}</p>
+      <p className="text-base font-semibold text-[var(--color-text)]">{value}</p>
     </div>
   );
 }

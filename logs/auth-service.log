@@ -11,3 +11,12 @@ f20b0db1c75b | 2025-06-14 23:16:22.166 | info | Starting Auth Service
 874ec47cf0f2 | 2025-07-06 21:40:52.222 | info | Starting Auth Service
 874ec47cf0f2 | 2025-07-06 21:40:52.250 | info | Database connection established
 874ec47cf0f2 | 2025-07-06 21:40:52.254 | info | Auth Service running on port :3003
+d781fdeab73d | 2025-07-06 23:13:52.861 | info | Starting Auth Service
+d781fdeab73d | 2025-07-06 23:13:52.872 | info | Database connection established
+d781fdeab73d | 2025-07-06 23:13:52.872 | info | Auth Service running on port :3003
+39629b291faf | 2025-07-06 23:16:11.136 | info | Starting Auth Service
+39629b291faf | 2025-07-06 23:16:11.146 | info | Database connection established
+39629b291faf | 2025-07-06 23:16:11.147 | info | Auth Service running on port :3003
+9fd18cb7a4bd | 2025-07-09 14:47:22.237 | info | Starting Auth Service
+9fd18cb7a4bd | 2025-07-09 14:47:22.256 | info | Database connection established
+9fd18cb7a4bd | 2025-07-09 14:47:22.258 | info | Auth Service running on port :3003
