@@ -19,7 +19,7 @@ export default function Home() {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const name = formData.get("name");
+    const email = formData.get("email");
     const password = formData.get("password");
 
     try {
@@ -27,7 +27,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: 'include',
-        body: JSON.stringify({ name, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -78,8 +78,9 @@ export default function Home() {
           <form className="space-y-2" onSubmit={handleClick}>
             <div className="rounded border border-teal-798 p-2 shadow-md bg-transparent flex items-center">
               <Input
-                name="name"
-                placeholder="Login..."
+                name="email"
+                type="email"
+                placeholder="Email..."
                 className="w-full bg-transparent border-none focus:outline-none"
                 required
               />

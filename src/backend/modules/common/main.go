@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
+	"net"
+	"time"
+
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
@@ -11,9 +15,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"log"
-	"net"
-	"time"
 )
 
 var appLog = logger.NewLogger("auth-service")
@@ -41,8 +42,8 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 
 	var userID int
 	err = s.db.QueryRow(
-		"INSERT INTO users (name, password) VALUES ($1, $2) RETURNING user_id",
-		req.Name, string(hashedPassword),
+		"INSERT INTO users (email, password) VALUES ($1, $2) RETURNING user_id",
+		req.Email, string(hashedPassword),
 	).Scan(&userID)
 
 	if err != nil {
@@ -63,7 +64,7 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	var userID int
 	var hashedPassword string
-	err := s.db.QueryRow("SELECT user_id, password FROM users WHERE name = $1", req.Name).Scan(&userID, &hashedPassword)
+	err := s.db.QueryRow("SELECT user_id, password FROM users WHERE email = $1", req.Email).Scan(&userID, &hashedPassword)
 	if err != nil {
 		return &pb.LoginResponse{
 			Message:   "Invalid credentials",

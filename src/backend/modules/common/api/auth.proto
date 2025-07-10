@@ -9,7 +9,7 @@ option go_package = "github.com/slomus/USOSWEB/src/backend/common/gen/auth;auth"
 // Wiadomości
 
 message LoginRequest {
-  string name = 10;
+  string email = 10;
   string password = 11;
 }
 
@@ -29,7 +29,7 @@ message LogoutResponse {
 }
 
 message RegisterRequest {
-  string name = 11;
+  string email = 11;
   string password = 12;
 }
 
