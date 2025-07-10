@@ -14,9 +14,12 @@ import (
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
+	"github.com/slomus/USOSWEB/src/backend/pkg/validation"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 var appLog = logger.NewLogger("auth-service")
@@ -34,8 +37,18 @@ type TokenContext struct {
 }
 
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	// Validate input data
+	if errors := validation.ValidateRegisterRequest(req.Email, req.Password); len(errors) > 0 {
+		appLog.LogWarn(fmt.Sprintf("Registration validation failed: %s", errors.Error()))
+		return &pb.RegisterResponse{
+			Success: false,
+			Message: fmt.Sprintf("Validation failed: %s", errors.Error()),
+		}, nil
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		appLog.LogError("Failed to hash password", err)
 		return &pb.RegisterResponse{
 			Success: false,
 			Message: "Failed to hash password",
@@ -49,13 +62,14 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	).Scan(&userID)
 
 	if err != nil {
-		log.Printf("Failed to create user: %v", err)
+		appLog.LogError("Failed to create user", err)
 		return &pb.RegisterResponse{
 			Success: false,
 			Message: "User registration failed",
 		}, nil
 	}
 
+	appLog.LogInfo(fmt.Sprintf("User registered successfully with ID: %d", userID))
 	return &pb.RegisterResponse{
 		Success: true,
 		Message: "User registered successfully",
@@ -64,10 +78,20 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 }
 
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	// Validate input data
+	if errors := validation.ValidateLoginRequest(req.Email, req.Password); len(errors) > 0 {
+		appLog.LogWarn(fmt.Sprintf("Login validation failed: %s", errors.Error()))
+		return &pb.LoginResponse{
+			Message:   fmt.Sprintf("Validation failed: %s", errors.Error()),
+			ExpiresIn: 0,
+		}, status.Error(codes.InvalidArgument, errors.Error())
+	}
+
 	var userID int
 	var hashedPassword string
 	err := s.db.QueryRow("SELECT user_id, password FROM users WHERE email = $1", req.Email).Scan(&userID, &hashedPassword)
 	if err != nil {
+		appLog.LogWarn(fmt.Sprintf("Login attempt for non-existent email: %s", req.Email))
 		return &pb.LoginResponse{
 			Message:   "Invalid credentials",
 			ExpiresIn: 0,
@@ -76,6 +100,7 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
+		appLog.LogWarn(fmt.Sprintf("Failed login attempt for email: %s", req.Email))
 		return &pb.LoginResponse{
 			Message:   "Invalid credentials",
 			ExpiresIn: 0,
@@ -84,6 +109,7 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 	accessToken, refreshToken, err := auth.GenerateTokens(int64(userID))
 	if err != nil {
+		appLog.LogError("Token generation failed", err)
 		return &pb.LoginResponse{
 			Message:   "Token generation failed",
 			ExpiresIn: 0,
@@ -96,6 +122,7 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	)
 	grpc.SendHeader(ctx, md)
 
+	appLog.LogInfo(fmt.Sprintf("User %d logged in successfully", userID))
 	return &pb.LoginResponse{
 		Message:   "Login successful",
 		ExpiresIn: 3600,
@@ -188,12 +215,22 @@ func (s *server) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutR
 }
 
 func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*pb.ForgotPasswordResponse, error) {
+	// Validate input data
+	if errors := validation.ValidateForgotPasswordRequest(req.Email); len(errors) > 0 {
+		appLog.LogWarn(fmt.Sprintf("Forgot password validation failed: %s", errors.Error()))
+		return &pb.ForgotPasswordResponse{
+			Success: false,
+			Message: fmt.Sprintf("Validation failed: %s", errors.Error()),
+		}, status.Error(codes.InvalidArgument, errors.Error())
+	}
+
 	// Check if user exists
 	var userID int
 	var email string
 	err := s.db.QueryRow("SELECT user_id, email FROM users WHERE email = $1", req.Email).Scan(&userID, &email)
 	if err != nil {
 		// Return success even if user doesn't exist for security
+		appLog.LogInfo(fmt.Sprintf("Password reset requested for non-existent email: %s", req.Email))
 		return &pb.ForgotPasswordResponse{
 			Success: true,
 			Message: "If email exists, reset instructions have been sent",
@@ -210,7 +247,7 @@ func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordReque
 		userID, resetToken, expiresAt,
 	)
 	if err != nil {
-		log.Printf("Failed to store reset token: %v", err)
+		appLog.LogError("Failed to store reset token", err)
 		return &pb.ForgotPasswordResponse{
 			Success: false,
 			Message: "Failed to process password reset",
@@ -219,7 +256,7 @@ func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordReque
 
 	// TODO: Send email via messaging service
 	// For now, log the reset token
-	log.Printf("Password reset token for %s: %s", email, resetToken)
+	appLog.LogInfo(fmt.Sprintf("Password reset token generated for %s: %s", email, resetToken))
 
 	return &pb.ForgotPasswordResponse{
 		Success: true,
@@ -228,6 +265,15 @@ func (s *server) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordReque
 }
 
 func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
+	// Validate input data
+	if errors := validation.ValidateResetPasswordRequest(req.Token, req.NewPassword); len(errors) > 0 {
+		appLog.LogWarn(fmt.Sprintf("Reset password validation failed: %s", errors.Error()))
+		return &pb.ResetPasswordResponse{
+			Success: false,
+			Message: fmt.Sprintf("Validation failed: %s", errors.Error()),
+		}, status.Error(codes.InvalidArgument, errors.Error())
+	}
+
 	// Validate reset token
 	var userID int
 	var expiresAt time.Time
@@ -238,6 +284,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 	).Scan(&userID, &expiresAt, &used)
 
 	if err != nil {
+		appLog.LogWarn(fmt.Sprintf("Invalid reset token attempted: %s", req.Token))
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Invalid or expired reset token",
@@ -245,6 +292,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 	}
 
 	if used {
+		appLog.LogWarn(fmt.Sprintf("Attempt to reuse reset token for user %d", userID))
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Reset token has already been used",
@@ -252,6 +300,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 	}
 
 	if time.Now().After(expiresAt) {
+		appLog.LogWarn(fmt.Sprintf("Expired reset token attempted for user %d", userID))
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Reset token has expired",
@@ -261,6 +310,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 	// Hash new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
+		appLog.LogError("Failed to hash new password", err)
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Failed to process password reset",
@@ -270,6 +320,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 	// Update password and mark token as used
 	tx, err := s.db.Begin()
 	if err != nil {
+		appLog.LogError("Failed to begin transaction", err)
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Failed to process password reset",
@@ -279,6 +330,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 
 	_, err = tx.Exec("UPDATE users SET password = $1 WHERE user_id = $2", string(hashedPassword), userID)
 	if err != nil {
+		appLog.LogError("Failed to update password", err)
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Failed to update password",
@@ -287,6 +339,7 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 
 	_, err = tx.Exec("UPDATE password_reset_tokens SET used = TRUE WHERE token = $1", req.Token)
 	if err != nil {
+		appLog.LogError("Failed to mark token as used", err)
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Failed to mark token as used",
@@ -295,12 +348,14 @@ func (s *server) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest
 
 	err = tx.Commit()
 	if err != nil {
+		appLog.LogError("Failed to commit transaction", err)
 		return &pb.ResetPasswordResponse{
 			Success: false,
 			Message: "Failed to complete password reset",
 		}, nil
 	}
 
+	appLog.LogInfo(fmt.Sprintf("Password reset successfully for user %d", userID))
 	return &pb.ResetPasswordResponse{
 		Success: true,
 		Message: "Password has been reset successfully",

@@ -20,6 +20,14 @@ type Config struct {
 	JWTSecretKey          string
 	JWTAccessTokenExpiry  int
 	JWTRefreshTokenExpiry int
+
+	// Service Discovery - gRPC endpoints
+	CalendarServiceHost  string
+	CalendarServicePort  string
+	MessagingServiceHost string
+	MessagingServicePort string
+	CommonServiceHost    string
+	CommonServicePort    string
 }
 
 var Envs = initConfig()
@@ -42,7 +50,28 @@ func initConfig() Config {
 		JWTSecretKey:          getEnv("JWT_SECRET_KEY", "supersecret"),
 		JWTAccessTokenExpiry:  getEnvAsInt("JWT_ACCESS_TOKEN_EXPIRY", 15),
 		JWTRefreshTokenExpiry: getEnvAsInt("JWT_REFRESH_TOKEN_EXPIRY", 168), // 7 dni
+
+		// Service Discovery - nazwy muszą pasować do docker-compose.yml
+		CalendarServiceHost:  getEnv("CALENDAR_SERVICE_HOST", "calendar"),
+		CalendarServicePort:  getEnv("CALENDAR_SERVICE_PORT", "3001"),
+		MessagingServiceHost: getEnv("MESSAGING_SERVICE_HOST", "messaging"),
+		MessagingServicePort: getEnv("MESSAGING_SERVICE_PORT", "3002"),
+		CommonServiceHost:    getEnv("COMMON_SERVICE_HOST", "common"),
+		CommonServicePort:    getEnv("COMMON_SERVICE_PORT", "3003"),
 	}
+}
+
+// GetServiceEndpoint returns full service endpoint
+func (c Config) GetCalendarEndpoint() string {
+	return fmt.Sprintf("%s:%s", c.CalendarServiceHost, c.CalendarServicePort)
+}
+
+func (c Config) GetMessagingEndpoint() string {
+	return fmt.Sprintf("%s:%s", c.MessagingServiceHost, c.MessagingServicePort)
+}
+
+func (c Config) GetCommonEndpoint() string {
+	return fmt.Sprintf("%s:%s", c.CommonServiceHost, c.CommonServicePort)
 }
 
 func getEnv(key, fallback string) string {
