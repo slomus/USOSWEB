@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: messaging-config
+  namespace: usosweb
+data:
+  ENV: "development"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "usosweb"
+  DB_USER: "postgres"
+  DB_SSLMODE: "disable"
+  GRPC_PORT: "3002"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging
+  namespace: usosweb
+  labels:
+    app: messaging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: messaging
+  template:
+    metadata:
+      labels:
+        app: messaging
+    spec:
+      containers:
+      - name: messaging
+        image: usosweb-messaging:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3002
+          name: grpc
+        env:
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: ENV
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_SSLMODE
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: DB_SSLMODE
+        - name: GRPC_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: GRPC_PORT
+        livenessProbe:
+          tcpSocket:
+            port: 3002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 3002
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-service
+  namespace: usosweb
+  labels:
+    app: messaging
+spec:
+  selector:
+    app: messaging
+  ports:
+  - name: grpc
+    port: 3002
+    targetPort: 3002
+  type: ClusterIP 

@@ -1,0 +1,33 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache git make protobuf-dev
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest && \
+    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+
+COPY . .
+
+WORKDIR /app/modules/api-gateway
+
+RUN if [ -f Makefile ]; then make generate-proto || echo "Nie można wygenerować proto"; fi
+
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o app .
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /app
+
+COPY --from=builder /app/modules/api-gateway/app .
+
+RUN addgroup -g 1001 appuser && \
+    adduser -D -s /bin/sh -u 1001 -G appuser appuser
+USER appuser
+
+EXPOSE 8083
+CMD ["./app"] 

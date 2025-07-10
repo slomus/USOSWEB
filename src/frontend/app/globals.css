@@ -1,28 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #DFD4CA;
-  --foreground: #202120;
+  --color-bg: #dfd4ca;
+  --color-bg-secondary: #9c9793;
+  --color-text: #202120;
+  --color-text-secondary: #403e3c;
+  --color-accent: #3a6a68;
+  --color-accent2: #8b2e2f;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"] {
+  --color-bg: #202120;
+  --color-bg-secondary: #403e3c;
+  --color-text: #dfd4ca;
+  --color-text-secondary: #9c9793;
+  --color-accent: #3a6a68;
+  --color-accent-hover: #4b7b79;
+  --color-accent2: #8b2e2f;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #202120;
-    --foreground: #DFD4CA;
-  }
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }
 
-div {
-  margin: 20px;
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: center;
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-input-decoration-container,
+input[type="password"]::-webkit-input-password-toggle-button {
+  display: none !important;
 }
