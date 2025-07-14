@@ -1,0 +1,8 @@
+27f8e5b5c4a5 | 2025-07-13 22:09:38.391 | info | Starting Messaging Service
+27f8e5b5c4a5 | 2025-07-13 22:09:38.391 | info | Messaging Service running on port :3002
+27f8e5b5c4a5 | 2025-07-13 22:09:38.391 | info | Available endpoints:
+27f8e5b5c4a5 | 2025-07-13 22:09:38.391 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+a579f09b5f92 | 2025-07-13 22:16:21.400 | info | Starting Messaging Service
+a579f09b5f92 | 2025-07-13 22:16:21.402 | info | Messaging Service running on port :3002
+a579f09b5f92 | 2025-07-13 22:16:21.402 | info | Available endpoints:
+a579f09b5f92 | 2025-07-13 22:16:21.402 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development

@@ -20,3 +20,54 @@ d781fdeab73d | 2025-07-06 23:13:52.872 | info | Auth Service running on port :30
 9fd18cb7a4bd | 2025-07-09 14:47:22.237 | info | Starting Auth Service
 9fd18cb7a4bd | 2025-07-09 14:47:22.256 | info | Database connection established
 9fd18cb7a4bd | 2025-07-09 14:47:22.258 | info | Auth Service running on port :3003
+50b06637991d | 2025-07-12 20:10:44.215 | info | Starting Auth Service
+50b06637991d | 2025-07-12 20:10:44.226 | info | Database connection established
+50b06637991d | 2025-07-12 20:10:44.227 | info | Auth Service running on port :3003
+81d17d856b93 | 2025-07-12 20:24:51.492 | info | Starting Auth Service
+81d17d856b93 | 2025-07-12 20:24:51.507 | info | Database connection established
+81d17d856b93 | 2025-07-12 20:24:51.507 | info | Auth Service running on port :3003
+db9c09a615ac | 2025-07-13 18:53:57.844 | info | Starting Auth Service
+db9c09a615ac | 2025-07-13 18:53:57.865 | info | Database connection established
+db9c09a615ac | 2025-07-13 18:53:57.866 | info | Auth Service running on port :3003
+10cff48705a9 | 2025-07-13 22:09:38.524 | info | Starting Common Service
+10cff48705a9 | 2025-07-13 22:09:38.538 | info | Database connection established
+10cff48705a9 | 2025-07-13 22:09:38.538 | info | AuthService registered
+10cff48705a9 | 2025-07-13 22:09:38.538 | info | CourseService registered
+10cff48705a9 | 2025-07-13 22:09:38.538 | info | Common Service registered and listening on :50051
+10cff48705a9 | 2025-07-13 22:09:38.538 | info | Available services:
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |    AuthService:
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/login
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/register
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/refresh
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/logout
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/forgot-password
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - POST /api/auth/reset-password
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |    CourseService:
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - GET  /api/courses
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - GET  /api/courses/{id}
+10cff48705a9 | 2025-07-13 22:09:38.538 | info |     - GET  /api/courses/{id}/subjects
+10cff48705a9 | 2025-07-13 22:09:38.539 | info |     - GET  /api/courses/search
+10cff48705a9 | 2025-07-13 22:09:38.539 | info |     - GET  /api/courses/stats
+10cff48705a9 | 2025-07-13 22:09:38.539 | info |     - GET  /api/faculties
+10cff48705a9 | 2025-07-13 22:09:38.539 | info |     - GET  /api/student/course-info/{album_nr}
+022fc076c493 | 2025-07-13 22:16:21.426 | info | Starting Common Service
+022fc076c493 | 2025-07-13 22:16:21.435 | info | Database connection established
+022fc076c493 | 2025-07-13 22:16:21.436 | info | AuthService registered
+022fc076c493 | 2025-07-13 22:16:21.436 | info | CourseService registered
+022fc076c493 | 2025-07-13 22:16:21.436 | info | Common Service registered and listening on :50051
+022fc076c493 | 2025-07-13 22:16:21.436 | info | Available services:
+022fc076c493 | 2025-07-13 22:16:21.436 | info |    AuthService:
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/login
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/register
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/refresh
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/logout
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/forgot-password
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - POST /api/auth/reset-password
+022fc076c493 | 2025-07-13 22:16:21.436 | info |    CourseService:
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses/{id}
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses/{id}/subjects
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses/search
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses/stats
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/faculties
+022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/student/course-info/{album_nr}

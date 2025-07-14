@@ -1,0 +1,178 @@
+syntax = "proto3";
+package course;
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course";
+
+service CourseService {
+  rpc GetAllCourses(google.protobuf.Empty) returns (GetAllCoursesResponse) {
+    option (google.api.http) = {
+      get : "/api/courses"
+    };
+  }
+  // Pobiera szczegóły konkretnego kierunku
+  rpc GetCourseDetails(GetCourseDetailsRequest)
+      returns (GetCourseDetailsResponse) {
+    option (google.api.http) = {
+      get : "/api/courses/{course_id}"
+    };
+  }
+  // Pobiera przedmioty dla konkretnego kierunku
+  rpc GetCourseSubjects(GetCourseSubjectsRequest)
+      returns (GetCourseSubjectsResponse) {
+    option (google.api.http) = {
+      get : "/api/courses/{course_id}/subjects"
+    };
+  }
+  // Wyszukuje kierunki według filtrów
+  rpc SearchCourses(SearchCoursesRequest) returns (SearchCoursesResponse) {
+    option (google.api.http) = {
+      get : "/api/courses/search"
+    };
+  }
+  // Pobiera statystyki kierunków
+  rpc GetCourseStats(google.protobuf.Empty) returns (GetCourseStatsResponse) {
+    option (google.api.http) = {
+      get : "/api/courses/stats"
+    };
+  }
+  // Pobiera wszystkie wydziały (pomocnicze dla filtrowania)
+  rpc GetFaculties(google.protobuf.Empty) returns (GetFacultiesResponse) {
+    option (google.api.http) = {
+      get : "/api/faculties"
+    };
+  }
+  // 🎯 NOWA METODA: Pobiera informacje o kierunku studenta
+  rpc GetStudentCourseInfo(GetStudentCourseInfoRequest)
+      returns (GetStudentCourseInfoResponse) {
+    option (google.api.http) = {
+      get : "/api/student/course-info/{album_nr}"
+    };
+  }
+}
+
+// Podstawowe informacje o kierunku
+message CourseInfo {
+  int32 course_id = 10;
+  string alias = 11;
+  string name = 12;
+  int32 year = 13;
+  int32 semester = 14;
+  string course_mode = 15; // "stacjonarne" lub "niestacjonarne"
+  string degree_type = 16; // "inżynierskie", "licencjackie", "magisterskie"
+  string degree = 17;      // "1" lub "2"
+  string faculty_name = 18;
+  int32 faculty_id = 19;
+  int32 enrolled_students_count = 20;
+}
+
+// Szczegółowe informacje o kierunku
+message CourseDetails {
+  int32 course_id = 10;
+  string alias = 11;
+  string name = 12;
+  int32 year = 13;
+  int32 semester = 14;
+  string course_mode = 15;
+  string degree_type = 16;
+  string degree = 17;
+  string faculty_name = 18;
+  int32 faculty_id = 19;
+  optional string module_alias = 20;
+  optional string module_name = 21;
+  optional string supervisor_name = 22;
+  optional string supervisor_surname = 23;
+  optional string supervisor_degree = 24;
+  optional string supervisor_title = 25;
+}
+
+// Przedmiot przypisany do kierunku
+message CourseSubject {
+  int32 subject_id = 10;
+  string alias = 11;
+  string name = 12;
+  double ects = 13;
+  string description = 14;
+  string syllabus = 15;
+}
+
+// Statystyki kierunków dla wydziału
+message CourseStats {
+  string faculty_name = 10;
+  int32 total_courses = 11;
+  int32 full_time_courses = 12;
+  int32 part_time_courses = 13;
+  int32 engineering_courses = 14;
+  int32 bachelor_courses = 15;
+  int32 master_courses = 16;
+}
+
+// Informacje o wydziale
+message Faculty {
+  int32 faculty_id = 10;
+  string name = 11;
+}
+
+message StudentCourseInfo {
+  string university_name = 10;
+  string college_name = 11;
+  string faculty_name = 12;
+  string faculty_address = 13;
+  string course_name = 14;
+  int32 year = 15;
+  int32 semester = 16;
+  string semester_name = 17;
+  string study_mode = 18;
+  string module_name = 19;
+  string supervisor_name = 20;
+}
+
+// Request/Response messages
+message GetAllCoursesResponse {
+  repeated CourseInfo courses = 10;
+  string message = 11;
+}
+
+message GetCourseDetailsRequest { int32 course_id = 10; }
+
+message GetCourseDetailsResponse {
+  CourseDetails course = 10;
+  string message = 11;
+}
+
+message GetCourseSubjectsRequest { int32 course_id = 10; }
+
+message GetCourseSubjectsResponse {
+  repeated CourseSubject subjects = 10;
+  string message = 11;
+}
+
+message SearchCoursesRequest {
+  optional string name = 10;
+  optional int32 year = 11;
+  optional string course_mode = 12;
+  optional string degree_type = 13;
+  optional int32 faculty_id = 14;
+}
+
+message SearchCoursesResponse {
+  repeated CourseInfo courses = 10;
+  string message = 11;
+}
+
+message GetCourseStatsResponse {
+  repeated CourseStats stats = 10;
+  string message = 11;
+}
+
+message GetFacultiesResponse {
+  repeated Faculty faculties = 10;
+  string message = 11;
+}
+
+message GetStudentCourseInfoRequest { int32 album_nr = 10; }
+
+message GetStudentCourseInfoResponse {
+  StudentCourseInfo course_info = 10;
+  string message = 11;
+}

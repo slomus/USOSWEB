@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
+	"github.com/slomus/USOSWEB/src/backend/configs"
+	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
+	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -153,22 +155,29 @@ func main() {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	appLog.LogInfo("Registering AuthService endpoints")
-	authServiceEndpoint := "common:3003"
+	commonServiceEndpoint := configs.Envs.GetCommonEndpoint()
 
-	appLog.LogDebug(fmt.Sprintf("Connecting to AuthService at: %s", authServiceEndpoint))
-	err := pb.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
+	appLog.LogDebug(fmt.Sprintf("Connecting to AuthService at: %s", commonServiceEndpoint))
+	err := authPb.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
 	if err != nil {
 		appLog.LogError("Failed to register AuthService gateway", err)
 		panic(err)
 	}
 	appLog.LogInfo("AuthService endpoints registered successfully")
 	appLog.LogInfo("Registering AuthHello endpoints")
-	err = pb.RegisterAuthHelloHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
+	err = authPb.RegisterAuthHelloHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
 	if err != nil {
 		appLog.LogError("Failed to register AuthHello gateway", err)
 		panic(err)
 	}
 	appLog.LogInfo("AuthHello endpoints registered successfully")
+
+	err = coursePb.RegisterCourseServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register CourseService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("CourseService endpoints registered successfully")
 
 	handler := loggingMiddleware(allowCORS(extractTokensFromCookies(mux)))
 
@@ -179,6 +188,13 @@ func main() {
 		"POST /api/auth/refresh",
 		"POST /api/auth/logout",
 		"GET  /api/hello",
+		"GET  /api/courses",
+		"GET  /api/courses/{id}",
+		"GET  /api/courses/{id}/subjects",
+		"GET  /api/courses/search",
+		"GET  /api/courses/stats",
+		"GET  /api/faculties",
+		"GET  /api/student/course-info/{album_nr}",
 	}
 
 	for _, endpoint := range endpoints {

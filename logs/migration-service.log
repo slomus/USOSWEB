@@ -55,3 +55,48 @@ aae837bd13e2 | 2025-07-06 21:40:51.027 | info | Migration service completed in 6
 0a480fb348f0 | 2025-07-09 14:47:20.912 | info | No new migrations to apply
 0a480fb348f0 | 2025-07-09 14:47:20.914 | info | Final migration version: 21 (dirty: false)
 0a480fb348f0 | 2025-07-09 14:47:20.915 | info | Migration service completed in 93ms
+e53280b376ae | 2025-07-12 20:10:43.338 | info | Starting database migration service
+e53280b376ae | 2025-07-12 20:10:43.338 | info | Migration command: up
+e53280b376ae | 2025-07-12 20:10:43.338 | info | Connecting to database: postgres:5432/mydb
+e53280b376ae | 2025-07-12 20:10:43.351 | info | Database connection established
+e53280b376ae | 2025-07-12 20:10:43.361 | info | Database has no migrations applied yet
+e53280b376ae | 2025-07-12 20:10:43.361 | info | Running UP migrations...
+e53280b376ae | 2025-07-12 20:10:43.511 | info | UP migrations completed successfully
+e53280b376ae | 2025-07-12 20:10:43.512 | info | Final migration version: 23 (dirty: false)
+e53280b376ae | 2025-07-12 20:10:43.512 | info | Migration service completed in 174ms
+8bf5cd471c4f | 2025-07-12 20:24:49.984 | info | Starting database migration service
+8bf5cd471c4f | 2025-07-12 20:24:49.984 | info | Migration command: up
+8bf5cd471c4f | 2025-07-12 20:24:49.984 | info | Connecting to database: postgres:5432/mydb
+8bf5cd471c4f | 2025-07-12 20:24:50.024 | info | Database connection established
+8bf5cd471c4f | 2025-07-12 20:24:50.138 | info | Database has no migrations applied yet
+8bf5cd471c4f | 2025-07-12 20:24:50.138 | info | Running UP migrations...
+8bf5cd471c4f | 2025-07-12 20:24:50.936 | info | UP migrations completed successfully
+8bf5cd471c4f | 2025-07-12 20:24:50.937 | info | Final migration version: 23 (dirty: false)
+8bf5cd471c4f | 2025-07-12 20:24:50.937 | info | Migration service completed in 952ms
+cc34bda6605e | 2025-07-13 18:53:56.353 | info | Starting database migration service
+cc34bda6605e | 2025-07-13 18:53:56.353 | info | Migration command: up
+cc34bda6605e | 2025-07-13 18:53:56.353 | info | Connecting to database: postgres:5432/mydb
+cc34bda6605e | 2025-07-13 18:53:56.380 | info | Database connection established
+cc34bda6605e | 2025-07-13 18:53:56.437 | info | Database has no migrations applied yet
+cc34bda6605e | 2025-07-13 18:53:56.437 | info | Running UP migrations...
+cc34bda6605e | 2025-07-13 18:53:56.678 | info | UP migrations completed successfully
+cc34bda6605e | 2025-07-13 18:53:56.679 | info | Final migration version: 23 (dirty: false)
+cc34bda6605e | 2025-07-13 18:53:56.679 | info | Migration service completed in 325ms
+cf96ff9c4447 | 2025-07-13 22:09:37.378 | info | Starting database migration service
+cf96ff9c4447 | 2025-07-13 22:09:37.378 | info | Migration command: up
+cf96ff9c4447 | 2025-07-13 22:09:37.378 | info | Connecting to database: postgres:5432/mydb
+cf96ff9c4447 | 2025-07-13 22:09:37.388 | info | Database connection established
+cf96ff9c4447 | 2025-07-13 22:09:37.404 | info | Database has no migrations applied yet
+cf96ff9c4447 | 2025-07-13 22:09:37.404 | info | Running UP migrations...
+cf96ff9c4447 | 2025-07-13 22:09:37.634 | info | UP migrations completed successfully
+cf96ff9c4447 | 2025-07-13 22:09:37.634 | info | Final migration version: 23 (dirty: false)
+cf96ff9c4447 | 2025-07-13 22:09:37.635 | info | Migration service completed in 256ms
+3ef9f03be97b | 2025-07-13 22:16:20.311 | info | Starting database migration service
+3ef9f03be97b | 2025-07-13 22:16:20.312 | info | Migration command: up
+3ef9f03be97b | 2025-07-13 22:16:20.312 | info | Connecting to database: postgres:5432/mydb
+3ef9f03be97b | 2025-07-13 22:16:20.322 | info | Database connection established
+3ef9f03be97b | 2025-07-13 22:16:20.334 | info | Database has no migrations applied yet
+3ef9f03be97b | 2025-07-13 22:16:20.334 | info | Running UP migrations...
+3ef9f03be97b | 2025-07-13 22:16:20.542 | info | UP migrations completed successfully
+3ef9f03be97b | 2025-07-13 22:16:20.543 | info | Final migration version: 23 (dirty: false)
+3ef9f03be97b | 2025-07-13 22:16:20.543 | info | Migration service completed in 232ms

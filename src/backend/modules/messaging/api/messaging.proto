@@ -1,0 +1,28 @@
+syntax = 'proto3';
+
+package modules.messaging.api;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging;messaging";
+
+message SendEmailRequest {
+  string to = 10;
+  string subject = 11;
+  string body = 12;
+  string from = 13;
+}
+
+message SendEmailResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+service MessagingService {
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/send-email"
+      body : "*"
+    };
+  }
+}
