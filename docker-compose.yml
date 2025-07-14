@@ -128,7 +128,7 @@ services:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
-      - "50051:50051"
+      - "3003:3003"
     environment:
       - ENV=development
       - DB_HOST=postgres

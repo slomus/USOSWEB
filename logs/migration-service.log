@@ -100,3 +100,30 @@ cf96ff9c4447 | 2025-07-13 22:09:37.635 | info | Migration service completed in 2
 3ef9f03be97b | 2025-07-13 22:16:20.542 | info | UP migrations completed successfully
 3ef9f03be97b | 2025-07-13 22:16:20.543 | info | Final migration version: 23 (dirty: false)
 3ef9f03be97b | 2025-07-13 22:16:20.543 | info | Migration service completed in 232ms
+6a773f2d7597 | 2025-07-14 09:40:00.970 | info | Starting database migration service
+6a773f2d7597 | 2025-07-14 09:40:00.971 | info | Migration command: up
+6a773f2d7597 | 2025-07-14 09:40:00.971 | info | Connecting to database: postgres:5432/mydb
+6a773f2d7597 | 2025-07-14 09:40:01.014 | info | Database connection established
+6a773f2d7597 | 2025-07-14 09:40:01.059 | info | Database has no migrations applied yet
+6a773f2d7597 | 2025-07-14 09:40:01.059 | info | Running UP migrations...
+6a773f2d7597 | 2025-07-14 09:40:01.228 | info | UP migrations completed successfully
+6a773f2d7597 | 2025-07-14 09:40:01.228 | info | Final migration version: 23 (dirty: false)
+6a773f2d7597 | 2025-07-14 09:40:01.228 | info | Migration service completed in 258ms
+4ab02ed2fed1 | 2025-07-14 10:12:30.561 | info | Starting database migration service
+4ab02ed2fed1 | 2025-07-14 10:12:30.561 | info | Migration command: up
+4ab02ed2fed1 | 2025-07-14 10:12:30.561 | info | Connecting to database: postgres:5432/mydb
+4ab02ed2fed1 | 2025-07-14 10:12:30.575 | info | Database connection established
+4ab02ed2fed1 | 2025-07-14 10:12:30.589 | info | Database has no migrations applied yet
+4ab02ed2fed1 | 2025-07-14 10:12:30.589 | info | Running UP migrations...
+4ab02ed2fed1 | 2025-07-14 10:12:30.756 | info | UP migrations completed successfully
+4ab02ed2fed1 | 2025-07-14 10:12:30.757 | info | Final migration version: 23 (dirty: false)
+4ab02ed2fed1 | 2025-07-14 10:12:30.757 | info | Migration service completed in 195ms
+7fb0f1597ee6 | 2025-07-14 10:16:02.986 | info | Starting database migration service
+7fb0f1597ee6 | 2025-07-14 10:16:02.986 | info | Migration command: up
+7fb0f1597ee6 | 2025-07-14 10:16:02.987 | info | Connecting to database: postgres:5432/mydb
+7fb0f1597ee6 | 2025-07-14 10:16:02.999 | info | Database connection established
+7fb0f1597ee6 | 2025-07-14 10:16:03.011 | info | Database has no migrations applied yet
+7fb0f1597ee6 | 2025-07-14 10:16:03.011 | info | Running UP migrations...
+7fb0f1597ee6 | 2025-07-14 10:16:03.158 | info | UP migrations completed successfully
+7fb0f1597ee6 | 2025-07-14 10:16:03.159 | info | Final migration version: 23 (dirty: false)
+7fb0f1597ee6 | 2025-07-14 10:16:03.159 | info | Migration service completed in 174ms

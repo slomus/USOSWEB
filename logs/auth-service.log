@@ -71,3 +71,96 @@ db9c09a615ac | 2025-07-13 18:53:57.866 | info | Auth Service running on port :30
 022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/courses/stats
 022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/faculties
 022fc076c493 | 2025-07-13 22:16:21.436 | info |     - GET  /api/student/course-info/{album_nr}
+0ffacbadcfba | 2025-07-14 09:40:02.277 | info | Starting Common Service
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info | Database connection established
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info | AuthService registered
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info | CourseService registered
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info | Common Service registered and listening on :3003
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info | Available services:
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |    AuthService:
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |     - POST /api/auth/login
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |     - POST /api/auth/register
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |     - POST /api/auth/refresh
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |     - POST /api/auth/logout
+0ffacbadcfba | 2025-07-14 09:40:02.287 | info |     - POST /api/auth/forgot-password
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - POST /api/auth/reset-password
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |    CourseService:
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/courses
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/courses/{id}
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/courses/{id}/subjects
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/courses/search
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/courses/stats
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/faculties
+0ffacbadcfba | 2025-07-14 09:40:02.288 | info |     - GET  /api/student/course-info/{album_nr}
+0ffacbadcfba | 2025-07-14 09:40:58.838 | warning | Registration validation failed: password: password must be at least 8 characters long
+0ffacbadcfba | 2025-07-14 09:41:09.702 | warning | Registration validation failed: password: password must contain at least one uppercase letter
+0ffacbadcfba | 2025-07-14 09:41:21.487 | warning | Registration validation failed: password: password must contain at least one special character
+0ffacbadcfba | 2025-07-14 09:41:29.168 | info | User registered successfully with ID: 1
+0ffacbadcfba | 2025-07-14 09:46:02.448 | info | User 1 logged in successfully
+0ffacbadcfba | 2025-07-14 09:58:42.179 | warning | Login attempt for non-existent email: test@test.com
+0ffacbadcfba | 2025-07-14 09:59:33.933 | info | User registered successfully with ID: 9
+0ffacbadcfba | 2025-07-14 09:59:45.132 | info | User 9 logged in successfully
+0ffacbadcfba | 2025-07-14 10:02:44.620 | info | Received request for all faculties
+0ffacbadcfba | 2025-07-14 10:02:44.621 | info | Successfully returned 4 faculties
+0ffacbadcfba | 2025-07-14 10:04:39.307 | info | Received request for student course info, album_nr: 1
+0ffacbadcfba | 2025-07-14 10:04:39.322 | info | Successfully returned course info for album_nr: 1
+0ffacbadcfba | 2025-07-14 10:04:42.832 | info | Received request for student course info, album_nr: 2
+0ffacbadcfba | 2025-07-14 10:04:42.844 | info | Successfully returned course info for album_nr: 2
+0ffacbadcfba | 2025-07-14 10:10:24.376 | info | Received request for student course info, album_nr: 1
+0ffacbadcfba | 2025-07-14 10:10:24.387 | info | Successfully returned course info for album_nr: 1
+f7d9d532485f | 2025-07-14 10:12:31.720 | info | Starting Common Service
+f7d9d532485f | 2025-07-14 10:12:31.729 | info | Database connection established
+f7d9d532485f | 2025-07-14 10:12:31.729 | info | AuthService registered
+f7d9d532485f | 2025-07-14 10:12:31.729 | info | CourseService registered
+f7d9d532485f | 2025-07-14 10:12:31.729 | info | Common Service registered and listening on :3003
+f7d9d532485f | 2025-07-14 10:12:31.729 | info | Available services:
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |    AuthService:
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/login
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/register
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/refresh
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/logout
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/forgot-password
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - POST /api/auth/reset-password
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |    CourseService:
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/courses
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/courses/{id}
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/courses/{id}/subjects
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/courses/search
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/courses/stats
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/faculties
+f7d9d532485f | 2025-07-14 10:12:31.729 | info |     - GET  /api/student/course-info/{album_nr}
+f7d9d532485f | 2025-07-14 10:13:11.998 | info | Received request for student course info, album_nr: 1
+f7d9d532485f | 2025-07-14 10:13:12.037 | info | Successfully returned course info for album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:16:04.046 | info | Starting Common Service
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info | Database connection established
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info | AuthService registered
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info | CourseService registered
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info | Common Service registered and listening on :3003
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info | Available services:
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |    AuthService:
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |     - POST /api/auth/login
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |     - POST /api/auth/register
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |     - POST /api/auth/refresh
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |     - POST /api/auth/logout
+1802f6fee8b0 | 2025-07-14 10:16:04.058 | info |     - POST /api/auth/forgot-password
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - POST /api/auth/reset-password
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |    CourseService:
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/courses
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/courses/{id}
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/courses/{id}/subjects
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/courses/search
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/courses/stats
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/faculties
+1802f6fee8b0 | 2025-07-14 10:16:04.059 | info |     - GET  /api/student/course-info/{album_nr}
+1802f6fee8b0 | 2025-07-14 10:16:13.614 | info | Received request for student course info, album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:16:13.625 | info | Successfully returned course info for album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:19:31.200 | info | Received request for student course info, album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:19:31.216 | info | Successfully returned course info for album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:26:38.690 | info | Received request for all faculties
+1802f6fee8b0 | 2025-07-14 10:26:38.691 | info | Successfully returned 4 faculties
+1802f6fee8b0 | 2025-07-14 10:29:20.815 | info | Received request for all faculties
+1802f6fee8b0 | 2025-07-14 10:29:20.816 | info | Successfully returned 4 faculties
+1802f6fee8b0 | 2025-07-14 10:30:02.157 | info | Received request for all faculties
+1802f6fee8b0 | 2025-07-14 10:30:02.157 | info | Successfully returned 4 faculties
+1802f6fee8b0 | 2025-07-14 10:30:24.712 | info | Received request for student course info, album_nr: 1
+1802f6fee8b0 | 2025-07-14 10:30:24.726 | info | Successfully returned course info for album_nr: 1

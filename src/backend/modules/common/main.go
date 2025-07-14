@@ -34,9 +34,9 @@ func main() {
 	appLog.LogInfo("Database connection established")
 
 	// Tworzenie serwera gRPC
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":3003")
 	if err != nil {
-		appLog.LogError("Failed to listen on port 50051", err)
+		appLog.LogError("Failed to listen on port 3003", err)
 		panic(err)
 	}
 
@@ -54,7 +54,7 @@ func main() {
 	coursePb.RegisterCourseServiceServer(grpcServer, courseServer)
 	appLog.LogInfo("CourseService registered")
 
-	appLog.LogInfo("Common Service registered and listening on :50051")
+	appLog.LogInfo("Common Service registered and listening on :3003")
 	appLog.LogInfo("Available services:")
 	appLog.LogInfo("   AuthService:")
 	appLog.LogInfo("    - POST /api/auth/login")

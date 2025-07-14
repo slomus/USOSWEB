@@ -25,54 +25,55 @@ func (s *CourseServer) GetStudentCourseInfo(ctx context.Context, req *pb.GetStud
 	courseLog.LogInfo(fmt.Sprintf("Received request for student course info, album_nr: %d", req.AlbumNr))
 
 	query := `
-		SELECT
-			'Uniwersytet Michała Wielkiego' as university_name,
-			CASE
-				WHEN f.name LIKE '%Informatyki%' OR f.name LIKE '%Matematyki%' THEN 'Kolegium II'
-				WHEN f.name LIKE '%Fizyki%' OR f.name LIKE '%Mechatroniki%' THEN 'Kolegium I'
-				ELSE 'Kolegium Główne'
-			END as college_name,
-			f.name as faculty_name,
-			COALESCE(b.address, 'Adres nie został określony') as faculty_address,
-			c.name as course_name,
-			c.year as year,
-			c.semester as semester,
-			CASE
-				WHEN c.semester % 2 = 1 THEN 'Zimowy'
-				ELSE 'Letni'
-			END as semester_name,
-			CASE
-				WHEN c.course_mode = 'stacjonarne' THEN 'Stacjonarne'
-				WHEN c.course_mode = 'niestacjonarne' THEN 'Niestacjonarne'
-				ELSE c.course_mode
-			END as study_mode,
-			COALESCE(m.name, 'Nie przypisano') as module_name,
-			COALESCE(
-				CASE
-					WHEN ts.degree IS NOT NULL AND ts.title IS NOT NULL THEN
-						CONCAT(ts.degree, ' ', u.name, ' ', u.surname, ', ', ts.title)
-					WHEN ts.degree IS NOT NULL THEN
-						CONCAT(ts.degree, ' ', u.name, ' ', u.surname)
-					ELSE
-						CONCAT(u.name, ' ', u.surname)
-				END,
-				'Nie przypisano'
-			) as supervisor_name
-		FROM students s
-		JOIN users us ON s.user_id = us.user_id
-		JOIN student_classes sc ON s.album_nr = sc.album_nr
-		JOIN classes cl ON sc.class_id = cl.class_id
-		JOIN subjects sub ON cl.subject_id = sub.subject_id
-		JOIN course_subjects cs ON sub.subject_id = cs.subject_id
-		JOIN courses c ON cs.course_id = c.course_id
-		JOIN faculties f ON c.faculty_id = f.faculty_id
-		LEFT JOIN buildings b ON f.name LIKE CONCAT('%', REPLACE(b.name, 'Instytut ', ''), '%')
-		LEFT JOIN modules m ON c.course_id = m.course_id
-		LEFT JOIN teaching_staff ts ON f.faculty_id = ts.faculty_id
-		LEFT JOIN users u ON ts.user_id = u.user_id
-		WHERE s.album_nr = $1
-		ORDER BY ts.teaching_staff_id ASC
-		LIMIT 1`
+    SELECT
+        'Uniwersytet Michała Wielkiego' as university_name,
+        CASE
+            WHEN f.name LIKE '%Informatyki%' OR f.name LIKE '%Matematyki%' THEN 'Kolegium II'
+            WHEN f.name LIKE '%Fizyki%' OR f.name LIKE '%Mechatroniki%' THEN 'Kolegium I'
+            ELSE 'Kolegium Główne'
+        END as college_name,
+        f.name as faculty_name,
+        COALESCE(b.address, 'Adres nie został określony') as faculty_address,
+        c.name as course_name,
+        c.year as year,
+        c.semester as semester,
+        CASE
+            WHEN c.semester % 2 = 1 THEN 'Zimowy'
+            ELSE 'Letni'
+        END as semester_name,
+        CASE
+            WHEN c.course_mode = 'stacjonarne' THEN 'Stacjonarne'
+            WHEN c.course_mode = 'niestacjonarne' THEN 'Niestacjonarne'
+            ELSE c.course_mode
+        END as study_mode,
+        COALESCE(m.name, 'Nie przypisano') as module_name,
+        COALESCE(
+            CASE
+                WHEN ts.degree IS NOT NULL AND ts.title IS NOT NULL THEN
+                    CONCAT(ts.degree, ' ', u.name, ' ', u.surname, ', ', ts.title)
+                WHEN ts.degree IS NOT NULL THEN
+                    CONCAT(ts.degree, ' ', u.name, ' ', u.surname)
+                ELSE
+                    CONCAT(u.name, ' ', u.surname)
+            END,
+            'Nie przypisano'
+        ) as supervisor_name
+    FROM students s
+    JOIN users us ON s.user_id = us.user_id
+    JOIN student_classes sc ON s.album_nr = sc.album_nr
+    JOIN classes cl ON sc.class_id = cl.class_id
+    JOIN subjects sub ON cl.subject_id = sub.subject_id
+    JOIN course_subjects cs ON sub.subject_id = cs.subject_id
+    JOIN courses c ON cs.course_id = c.course_id
+    JOIN faculties f ON c.faculty_id = f.faculty_id
+    LEFT JOIN buildings b ON f.name LIKE CONCAT('%', REPLACE(b.name, 'Instytut ', ''), '%')
+    LEFT JOIN modules m ON c.course_id = m.course_id
+    LEFT JOIN course_instructors ci ON cl.class_id = ci.class_id
+    LEFT JOIN teaching_staff ts ON ci.teaching_staff_id = ts.teaching_staff_id
+    LEFT JOIN users u ON ts.user_id = u.user_id
+    WHERE s.album_nr = $1
+    ORDER BY cl.class_id ASC
+    LIMIT 1`
 
 	var (
 		universityName string

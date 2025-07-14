@@ -1,6 +1,6 @@
-TRUNCATE TABLE 
+TRUNCATE TABLE
     module_subjects,
-    course_subjects, 
+    course_subjects,
     student_classes,
     course_instructors,
     surveys,
@@ -71,8 +71,8 @@ INSERT INTO courses (alias, name, year, semester, course_mode, degree_type, degr
 ('MECH-NS-I', 'Mechatronika', 3, 6, 'niestacjonarne', 'inżynierskie', '1', 4);
 
 INSERT INTO modules (alias, name, course_id) VALUES
-('INF-ERP', 'ERP - systemy typu CRM', 1),
-('INF-PROG', 'Programowanie', 1),
+('INF-ERP', 'ERP - systemy typu CRM', 2),
+('INF-PROG', 'Programowanie', 2),
 ('MAT-ANALIZA', 'Analiza Matematyczna', 3),
 ('FIZ-MECHANIKA', 'Mechanika', 4),
 ('MECH-3D', 'Technologie 3D', 5);
@@ -96,7 +96,7 @@ INSERT INTO message_recipients (message_id, recipient_id, read_at) VALUES
 (1, 1, '2024-10-01 12:30:00'), -- Michał przeczytał
 (1, 2, NULL), -- Jan nie przeczytał
 (1, 3, '2024-10-01 15:45:00'), -- Anna przeczytała
--- Wiadomość 2 (matematyka) do studentów  
+-- Wiadomość 2 (matematyka) do studentów
 (2, 1, '2024-10-02 16:00:00'),
 (2, 2, '2024-10-02 17:30:00'),
 (2, 3, NULL),
@@ -129,7 +129,7 @@ INSERT INTO surveys (class_id, question, mark) VALUES
 
 INSERT INTO course_instructors (class_id, teaching_staff_id) VALUES
 (1, 1), -- Emil prowadzi wykład PROG1
-(2, 1), -- Emil prowadzi lab PROG1 
+(2, 1), -- Emil prowadzi lab PROG1
 (3, 1), -- Emil prowadzi lab ALG1
 (4, 3), -- Kacper prowadzi wykład FIZ1
 (5, 2), -- Weronika prowadzi ćwiczenia MAT1
@@ -161,14 +161,14 @@ INSERT INTO module_subjects (module_id, subject_id) VALUES
 
 SELECT 'PODSUMOWANIE MOCK DANYCH:' as info;
 
-SELECT 
-    'users' as tabela, 
+SELECT
+    'users' as tabela,
     COUNT(*) as liczba_rekordow,
     'Użytkownicy: studenci, wykładowcy, administracja' as opis
 FROM users
 UNION ALL
 SELECT 'students', COUNT(*), 'Studenci zapisani w systemie' FROM students
-UNION ALL  
+UNION ALL
 SELECT 'messages', COUNT(*), 'Wiadomości w systemie' FROM messages
 UNION ALL
 SELECT 'classes', COUNT(*), 'Zajęcia/grupy' FROM classes
