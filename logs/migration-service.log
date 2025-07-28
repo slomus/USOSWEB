@@ -127,3 +127,21 @@ cf96ff9c4447 | 2025-07-13 22:09:37.635 | info | Migration service completed in 2
 7fb0f1597ee6 | 2025-07-14 10:16:03.158 | info | UP migrations completed successfully
 7fb0f1597ee6 | 2025-07-14 10:16:03.159 | info | Final migration version: 23 (dirty: false)
 7fb0f1597ee6 | 2025-07-14 10:16:03.159 | info | Migration service completed in 174ms
+74df15ce96d7 | 2025-07-23 18:23:36.584 | info | Starting database migration service
+74df15ce96d7 | 2025-07-23 18:23:36.585 | info | Migration command: up
+74df15ce96d7 | 2025-07-23 18:23:36.585 | info | Connecting to database: postgres:5432/mydb
+74df15ce96d7 | 2025-07-23 18:23:36.593 | info | Database connection established
+74df15ce96d7 | 2025-07-23 18:23:36.607 | info | Database has no migrations applied yet
+74df15ce96d7 | 2025-07-23 18:23:36.607 | info | Running UP migrations...
+74df15ce96d7 | 2025-07-23 18:23:36.827 | info | UP migrations completed successfully
+74df15ce96d7 | 2025-07-23 18:23:36.828 | info | Final migration version: 23 (dirty: false)
+74df15ce96d7 | 2025-07-23 18:23:36.828 | info | Migration service completed in 244ms
+9e60b2204a77 | 2025-07-23 19:01:37.964 | info | Starting database migration service
+9e60b2204a77 | 2025-07-23 19:01:37.964 | info | Migration command: up
+9e60b2204a77 | 2025-07-23 19:01:37.965 | info | Connecting to database: postgres:5432/mydb
+9e60b2204a77 | 2025-07-23 19:01:37.995 | info | Database connection established
+9e60b2204a77 | 2025-07-23 19:01:38.025 | info | Database has no migrations applied yet
+9e60b2204a77 | 2025-07-23 19:01:38.025 | info | Running UP migrations...
+9e60b2204a77 | 2025-07-23 19:01:38.208 | info | UP migrations completed successfully
+9e60b2204a77 | 2025-07-23 19:01:38.209 | info | Final migration version: 23 (dirty: false)
+9e60b2204a77 | 2025-07-23 19:01:38.209 | info | Migration service completed in 245ms

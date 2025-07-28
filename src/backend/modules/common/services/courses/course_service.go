@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strings"
 )
 
 var courseLog = logger.NewLogger("course-service")
@@ -139,50 +139,448 @@ func (s *CourseServer) GetStudentCourseInfo(ctx context.Context, req *pb.GetStud
 func (s *CourseServer) GetAllCourses(ctx context.Context, req *emptypb.Empty) (*pb.GetAllCoursesResponse, error) {
 	courseLog.LogInfo("Received request for all courses")
 
-	// TODO: Implementuj pobieranie wszystkich kierunków z bazy
+	query := `
+	SELECT
+		c.course_id,
+		c.alias,
+		c.name,
+		c.year,
+		c.semester,
+		c.course_mode,
+		c.degree_type,
+		c.degree,
+		f.name as faculty_name,
+		c.faculty_id,
+		COALESCE(student_count.count, 0) as enrolled_students_count
+	FROM courses c
+	JOIN faculties f ON c.faculty_id = f.faculty_id
+	LEFT JOIN (
+		SELECT
+			cs.course_id,
+			COUNT(DISTINCT s.album_nr) as count
+		FROM course_subjects cs
+		JOIN subjects sub ON cs.subject_id = sub.subject_id
+		JOIN classes cl ON sub.subject_id = cl.subject_id
+		JOIN student_classes sc ON cl.class_id = sc.class_id
+		JOIN students s ON sc.album_nr = s.album_nr
+		GROUP BY cs.course_id
+	) student_count ON c.course_id = student_count.course_id
+	ORDER BY f.name, c.name`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		courseLog.LogError("Failed to fetch all courses", err)
+		return &pb.GetAllCoursesResponse{
+			Courses: nil,
+			Message: "Failed to fetch courses",
+		}, err
+	}
+	defer rows.Close()
+
+	var courses []*pb.CourseInfo
+	for rows.Next() {
+		var course pb.CourseInfo
+		err := rows.Scan(
+			&course.CourseId,
+			&course.Alias,
+			&course.Name,
+			&course.Year,
+			&course.Semester,
+			&course.CourseMode,
+			&course.DegreeType,
+			&course.Degree,
+			&course.FacultyName,
+			&course.FacultyId,
+			&course.EnrolledStudentsCount,
+		)
+		if err != nil {
+			courseLog.LogError("Failed to scan course row", err)
+			continue
+		}
+		courses = append(courses, &course)
+	}
+
+	if err = rows.Err(); err != nil {
+		courseLog.LogError("Error occurred during rows iteration", err)
+		return &pb.GetAllCoursesResponse{
+			Courses: nil,
+			Message: "Error occurred while processing courses",
+		}, err
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d courses", len(courses)))
 	return &pb.GetAllCoursesResponse{
-		Courses: []*pb.CourseInfo{},
-		Message: "GetAllCourses not implemented yet",
+		Courses: courses,
+		Message: "Courses retrieved successfully",
 	}, nil
 }
 
 func (s *CourseServer) GetCourseDetails(ctx context.Context, req *pb.GetCourseDetailsRequest) (*pb.GetCourseDetailsResponse, error) {
 	courseLog.LogInfo(fmt.Sprintf("Received request for course details, ID: %d", req.CourseId))
 
-	// TODO: Implementuj pobieranie szczegółów kierunku
+	query := `
+	SELECT
+		c.course_id,
+		c.alias,
+		c.name,
+		c.year,
+		c.semester,
+		c.course_mode,
+		c.degree_type,
+		c.degree,
+		f.name as faculty_name,
+		c.faculty_id,
+		m.alias as module_alias,
+		m.name as module_name,
+		u.name as supervisor_name,
+		u.surname as supervisor_surname,
+		ts.degree as supervisor_degree,
+		ts.title as supervisor_title
+	FROM courses c
+	JOIN faculties f ON c.faculty_id = f.faculty_id
+	LEFT JOIN modules m ON c.course_id = m.course_id
+	LEFT JOIN (
+		-- Znajdujemy najczęściej występującego prowadzącego dla tego kierunku
+		SELECT DISTINCT ON (cs.course_id)
+			cs.course_id,
+			ts.teaching_staff_id,
+			ts.degree,
+			ts.title,
+			u.name,
+			u.surname,
+			COUNT(*) OVER (PARTITION BY cs.course_id, ts.teaching_staff_id) as class_count
+		FROM course_subjects cs
+		JOIN subjects sub ON cs.subject_id = sub.subject_id
+		JOIN classes cl ON sub.subject_id = cl.subject_id
+		JOIN course_instructors ci ON cl.class_id = ci.class_id
+		JOIN teaching_staff ts ON ci.teaching_staff_id = ts.teaching_staff_id
+		JOIN users u ON ts.user_id = u.user_id
+		ORDER BY cs.course_id, class_count DESC, ts.teaching_staff_id
+	) supervisor_info ON c.course_id = supervisor_info.course_id
+	LEFT JOIN teaching_staff ts ON supervisor_info.teaching_staff_id = ts.teaching_staff_id
+	LEFT JOIN users u ON ts.user_id = u.user_id
+	WHERE c.course_id = $1`
+
+	var course pb.CourseDetails
+	var moduleAlias, moduleName, supervisorName, supervisorSurname, supervisorDegree, supervisorTitle sql.NullString
+
+	err := s.db.QueryRow(query, req.CourseId).Scan(
+		&course.CourseId,
+		&course.Alias,
+		&course.Name,
+		&course.Year,
+		&course.Semester,
+		&course.CourseMode,
+		&course.DegreeType,
+		&course.Degree,
+		&course.FacultyName,
+		&course.FacultyId,
+		&moduleAlias,
+		&moduleName,
+		&supervisorName,
+		&supervisorSurname,
+		&supervisorDegree,
+		&supervisorTitle,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			courseLog.LogInfo(fmt.Sprintf("Course with ID %d not found", req.CourseId))
+			return &pb.GetCourseDetailsResponse{
+				Course:  nil,
+				Message: "Course not found",
+			}, nil
+		}
+		courseLog.LogError(fmt.Sprintf("Failed to fetch course details for ID %d", req.CourseId), err)
+		return nil, fmt.Errorf("failed to fetch course details: %w", err)
+	}
+
+	if moduleAlias.Valid {
+		course.ModuleAlias = &moduleAlias.String
+	}
+	if moduleName.Valid {
+		course.ModuleName = &moduleName.String
+	}
+	if supervisorName.Valid {
+		course.SupervisorName = &supervisorName.String
+	}
+	if supervisorSurname.Valid {
+		course.SupervisorSurname = &supervisorSurname.String
+	}
+	if supervisorDegree.Valid {
+		course.SupervisorDegree = &supervisorDegree.String
+	}
+	if supervisorTitle.Valid {
+		course.SupervisorTitle = &supervisorTitle.String
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned course details for ID: %d", req.CourseId))
 	return &pb.GetCourseDetailsResponse{
-		Course:  nil,
-		Message: "GetCourseDetails not implemented yet",
+		Course:  &course,
+		Message: "Course details retrieved successfully",
 	}, nil
 }
 
 func (s *CourseServer) GetCourseSubjects(ctx context.Context, req *pb.GetCourseSubjectsRequest) (*pb.GetCourseSubjectsResponse, error) {
 	courseLog.LogInfo(fmt.Sprintf("Received request for course subjects, course ID: %d", req.CourseId))
 
-	// TODO: Implementuj pobieranie przedmiotów kierunku
+	var exists bool
+	checkQuery := "SELECT EXISTS(SELECT 1 FROM courses WHERE course_id = $1)"
+	err := s.db.QueryRow(checkQuery, req.CourseId).Scan(&exists)
+	if err != nil {
+		courseLog.LogError(fmt.Sprintf("Failed to check if course exists for ID %d", req.CourseId), err)
+		return nil, fmt.Errorf("failed to verify course existence: %w", err)
+	}
+
+	if !exists {
+		courseLog.LogInfo(fmt.Sprintf("Course with ID %d not found", req.CourseId))
+		return &pb.GetCourseSubjectsResponse{
+			Subjects: nil,
+			Message:  "Course not found",
+		}, nil
+	}
+
+	query := `
+	SELECT
+		s.subject_id,
+		s.alias,
+		s.name,
+		s.ects,
+		COALESCE(s.description, '') as description,
+		COALESCE(s.syllabus, '') as syllabus
+	FROM course_subjects cs
+	JOIN subjects s ON cs.subject_id = s.subject_id
+	WHERE cs.course_id = $1
+	ORDER BY s.name`
+
+	rows, err := s.db.Query(query, req.CourseId)
+	if err != nil {
+		courseLog.LogError(fmt.Sprintf("Failed to fetch subjects for course ID %d", req.CourseId), err)
+		return &pb.GetCourseSubjectsResponse{
+			Subjects: nil,
+			Message:  "Failed to fetch course subjects",
+		}, err
+	}
+	defer rows.Close()
+
+	var subjects []*pb.CourseSubject
+	for rows.Next() {
+		var subject pb.CourseSubject
+		err := rows.Scan(
+			&subject.SubjectId,
+			&subject.Alias,
+			&subject.Name,
+			&subject.Ects,
+			&subject.Description,
+			&subject.Syllabus,
+		)
+		if err != nil {
+			courseLog.LogError("Failed to scan subject row", err)
+			continue
+		}
+		subjects = append(subjects, &subject)
+	}
+
+	if err = rows.Err(); err != nil {
+		courseLog.LogError("Error occurred during subjects rows iteration", err)
+		return &pb.GetCourseSubjectsResponse{
+			Subjects: nil,
+			Message:  "Error occurred while processing subjects",
+		}, err
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d subjects for course ID: %d", len(subjects), req.CourseId))
 	return &pb.GetCourseSubjectsResponse{
-		Subjects: []*pb.CourseSubject{},
-		Message:  "GetCourseSubjects not implemented yet",
+		Subjects: subjects,
+		Message:  "Course subjects retrieved successfully",
 	}, nil
 }
 
 func (s *CourseServer) SearchCourses(ctx context.Context, req *pb.SearchCoursesRequest) (*pb.SearchCoursesResponse, error) {
 	courseLog.LogInfo("Received request for course search")
 
-	// TODO: Implementuj wyszukiwanie kierunków
+	baseQuery := `
+	SELECT
+		c.course_id,
+		c.alias,
+		c.name,
+		c.year,
+		c.semester,
+		c.course_mode,
+		c.degree_type,
+		c.degree,
+		f.name as faculty_name,
+		c.faculty_id,
+		COALESCE(student_count.count, 0) as enrolled_students_count
+	FROM courses c
+	JOIN faculties f ON c.faculty_id = f.faculty_id
+	LEFT JOIN (
+		SELECT
+			cs.course_id,
+			COUNT(DISTINCT s.album_nr) as count
+		FROM course_subjects cs
+		JOIN subjects sub ON cs.subject_id = sub.subject_id
+		JOIN classes cl ON sub.subject_id = cl.subject_id
+		JOIN student_classes sc ON cl.class_id = sc.class_id
+		JOIN students s ON sc.album_nr = s.album_nr
+		GROUP BY cs.course_id
+	) student_count ON c.course_id = student_count.course_id`
+
+	var whereConditions []string
+	var args []interface{}
+	argIndex := 1
+
+	if req.Name != nil && *req.Name != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("c.name ILIKE $%d", argIndex))
+		args = append(args, "%"+*req.Name+"%")
+		argIndex++
+	}
+
+	if req.Year != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("c.year = $%d", argIndex))
+		args = append(args, *req.Year)
+		argIndex++
+	}
+
+	if req.CourseMode != nil && *req.CourseMode != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("c.course_mode = $%d", argIndex))
+		args = append(args, *req.CourseMode)
+		argIndex++
+	}
+
+	if req.DegreeType != nil && *req.DegreeType != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("c.degree_type = $%d", argIndex))
+		args = append(args, *req.DegreeType)
+		argIndex++
+	}
+
+	if req.FacultyId != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("c.faculty_id = $%d", argIndex))
+		args = append(args, *req.FacultyId)
+		argIndex++
+	}
+
+	finalQuery := baseQuery
+	if len(whereConditions) > 0 {
+		finalQuery += " WHERE " + strings.Join(whereConditions, " AND ")
+	}
+	finalQuery += " ORDER BY f.name, c.name"
+
+	courseLog.LogInfo(fmt.Sprintf("Executing search query with %d filters", len(whereConditions)))
+
+	rows, err := s.db.Query(finalQuery, args...)
+	if err != nil {
+		courseLog.LogError("Failed to execute course search", err)
+		return &pb.SearchCoursesResponse{
+			Courses: nil,
+			Message: "Failed to search courses",
+		}, err
+	}
+	defer rows.Close()
+
+	var courses []*pb.CourseInfo
+	for rows.Next() {
+		var course pb.CourseInfo
+		err := rows.Scan(
+			&course.CourseId,
+			&course.Alias,
+			&course.Name,
+			&course.Year,
+			&course.Semester,
+			&course.CourseMode,
+			&course.DegreeType,
+			&course.Degree,
+			&course.FacultyName,
+			&course.FacultyId,
+			&course.EnrolledStudentsCount,
+		)
+		if err != nil {
+			courseLog.LogError("Failed to scan course search row", err)
+			continue
+		}
+		courses = append(courses, &course)
+	}
+
+	if err = rows.Err(); err != nil {
+		courseLog.LogError("Error occurred during course search rows iteration", err)
+		return &pb.SearchCoursesResponse{
+			Courses: nil,
+			Message: "Error occurred while processing search results",
+		}, err
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d courses from search", len(courses)))
+	if courses == nil {
+		return &pb.SearchCoursesResponse{
+			Courses: courses,
+			Message: "Course search failed",
+		}, nil
+
+	}
 	return &pb.SearchCoursesResponse{
-		Courses: []*pb.CourseInfo{},
-		Message: "SearchCourses not implemented yet",
+		Courses: courses,
+		Message: "Course search completed successfully",
 	}, nil
 }
 
 func (s *CourseServer) GetCourseStats(ctx context.Context, req *emptypb.Empty) (*pb.GetCourseStatsResponse, error) {
 	courseLog.LogInfo("Received request for course statistics")
 
-	// TODO: Implementuj pobieranie statystyk kierunków
+	query := `
+	SELECT
+		f.name as faculty_name,
+		COUNT(*) as total_courses,
+		COUNT(CASE WHEN c.course_mode = 'stacjonarne' THEN 1 END) as full_time_courses,
+		COUNT(CASE WHEN c.course_mode = 'niestacjonarne' THEN 1 END) as part_time_courses,
+		COUNT(CASE WHEN c.degree_type = 'inżynierskie' THEN 1 END) as engineering_courses,
+		COUNT(CASE WHEN c.degree_type = 'licencjackie' THEN 1 END) as bachelor_courses,
+		COUNT(CASE WHEN c.degree_type = 'magisterskie' THEN 1 END) as master_courses
+	FROM courses c
+	JOIN faculties f ON c.faculty_id = f.faculty_id
+	GROUP BY f.faculty_id, f.name
+	ORDER BY f.name`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		courseLog.LogError("Failed to fetch course statistics", err)
+		return &pb.GetCourseStatsResponse{
+			Stats:   nil,
+			Message: "Failed to fetch course statistics",
+		}, err
+	}
+	defer rows.Close()
+
+	var stats []*pb.CourseStats
+	for rows.Next() {
+		var stat pb.CourseStats
+		err := rows.Scan(
+			&stat.FacultyName,
+			&stat.TotalCourses,
+			&stat.FullTimeCourses,
+			&stat.PartTimeCourses,
+			&stat.EngineeringCourses,
+			&stat.BachelorCourses,
+			&stat.MasterCourses,
+		)
+		if err != nil {
+			courseLog.LogError("Failed to scan course stats row", err)
+			continue
+		}
+		stats = append(stats, &stat)
+	}
+
+	if err = rows.Err(); err != nil {
+		courseLog.LogError("Error occurred during course stats rows iteration", err)
+		return &pb.GetCourseStatsResponse{
+			Stats:   nil,
+			Message: "Error occurred while processing statistics",
+		}, err
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned statistics for %d faculties", len(stats)))
 	return &pb.GetCourseStatsResponse{
-		Stats:   []*pb.CourseStats{},
-		Message: "GetCourseStats not implemented yet",
+		Stats:   stats,
+		Message: "Course statistics retrieved successfully",
 	}, nil
 }
 

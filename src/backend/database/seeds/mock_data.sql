@@ -21,7 +21,7 @@ TRUNCATE TABLE
 RESTART IDENTITY CASCADE;
 
 INSERT INTO users (name, surname, password, email, PESEL, phone_nr, postal_address, registration_address, bank_account_nr, active, activation_date) VALUES
-('Michał', 'Grzonkowski', '$2a$10$hashedpassword3', 'michal.grzonkowski@student.edu.pl', '92030334567', '+48345678901', 'ul. Młodzieżowa 3, Gdańsk', 'ul. Młodzieżowa 3, Gdańsk', '34567890123456789012345678', true, '2024-09-01 12:00:00'),
+('Michał', 'Grzonkowski', '$2a$10$hashedpassword3', 'michal.grzonkowski@student.edu.pl', '92030334567', '+48345678901', 'ul. Młodziezowa 3, Gdańsk', 'ul. Młodzieżowa 3, Gdańsk', '34567890123456789012345678', true, '2024-09-01 12:00:00'),
 ('Jan', 'Kowalski', '$2a$10$hashedpassword1', 'jan.kowalski@student.edu.pl', '93040445678', '+48123456789', 'ul. Studencka 1, Warszawa', 'ul. Studencka 1, Warszawa', '12345678901234567890123456', true, '2024-09-01 10:00:00'),
 ('Anna', 'Nowak', '$2a$10$hashedpassword2', 'anna.nowak@student.edu.pl', '94050556789', '+48234567890', 'ul. Akademicka 2, Kraków', 'ul. Akademicka 2, Kraków', '23456789012345678901234567', true, '2024-09-01 11:00:00'),
 ('Emil', 'Kosicki', '$2a$10$hashedpassword4', 'emil.kosicki@edu.pl', '75040445678', '+48456789012', 'ul. Profesorska 10, Warszawa', 'ul. Profesorska 10, Warszawa', '45678901234567890123456789', true, '2024-08-15 09:00:00'),
@@ -47,7 +47,7 @@ INSERT INTO subjects (alias, name, ECTS, description, syllabus) VALUES
 ('PROG1', 'Programowanie', 6.0, 'Podstawy programowania w języku C', 'Zmienne, funkcje, struktury danych, algorytmy'),
 ('MAT1', 'Matematyka', 5.0, 'Analiza matematyczna dla informatyków', 'Granice, pochodne, całki, szeregi'),
 ('BD1', 'Bazy Danych', 4.0, 'Projektowanie i implementacja baz danych', 'SQL, normalizacja, transakcje'),
-('ALG1', 'Algorytmy i Struktury Danych', 6.0, 'Podstawowe algorytmy i struktury danych', 'Sortowanie, drzewa, grafy, złożoność'),
+('ALG1', 'Algorytmy i Struktury Danych', 6.0, 'Podstawowe algorytmy i struktury danych', 'Sortowanie, drzewa, grafy, złozoność'),
 ('FIZ1', 'Fizyka', 5.0, 'Mechanika klasyczna', 'Kinematyka, dynamika, termodynamika'),
 ('SYS1', 'Systemy Wbudowane', 5.0, 'Programowanie płytek','Wykorzystanie języka C do programowania płytek Arduino');
 
@@ -64,11 +64,13 @@ INSERT INTO administrative_staff (role, faculty_id, user_id) VALUES
 ('Kierownik Dziekanatu', 1, 7); -- Agnieszka Kowalik
 
 INSERT INTO courses (alias, name, year, semester, course_mode, degree_type, degree, faculty_id) VALUES
-('INF-S-I', 'Informatyka', 1, 1, 'stacjonarne', 'inżynierskie', '1', 1),
+('INF-S-I', 'Informatyka', 1, 1, 'stacjonarne', 'inzynierskie', '1', 1),
 ('INF-NS-M', 'Informatyka', 5, 8, 'niestacjonarne', 'magisterskie', '2', 1),
 ('MAT-S-L', 'Matematyka', 1, 1, 'stacjonarne', 'licencjackie', '1', 2),
-('FIZ-S-I', 'Fizyka', 2, 5, 'stacjonarne', 'inżynierskie', '1', 3),
-('MECH-NS-I', 'Mechatronika', 3, 6, 'niestacjonarne', 'inżynierskie', '1', 4);
+('FIZ-S-I', 'Fizyka', 2, 5, 'stacjonarne', 'inzynierskie', '1', 3),
+('MECH-NS-I', 'Mechatronika', 3, 6, 'niestacjonarne', 'inzynierskie', '1', 4);
+
+
 
 INSERT INTO modules (alias, name, course_id) VALUES
 ('INF-ERP', 'ERP - systemy typu CRM', 2),
@@ -164,7 +166,7 @@ SELECT 'PODSUMOWANIE MOCK DANYCH:' as info;
 SELECT
     'users' as tabela,
     COUNT(*) as liczba_rekordow,
-    'Użytkownicy: studenci, wykładowcy, administracja' as opis
+    'Uzytkownicy: studenci, wykładowcy, administracja' as opis
 FROM users
 UNION ALL
 SELECT 'students', COUNT(*), 'Studenci zapisani w systemie' FROM students

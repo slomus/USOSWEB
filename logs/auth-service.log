@@ -164,3 +164,94 @@ f7d9d532485f | 2025-07-14 10:13:12.037 | info | Successfully returned course inf
 1802f6fee8b0 | 2025-07-14 10:30:02.157 | info | Successfully returned 4 faculties
 1802f6fee8b0 | 2025-07-14 10:30:24.712 | info | Received request for student course info, album_nr: 1
 1802f6fee8b0 | 2025-07-14 10:30:24.726 | info | Successfully returned course info for album_nr: 1
+ddc39bbc3eaa | 2025-07-23 18:23:37.673 | info | Starting Common Service
+ddc39bbc3eaa | 2025-07-23 18:23:37.684 | info | Database connection established
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info | AuthService registered
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info | CourseService registered
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info | Common Service registered and listening on :3003
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info | Available services:
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |    AuthService:
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/login
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/register
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/refresh
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/logout
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/forgot-password
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - POST /api/auth/reset-password
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |    CourseService:
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/courses
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/courses/{id}
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/courses/{id}/subjects
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/courses/search
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/courses/stats
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/faculties
+ddc39bbc3eaa | 2025-07-23 18:23:37.685 | info |     - GET  /api/student/course-info/{album_nr}
+ddc39bbc3eaa | 2025-07-23 18:27:30.455 | info | Received request for all courses
+ddc39bbc3eaa | 2025-07-23 18:27:30.460 | info | Successfully returned 5 courses
+ddc39bbc3eaa | 2025-07-23 18:34:46.519 | info | Received request for course details, ID: 1
+ddc39bbc3eaa | 2025-07-23 18:34:46.528 | info | Successfully returned course details for ID: 1
+ddc39bbc3eaa | 2025-07-23 18:36:33.950 | info | Received request for course subjects, course ID: 1
+ddc39bbc3eaa | 2025-07-23 18:36:33.952 | info | Successfully returned 2 subjects for course ID: 1
+ddc39bbc3eaa | 2025-07-23 18:42:31.683 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:42:31.683 | info | Executing search query with 5 filters
+ddc39bbc3eaa | 2025-07-23 18:42:31.688 | info | Successfully returned 1 courses from search
+ddc39bbc3eaa | 2025-07-23 18:42:44.290 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:42:44.291 | info | Executing search query with 5 filters
+ddc39bbc3eaa | 2025-07-23 18:42:44.293 | info | Successfully returned 0 courses from search
+ddc39bbc3eaa | 2025-07-23 18:47:22.348 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:47:22.349 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:47:22.354 | info | Successfully returned 2 courses from search
+ddc39bbc3eaa | 2025-07-23 18:47:32.064 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:47:32.064 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:47:32.066 | info | Successfully returned 2 courses from search
+ddc39bbc3eaa | 2025-07-23 18:47:53.627 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:47:53.628 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:47:53.631 | info | Successfully returned 0 courses from search
+ddc39bbc3eaa | 2025-07-23 18:48:05.567 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:48:05.567 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:48:05.570 | info | Successfully returned 0 courses from search
+ddc39bbc3eaa | 2025-07-23 18:48:28.827 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:48:28.827 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:48:28.830 | info | Successfully returned 3 courses from search
+ddc39bbc3eaa | 2025-07-23 18:53:08.202 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:53:08.203 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:53:08.205 | info | Successfully returned 3 courses from search
+ddc39bbc3eaa | 2025-07-23 18:53:56.511 | info | Received request for course search
+ddc39bbc3eaa | 2025-07-23 18:53:56.511 | info | Executing search query with 1 filters
+ddc39bbc3eaa | 2025-07-23 18:53:56.513 | info | Successfully returned 3 courses from search
+ddc39bbc3eaa | 2025-07-23 18:54:08.433 | info | Received request for course statistics
+ddc39bbc3eaa | 2025-07-23 18:54:08.434 | info | Successfully returned statistics for 4 faculties
+7bc1c2bc81b6 | 2025-07-23 19:01:38.835 | info | Starting Common Service
+7bc1c2bc81b6 | 2025-07-23 19:01:38.847 | info | Database connection established
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info | AuthService registered
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info | CourseService registered
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info | Common Service registered and listening on :3003
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info | Available services:
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |    AuthService:
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/login
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/register
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/refresh
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/logout
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/forgot-password
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - POST /api/auth/reset-password
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |    CourseService:
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/courses
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/courses/{id}
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/courses/{id}/subjects
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/courses/search
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/courses/stats
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/faculties
+7bc1c2bc81b6 | 2025-07-23 19:01:38.848 | info |     - GET  /api/student/course-info/{album_nr}
+7bc1c2bc81b6 | 2025-07-23 19:03:07.875 | info | Received request for course statistics
+7bc1c2bc81b6 | 2025-07-23 19:03:07.879 | info | Successfully returned statistics for 4 faculties
+7bc1c2bc81b6 | 2025-07-23 19:03:12.547 | info | Received request for course search
+7bc1c2bc81b6 | 2025-07-23 19:03:12.547 | info | Executing search query with 1 filters
+7bc1c2bc81b6 | 2025-07-23 19:03:12.551 | info | Successfully returned 0 courses from search
+7bc1c2bc81b6 | 2025-07-23 19:03:57.338 | info | Received request for course search
+7bc1c2bc81b6 | 2025-07-23 19:03:57.338 | info | Executing search query with 1 filters
+7bc1c2bc81b6 | 2025-07-23 19:03:57.340 | info | Successfully returned 3 courses from search
+7bc1c2bc81b6 | 2025-07-23 19:31:12.889 | info | Received request for course details, ID: 1
+7bc1c2bc81b6 | 2025-07-23 19:31:12.892 | info | Successfully returned course details for ID: 1
+7bc1c2bc81b6 | 2025-07-23 19:32:01.117 | info | Received request for course details, ID: 5
+7bc1c2bc81b6 | 2025-07-23 19:32:01.119 | info | Successfully returned course details for ID: 5
+7bc1c2bc81b6 | 2025-07-23 19:32:05.202 | info | Received request for course details, ID: 456546
+7bc1c2bc81b6 | 2025-07-23 19:32:05.205 | info | Course with ID 456546 not found

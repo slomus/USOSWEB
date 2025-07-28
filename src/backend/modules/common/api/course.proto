@@ -42,7 +42,6 @@ service CourseService {
       get : "/api/faculties"
     };
   }
-  // 🎯 NOWA METODA: Pobiera informacje o kierunku studenta
   rpc GetStudentCourseInfo(GetStudentCourseInfoRequest)
       returns (GetStudentCourseInfoResponse) {
     option (google.api.http) = {
