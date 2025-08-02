@@ -1,0 +1,11 @@
+ebd40fe2e3b0 | 2025-08-02 19:56:24.168 | info | Cache MISS: usosweb:courses:stats:all
+ebd40fe2e3b0 | 2025-08-02 19:56:24.171 | info | Cache SET: usosweb:courses:stats:all (TTL: 1h0m0s)
+ebd40fe2e3b0 | 2025-08-02 19:56:31.613 | info | Cache HIT: usosweb:courses:stats:all
+ebd40fe2e3b0 | 2025-08-02 19:56:34.100 | info | Cache HIT: usosweb:courses:stats:all
+ebd40fe2e3b0 | 2025-08-02 19:57:20.647 | info | Cache HIT: usosweb:courses:stats:all
+ebd40fe2e3b0 | 2025-08-02 19:59:19.605 | info | Cache MISS: usosweb:courses:search:name:0xc000034360_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil>
+ebd40fe2e3b0 | 2025-08-02 19:59:19.614 | info | Cache SET: usosweb:courses:search:name:0xc000034360_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil> (TTL: 15m0s)
+ebd40fe2e3b0 | 2025-08-02 19:59:22.272 | info | Cache MISS: usosweb:courses:search:name:0xc000131920_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil>
+ebd40fe2e3b0 | 2025-08-02 19:59:22.278 | info | Cache SET: usosweb:courses:search:name:0xc000131920_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil> (TTL: 15m0s)
+ebd40fe2e3b0 | 2025-08-02 20:02:28.002 | info | Cache MISS: usosweb:courses:all:list
+ebd40fe2e3b0 | 2025-08-02 20:02:28.027 | info | Cache SET: usosweb:courses:all:list (TTL: 1h0m0s)

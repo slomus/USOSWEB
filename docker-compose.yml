@@ -157,7 +157,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
+      - REDIS_DB=0
       - CACHE_ENABLED=true
+      - CACHE_DEFAULT_TTL=1h
     volumes:
       - ./logs:/app/logs
     depends_on:

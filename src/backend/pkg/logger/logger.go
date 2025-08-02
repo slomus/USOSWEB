@@ -53,6 +53,45 @@ func NewLogger(serviceName string) *Logger {
 	}
 }
 
+func NewLoggerWithFile(serviceName string, logFilePath string) *Logger {
+	log := logrus.New()
+
+	podName := os.Getenv("HOSTNAME")
+	if podName == "" {
+		podName = serviceName
+	}
+
+	log.SetFormatter(&CustomTextFormatter{
+		PodName: podName,
+	})
+
+	var output io.Writer = os.Stdout
+
+	// Create logs directory if it doesn't exist
+	if err := os.MkdirAll("/app/logs", 0755); err == nil {
+		file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			// Write to both stdout and specific file
+			output = io.MultiWriter(os.Stdout, file)
+		}
+	}
+
+	log.SetOutput(output)
+
+	if level := os.Getenv("LOG_LEVEL"); level != "" {
+		if parsedLevel, err := logrus.ParseLevel(level); err == nil {
+			log.SetLevel(parsedLevel)
+		}
+	} else {
+		log.SetLevel(logrus.InfoLevel)
+	}
+
+	return &Logger{
+		Logger:  log,
+		podName: podName,
+	}
+}
+
 type CustomTextFormatter struct {
 	PodName string
 }

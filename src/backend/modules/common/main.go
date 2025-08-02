@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
@@ -33,15 +34,16 @@ func main() {
 	}
 	defer db.Close()
 
-	// Redis connection
-	redisCache := cache.NewRedisCache(
-		configs.Envs.RedisHost+":"+configs.Envs.RedisPort,
-		configs.Envs.RedisPassword,
-		0,
-	)
-	defer redisCache.Close()
+	// Redis connection string construction
+	redisAddr := configs.Envs.GetRedisEndpoint()
+	appLog.LogInfo(fmt.Sprintf("Attempting to connect to Redis at: %s", redisAddr))
 
-	// Redis connection test
+	redisCache := cache.NewRedisCache(
+		redisAddr,
+		configs.Envs.RedisPassword,
+		configs.Envs.RedisDB,
+	)
+	defer redisCache.Close() // Redis connection test
 	ctx := context.Background()
 	if err := redisCache.Ping(ctx); err != nil {
 		appLog.LogError("Failed to connect to Redis", err)

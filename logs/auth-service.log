@@ -259,3 +259,99 @@ bda9413b3153 | 2025-08-02 19:10:47.255 | info | Starting Common Service
 bda9413b3153 | 2025-08-02 19:10:47.332 | error | Failed to connect to Redis | error: dial tcp :0: connect: connection refused
 85c66f4bd03f | 2025-08-02 19:17:53.534 | info | Starting Common Service
 85c66f4bd03f | 2025-08-02 19:17:53.618 | error | Failed to connect to Redis | error: dial tcp :0: connect: connection refused
+f5de70e164b9 | 2025-08-02 19:33:52.731 | info | Starting Common Service
+f5de70e164b9 | 2025-08-02 19:33:52.741 | info | Attempting to connect to Redis at: redis:6379
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | Redis connection established
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | Database connection established
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | AuthService registered
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | CourseService registered
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | Common Service registered and listening on :3003
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info | Available services:
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |    AuthService:
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/login
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/register
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/refresh
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/logout
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/forgot-password
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - POST /api/auth/reset-password
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |    CourseService:
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/courses
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/courses/{id}
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/courses/{id}/subjects
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/courses/search
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/courses/stats
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/faculties
+f5de70e164b9 | 2025-08-02 19:33:52.743 | info |     - GET  /api/student/course-info/{album_nr}
+f5de70e164b9 | 2025-08-02 19:37:04.550 | info | Received request for all courses
+f5de70e164b9 | 2025-08-02 19:37:04.550 | info | Cache MISS: usosweb:courses:all:list
+f5de70e164b9 | 2025-08-02 19:37:04.558 | info | Cache SET: usosweb:courses:all:list (TTL: 1h0m0s)
+f5de70e164b9 | 2025-08-02 19:37:04.558 | info | Successfully returned 0 courses
+f5de70e164b9 | 2025-08-02 19:37:14.347 | info | Received request for all courses
+f5de70e164b9 | 2025-08-02 19:37:14.348 | info | Cache HIT: usosweb:courses:all:list
+f5de70e164b9 | 2025-08-02 19:37:14.348 | info | All courses fetched from cache
+f5de70e164b9 | 2025-08-02 19:37:19.702 | info | Received request for all courses
+f5de70e164b9 | 2025-08-02 19:37:19.702 | info | Cache HIT: usosweb:courses:all:list
+f5de70e164b9 | 2025-08-02 19:37:19.702 | info | All courses fetched from cache
+f5de70e164b9 | 2025-08-02 19:37:55.681 | info | Received request for course details, ID: 1
+f5de70e164b9 | 2025-08-02 19:37:55.681 | info | Cache MISS: usosweb:courses:details:1
+f5de70e164b9 | 2025-08-02 19:37:55.688 | info | Cache SET: usosweb:courses:details:1 (TTL: 1h0m0s)
+f5de70e164b9 | 2025-08-02 19:37:55.688 | info | Successfully returned course details for ID: 1
+f5de70e164b9 | 2025-08-02 19:38:00.415 | info | Received request for all courses
+f5de70e164b9 | 2025-08-02 19:38:00.415 | info | Cache HIT: usosweb:courses:all:list
+f5de70e164b9 | 2025-08-02 19:38:00.417 | info | All courses fetched from cache
+f5de70e164b9 | 2025-08-02 19:38:28.524 | info | Received request for course search
+f5de70e164b9 | 2025-08-02 19:38:28.525 | info | Cache MISS: usosweb:courses:search:name:0xc0000350e0_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil>
+f5de70e164b9 | 2025-08-02 19:38:28.525 | info | Executing search query with 1 filters
+f5de70e164b9 | 2025-08-02 19:38:28.530 | info | Cache SET: usosweb:courses:search:name:0xc0000350e0_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil> (TTL: 15m0s)
+f5de70e164b9 | 2025-08-02 19:38:28.530 | info | Successfully returned 2 courses from search
+f5de70e164b9 | 2025-08-02 19:38:32.247 | info | Received request for course search
+f5de70e164b9 | 2025-08-02 19:38:32.248 | info | Cache MISS: usosweb:courses:search:name:0xc00028ba50_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil>
+f5de70e164b9 | 2025-08-02 19:38:32.248 | info | Executing search query with 1 filters
+f5de70e164b9 | 2025-08-02 19:38:32.253 | info | Cache SET: usosweb:courses:search:name:0xc00028ba50_year:<nil>_mode:<nil>_type:<nil>_faculty:<nil> (TTL: 15m0s)
+f5de70e164b9 | 2025-08-02 19:38:32.254 | info | Successfully returned 2 courses from search
+f5de70e164b9 | 2025-08-02 19:41:06.629 | info | Received request for course statistics
+f5de70e164b9 | 2025-08-02 19:41:06.629 | info | Cache MISS: usosweb:courses:stats:all
+f5de70e164b9 | 2025-08-02 19:41:06.663 | info | Cache SET: usosweb:courses:stats:all (TTL: 1h0m0s)
+f5de70e164b9 | 2025-08-02 19:41:06.663 | info | Successfully returned statistics for 4 faculties
+f5de70e164b9 | 2025-08-02 19:41:21.438 | info | Received request for course statistics
+f5de70e164b9 | 2025-08-02 19:41:21.439 | info | Cache HIT: usosweb:courses:stats:all
+f5de70e164b9 | 2025-08-02 19:41:21.439 | info | Course stats fetched from cache
+ebd40fe2e3b0 | 2025-08-02 19:52:43.449 | info | Starting Common Service
+ebd40fe2e3b0 | 2025-08-02 19:52:43.458 | info | Attempting to connect to Redis at: redis:6379
+ebd40fe2e3b0 | 2025-08-02 19:52:43.459 | info | Redis connection established
+ebd40fe2e3b0 | 2025-08-02 19:52:43.459 | info | Database connection established
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info | AuthService registered
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info | CourseService registered
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info | Common Service registered and listening on :3003
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info | Available services:
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |    AuthService:
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/login
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/register
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/refresh
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/logout
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/forgot-password
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - POST /api/auth/reset-password
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |    CourseService:
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/courses
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/courses/{id}
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/courses/{id}/subjects
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/courses/search
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/courses/stats
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/faculties
+ebd40fe2e3b0 | 2025-08-02 19:52:43.460 | info |     - GET  /api/student/course-info/{album_nr}
+ebd40fe2e3b0 | 2025-08-02 19:56:24.167 | info | Received request for course statistics
+ebd40fe2e3b0 | 2025-08-02 19:56:24.171 | info | Successfully returned statistics for 0 faculties
+ebd40fe2e3b0 | 2025-08-02 19:56:31.613 | info | Received request for course statistics
+ebd40fe2e3b0 | 2025-08-02 19:56:31.613 | info | Course stats fetched from cache
+ebd40fe2e3b0 | 2025-08-02 19:56:34.100 | info | Received request for course statistics
+ebd40fe2e3b0 | 2025-08-02 19:56:34.100 | info | Course stats fetched from cache
+ebd40fe2e3b0 | 2025-08-02 19:57:20.647 | info | Received request for course statistics
+ebd40fe2e3b0 | 2025-08-02 19:57:20.647 | info | Course stats fetched from cache
+ebd40fe2e3b0 | 2025-08-02 19:59:19.604 | info | Received request for course search
+ebd40fe2e3b0 | 2025-08-02 19:59:19.605 | info | Executing search query with 1 filters
+ebd40fe2e3b0 | 2025-08-02 19:59:19.614 | info | Successfully returned 2 courses from search
+ebd40fe2e3b0 | 2025-08-02 19:59:22.271 | info | Received request for course search
+ebd40fe2e3b0 | 2025-08-02 19:59:22.272 | info | Executing search query with 1 filters
+ebd40fe2e3b0 | 2025-08-02 19:59:22.278 | info | Successfully returned 2 courses from search
+ebd40fe2e3b0 | 2025-08-02 20:02:28.002 | info | Received request for all courses
+ebd40fe2e3b0 | 2025-08-02 20:02:28.027 | info | Successfully returned 5 courses

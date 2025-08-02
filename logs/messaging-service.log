@@ -34,3 +34,11 @@ fa0f04f2c5a3 | 2025-08-02 19:10:47.344 | info |   - SendEmail (gRPC): sends emai
 2a2f68de3081 | 2025-08-02 19:17:49.838 | info | Messaging Service running on port :3002
 2a2f68de3081 | 2025-08-02 19:17:49.838 | info | Available endpoints:
 2a2f68de3081 | 2025-08-02 19:17:49.838 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+9ab5d46420d1 | 2025-08-02 19:33:48.763 | info | Starting Messaging Service
+9ab5d46420d1 | 2025-08-02 19:33:48.763 | info | Messaging Service running on port :3002
+9ab5d46420d1 | 2025-08-02 19:33:48.764 | info | Available endpoints:
+9ab5d46420d1 | 2025-08-02 19:33:48.764 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+5fbe6d940b49 | 2025-08-02 19:52:39.593 | info | Starting Messaging Service
+5fbe6d940b49 | 2025-08-02 19:52:39.594 | info | Messaging Service running on port :3002
+5fbe6d940b49 | 2025-08-02 19:52:39.594 | info | Available endpoints:
+5fbe6d940b49 | 2025-08-02 19:52:39.594 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development

@@ -23,7 +23,7 @@ func NewRedisCache(addr, password string, db int) *RedisCache {
 
 	return &RedisCache{
 		client: rdb,
-		logger: logger.NewLogger("redis-cache"),
+		logger: logger.NewLoggerWithFile("redis-cache", "/app/logs/redis.log"),
 	}
 }
 
