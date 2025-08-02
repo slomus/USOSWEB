@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
+	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"net"
@@ -31,6 +33,22 @@ func main() {
 	}
 	defer db.Close()
 
+	// Redis connection
+	redisCache := cache.NewRedisCache(
+		configs.Envs.RedisHost+":"+configs.Envs.RedisPort,
+		configs.Envs.RedisPassword,
+		0,
+	)
+	defer redisCache.Close()
+
+	// Redis connection test
+	ctx := context.Background()
+	if err := redisCache.Ping(ctx); err != nil {
+		appLog.LogError("Failed to connect to Redis", err)
+		panic(err)
+	}
+
+	appLog.LogInfo("Redis connection established")
 	appLog.LogInfo("Database connection established")
 
 	// Tworzenie serwera gRPC
@@ -43,8 +61,8 @@ func main() {
 	grpcServer := grpc.NewServer()
 
 	// Tworzenie instancji serwisów
-	authServer := auth.NewAuthServer(db)
-	courseServer := course.NewCourseServer(db)
+	authServer := auth.NewAuthServerWithCache(db, redisCache)
+	courseServer := course.NewCourseServerWithCache(db, redisCache)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)

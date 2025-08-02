@@ -255,3 +255,7 @@ ddc39bbc3eaa | 2025-07-23 18:54:08.434 | info | Successfully returned statistics
 7bc1c2bc81b6 | 2025-07-23 19:32:01.119 | info | Successfully returned course details for ID: 5
 7bc1c2bc81b6 | 2025-07-23 19:32:05.202 | info | Received request for course details, ID: 456546
 7bc1c2bc81b6 | 2025-07-23 19:32:05.205 | info | Course with ID 456546 not found
+bda9413b3153 | 2025-08-02 19:10:47.255 | info | Starting Common Service
+bda9413b3153 | 2025-08-02 19:10:47.332 | error | Failed to connect to Redis | error: dial tcp :0: connect: connection refused
+85c66f4bd03f | 2025-08-02 19:17:53.534 | info | Starting Common Service
+85c66f4bd03f | 2025-08-02 19:17:53.618 | error | Failed to connect to Redis | error: dial tcp :0: connect: connection refused

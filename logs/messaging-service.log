@@ -26,3 +26,11 @@ cc0af8a73c26 | 2025-07-23 19:01:38.904 | info | Starting Messaging Service
 cc0af8a73c26 | 2025-07-23 19:01:38.904 | info | Messaging Service running on port :3002
 cc0af8a73c26 | 2025-07-23 19:01:38.905 | info | Available endpoints:
 cc0af8a73c26 | 2025-07-23 19:01:38.905 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+fa0f04f2c5a3 | 2025-08-02 19:10:47.344 | info | Starting Messaging Service
+fa0f04f2c5a3 | 2025-08-02 19:10:47.344 | info | Messaging Service running on port :3002
+fa0f04f2c5a3 | 2025-08-02 19:10:47.344 | info | Available endpoints:
+fa0f04f2c5a3 | 2025-08-02 19:10:47.344 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+2a2f68de3081 | 2025-08-02 19:17:49.837 | info | Starting Messaging Service
+2a2f68de3081 | 2025-08-02 19:17:49.838 | info | Messaging Service running on port :3002
+2a2f68de3081 | 2025-08-02 19:17:49.838 | info | Available endpoints:
+2a2f68de3081 | 2025-08-02 19:17:49.838 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development

@@ -5,24 +5,54 @@ import (
 	"database/sql"
 	"fmt"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
+	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"strings"
+	"time"
 )
 
 var courseLog = logger.NewLogger("course-service")
 
 type CourseServer struct {
 	pb.UnimplementedCourseServiceServer
-	db *sql.DB
+	db     *sql.DB
+	cache  cache.Cache
+	config *cache.CacheConfig
+	logger *logger.Logger
 }
 
 func NewCourseServer(db *sql.DB) *CourseServer {
-	return &CourseServer{db: db}
+	return &CourseServer{
+		db:     db,
+		cache:  nil,
+		config: cache.DefaultCacheConfig(),
+		logger: logger.NewLogger("course-service"),
+	}
+}
+
+func NewCourseServerWithCache(db *sql.DB, cacheClient cache.Cache) *CourseServer {
+	return &CourseServer{
+		db:     db,
+		cache:  cacheClient,
+		config: cache.DefaultCacheConfig(),
+		logger: logger.NewLogger("course-service"),
+	}
 }
 
 func (s *CourseServer) GetStudentCourseInfo(ctx context.Context, req *pb.GetStudentCourseInfoRequest) (*pb.GetStudentCourseInfoResponse, error) {
 	courseLog.LogInfo(fmt.Sprintf("Received request for student course info, album_nr: %d", req.AlbumNr))
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "student_info", req.AlbumNr)
+		var cachedResponse pb.GetStudentCourseInfoResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo(fmt.Sprintf("Student course info for album_nr %d fetched from cache", req.AlbumNr))
+			return &cachedResponse, nil
+		}
+	}
 
 	query := `
     SELECT
@@ -129,15 +159,34 @@ func (s *CourseServer) GetStudentCourseInfo(ctx context.Context, req *pb.GetStud
 		SupervisorName: supervisorName,
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned course info for album_nr: %d", req.AlbumNr))
-	return &pb.GetStudentCourseInfoResponse{
+	response := &pb.GetStudentCourseInfoResponse{
 		CourseInfo: courseInfo,
 		Message:    "Course info retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "student_info", req.AlbumNr)
+		s.cache.Set(ctx, cacheKey, response, s.config.StudentsTTL)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned course info for album_nr: %d", req.AlbumNr))
+	return response, nil
 }
 
 func (s *CourseServer) GetAllCourses(ctx context.Context, req *emptypb.Empty) (*pb.GetAllCoursesResponse, error) {
 	courseLog.LogInfo("Received request for all courses")
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "all", "list")
+		var cachedResponse pb.GetAllCoursesResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo("All courses fetched from cache")
+			return &cachedResponse, nil
+		}
+	}
 
 	query := `
 	SELECT
@@ -208,15 +257,34 @@ func (s *CourseServer) GetAllCourses(ctx context.Context, req *emptypb.Empty) (*
 		}, err
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d courses", len(courses)))
-	return &pb.GetAllCoursesResponse{
+	response := &pb.GetAllCoursesResponse{
 		Courses: courses,
 		Message: "Courses retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "all", "list")
+		s.cache.Set(ctx, cacheKey, response, s.config.CoursesTTL)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d courses", len(courses)))
+	return response, nil
 }
 
 func (s *CourseServer) GetCourseDetails(ctx context.Context, req *pb.GetCourseDetailsRequest) (*pb.GetCourseDetailsResponse, error) {
 	courseLog.LogInfo(fmt.Sprintf("Received request for course details, ID: %d", req.CourseId))
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "details", req.CourseId)
+		var cachedResponse pb.GetCourseDetailsResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo(fmt.Sprintf("Course details for ID %d fetched from cache", req.CourseId))
+			return &cachedResponse, nil
+		}
+	}
 
 	query := `
 	SELECT
@@ -240,7 +308,6 @@ func (s *CourseServer) GetCourseDetails(ctx context.Context, req *pb.GetCourseDe
 	JOIN faculties f ON c.faculty_id = f.faculty_id
 	LEFT JOIN modules m ON c.course_id = m.course_id
 	LEFT JOIN (
-		-- Znajdujemy najczęściej występującego prowadzącego dla tego kierunku
 		SELECT DISTINCT ON (cs.course_id)
 			cs.course_id,
 			ts.teaching_staff_id,
@@ -314,15 +381,34 @@ func (s *CourseServer) GetCourseDetails(ctx context.Context, req *pb.GetCourseDe
 		course.SupervisorTitle = &supervisorTitle.String
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned course details for ID: %d", req.CourseId))
-	return &pb.GetCourseDetailsResponse{
+	response := &pb.GetCourseDetailsResponse{
 		Course:  &course,
 		Message: "Course details retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "details", req.CourseId)
+		s.cache.Set(ctx, cacheKey, response, s.config.CoursesTTL)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned course details for ID: %d", req.CourseId))
+	return response, nil
 }
 
 func (s *CourseServer) GetCourseSubjects(ctx context.Context, req *pb.GetCourseSubjectsRequest) (*pb.GetCourseSubjectsResponse, error) {
 	courseLog.LogInfo(fmt.Sprintf("Received request for course subjects, course ID: %d", req.CourseId))
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "subjects", req.CourseId)
+		var cachedResponse pb.GetCourseSubjectsResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo(fmt.Sprintf("Course subjects for ID %d fetched from cache", req.CourseId))
+			return &cachedResponse, nil
+		}
+	}
 
 	var exists bool
 	checkQuery := "SELECT EXISTS(SELECT 1 FROM courses WHERE course_id = $1)"
@@ -389,15 +475,36 @@ func (s *CourseServer) GetCourseSubjects(ctx context.Context, req *pb.GetCourseS
 		}, err
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d subjects for course ID: %d", len(subjects), req.CourseId))
-	return &pb.GetCourseSubjectsResponse{
+	response := &pb.GetCourseSubjectsResponse{
 		Subjects: subjects,
 		Message:  "Course subjects retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "subjects", req.CourseId)
+		s.cache.Set(ctx, cacheKey, response, s.config.StudentsTTL)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d subjects for course ID: %d", len(subjects), req.CourseId))
+	return response, nil
 }
 
 func (s *CourseServer) SearchCourses(ctx context.Context, req *pb.SearchCoursesRequest) (*pb.SearchCoursesResponse, error) {
 	courseLog.LogInfo("Received request for course search")
+
+	// Check in cache
+	if s.cache != nil {
+		searchParams := fmt.Sprintf("name:%v_year:%v_mode:%v_type:%v_faculty:%v",
+			req.Name, req.Year, req.CourseMode, req.DegreeType, req.FacultyId)
+		cacheKey := cache.GenerateKey("courses", "search", searchParams)
+		var cachedResponse pb.SearchCoursesResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo("Course search results fetched from cache")
+			return &cachedResponse, nil
+		}
+	}
 
 	baseQuery := `
 	SELECT
@@ -509,22 +616,42 @@ func (s *CourseServer) SearchCourses(ctx context.Context, req *pb.SearchCoursesR
 		}, err
 	}
 
+	response := &pb.SearchCoursesResponse{
+		Courses: courses,
+		Message: "Course search completed successfully",
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		searchParams := fmt.Sprintf("name:%v_year:%v_mode:%v_type:%v_faculty:%v",
+			req.Name, req.Year, req.CourseMode, req.DegreeType, req.FacultyId)
+		cacheKey := cache.GenerateKey("courses", "search", searchParams)
+		s.cache.Set(ctx, cacheKey, response, 15*time.Minute)
+	}
+
 	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d courses from search", len(courses)))
 	if courses == nil {
 		return &pb.SearchCoursesResponse{
 			Courses: courses,
 			Message: "Course search failed",
 		}, nil
-
 	}
-	return &pb.SearchCoursesResponse{
-		Courses: courses,
-		Message: "Course search completed successfully",
-	}, nil
+	return response, nil
 }
 
 func (s *CourseServer) GetCourseStats(ctx context.Context, req *emptypb.Empty) (*pb.GetCourseStatsResponse, error) {
 	courseLog.LogInfo("Received request for course statistics")
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "stats", "all")
+		var cachedResponse pb.GetCourseStatsResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo("Course stats fetched from cache")
+			return &cachedResponse, nil
+		}
+	}
 
 	query := `
 	SELECT
@@ -577,15 +704,34 @@ func (s *CourseServer) GetCourseStats(ctx context.Context, req *emptypb.Empty) (
 		}, err
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned statistics for %d faculties", len(stats)))
-	return &pb.GetCourseStatsResponse{
+	response := &pb.GetCourseStatsResponse{
 		Stats:   stats,
 		Message: "Course statistics retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "stats", "all")
+		s.cache.Set(ctx, cacheKey, response, s.config.CoursesTTL)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned statistics for %d faculties", len(stats)))
+	return response, nil
 }
 
 func (s *CourseServer) GetFaculties(ctx context.Context, req *emptypb.Empty) (*pb.GetFacultiesResponse, error) {
 	courseLog.LogInfo("Received request for all faculties")
+
+	// Check in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "faculties", "all")
+		var cachedResponse pb.GetFacultiesResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo("Faculties fetched from cache")
+			return &cachedResponse, nil
+		}
+	}
 
 	query := "SELECT faculty_id, name FROM faculties ORDER BY name"
 	rows, err := s.db.Query(query)
@@ -609,9 +755,17 @@ func (s *CourseServer) GetFaculties(ctx context.Context, req *emptypb.Empty) (*p
 		faculties = append(faculties, &faculty)
 	}
 
-	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d faculties", len(faculties)))
-	return &pb.GetFacultiesResponse{
+	response := &pb.GetFacultiesResponse{
 		Faculties: faculties,
 		Message:   "Faculties retrieved successfully",
-	}, nil
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("courses", "faculties", "all")
+		s.cache.Set(ctx, cacheKey, response, 2*time.Hour)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d faculties", len(faculties)))
+	return response, nil
 }

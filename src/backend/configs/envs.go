@@ -29,6 +29,16 @@ type Config struct {
 	MessagingServicePort string
 	CommonServiceHost    string
 	CommonServicePort    string
+
+	// Redis
+	RedisHost     string `mapstructure:"REDIS_HOST"`
+	RedisPort     string `mapstructure:"REDIS_PORT"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB       int    `mapstructure:"REDIS_DB"`
+
+	// Cache
+	CacheEnabled    bool   `mapstructure:"CACHE_ENABLED"`
+	CacheDefaultTTL string `mapstructure:"CACHE_DEFAULT_TTL"`
 }
 
 var Envs = initConfig()
@@ -93,4 +103,3 @@ func getEnvAsInt(key string, fallback int) int {
 	}
 	return fallback
 }
-

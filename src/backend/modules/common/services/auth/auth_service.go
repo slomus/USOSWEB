@@ -12,6 +12,7 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	messagingpb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
+	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"github.com/slomus/USOSWEB/src/backend/pkg/validation"
 	"golang.org/x/crypto/bcrypt"
@@ -28,7 +29,10 @@ var authLog = logger.NewLogger("auth-service")
 type AuthServer struct {
 	pb.UnimplementedAuthServiceServer
 	pb.UnimplementedAuthHelloServer
-	db *sql.DB
+	db     *sql.DB
+	cache  cache.Cache
+	config *cache.CacheConfig
+	logger *logger.Logger
 }
 
 // TokenContext reprezentuje kontekst tokena
@@ -38,12 +42,40 @@ type TokenContext struct {
 	ExpiresIn    int32
 }
 
-// NewAuthServer tworzy nową instancję AuthServer
-func NewAuthServer(db *sql.DB) *AuthServer {
-	return &AuthServer{db: db}
+// User represents user data for cache
+type User struct {
+	ID       int64  `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Active   bool   `json:"active"`
 }
 
-// Login implementuje logowanie użytkownika
+// Session represents user session for cache
+type Session struct {
+	Token     string    `json:"token"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func NewAuthServer(db *sql.DB) *AuthServer {
+	return &AuthServer{
+		db:     db,
+		cache:  nil,
+		config: cache.DefaultCacheConfig(),
+		logger: logger.NewLogger("auth-service"),
+	}
+}
+
+func NewAuthServerWithCache(db *sql.DB, cacheClient cache.Cache) *AuthServer {
+	return &AuthServer{
+		db:     db,
+		cache:  cacheClient,
+		config: cache.DefaultCacheConfig(),
+		logger: logger.NewLogger("auth-service"),
+	}
+}
+
 func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	// Validate input data
 	if errors := validation.ValidateLoginRequest(req.Email, req.Password); len(errors) > 0 {
@@ -54,18 +86,44 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 		}, status.Error(codes.InvalidArgument, errors.Error())
 	}
 
-	var userID int
-	var hashedPassword string
-	err := s.db.QueryRow("SELECT user_id, password FROM users WHERE email = $1", req.Email).Scan(&userID, &hashedPassword)
-	if err != nil {
-		authLog.LogWarn(fmt.Sprintf("Login attempt for non-existent email: %s", req.Email))
-		return &pb.LoginResponse{
-			Message:   "Invalid credentials",
-			ExpiresIn: 0,
-		}, nil
+	var user *User
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("auth", "user_by_email", req.Email)
+		var cachedUser User
+		err := s.cache.Get(ctx, cacheKey, &cachedUser)
+		if err == nil {
+			authLog.LogInfo("User fetched from cache for login")
+			user = &cachedUser
+		}
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
+	if user == nil {
+		var userID int
+		var hashedPassword string
+		err := s.db.QueryRow("SELECT user_id, password FROM users WHERE email = $1", req.Email).Scan(&userID, &hashedPassword)
+		if err != nil {
+			authLog.LogWarn(fmt.Sprintf("Login attempt for non-existent email: %s", req.Email))
+			return &pb.LoginResponse{
+				Message:   "Invalid credentials",
+				ExpiresIn: 0,
+			}, nil
+		}
+
+		user = &User{
+			ID:       int64(userID),
+			Email:    req.Email,
+			Password: hashedPassword,
+			Active:   true,
+		}
+
+		// Cache user profile
+		if s.cache != nil {
+			cacheKey := cache.GenerateKey("auth", "user_by_email", req.Email)
+			s.cache.Set(ctx, cacheKey, user, 10*time.Minute)
+		}
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		authLog.LogWarn(fmt.Sprintf("Failed login attempt for email: %s", req.Email))
 		return &pb.LoginResponse{
@@ -74,7 +132,7 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 		}, nil
 	}
 
-	accessToken, refreshToken, err := auth.GenerateTokens(int64(userID))
+	accessToken, refreshToken, err := auth.GenerateTokens(user.ID)
 	if err != nil {
 		authLog.LogError("Token generation failed", err)
 		return &pb.LoginResponse{
@@ -82,6 +140,27 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 			ExpiresIn: 0,
 		}, nil
 	}
+
+	if s.cache != nil {
+		session := &Session{
+			Token:     accessToken,
+			UserID:    user.ID,
+			CreatedAt: time.Now(),
+			ExpiresAt: time.Now().Add(s.config.SessionTTL),
+		}
+
+		sessionKey := cache.GenerateKey("auth", "session", accessToken)
+		err = s.cache.Set(ctx, sessionKey, session, s.config.SessionTTL)
+		if err != nil {
+			authLog.LogWarn("Failed to cache session")
+		}
+
+		if refreshToken != "" {
+			refreshKey := cache.GenerateKey("auth", "refresh", refreshToken)
+			s.cache.Set(ctx, refreshKey, session, s.config.SessionTTL*7) // Longer TTL for refresh
+		}
+	}
+
 	md := metadata.Pairs(
 		"x-access-token", accessToken,
 		"x-refresh-token", refreshToken,
@@ -89,14 +168,13 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 	)
 	grpc.SendHeader(ctx, md)
 
-	authLog.LogInfo(fmt.Sprintf("User %d logged in successfully", userID))
+	authLog.LogInfo(fmt.Sprintf("User %d logged in successfully", user.ID))
 	return &pb.LoginResponse{
 		Message:   "Login successful",
 		ExpiresIn: 3600,
 	}, nil
 }
 
-// Logout implementuje wylogowanie użytkownika
 func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -114,6 +192,18 @@ func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Log
 
 	if rTokens := md.Get("refresh_token"); len(rTokens) > 0 {
 		refreshToken = rTokens[0]
+	}
+
+	if s.cache != nil {
+		if accessToken != "" {
+			sessionKey := cache.GenerateKey("auth", "session", accessToken)
+			s.cache.Delete(ctx, sessionKey)
+		}
+
+		if refreshToken != "" {
+			refreshKey := cache.GenerateKey("auth", "refresh", refreshToken)
+			s.cache.Delete(ctx, refreshKey)
+		}
 	}
 
 	if refreshToken != "" {
@@ -142,7 +232,6 @@ func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Log
 	}, nil
 }
 
-// Register implementuje rejestrację nowego użytkownika
 func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	// Validate input data
 	if errors := validation.ValidateRegisterRequest(req.Email, req.Password); len(errors) > 0 {
@@ -176,6 +265,23 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 		}, nil
 	}
 
+	// Cache new user
+	if s.cache != nil {
+		user := &User{
+			ID:       int64(userID),
+			Email:    req.Email,
+			Password: string(hashedPassword),
+			Active:   true,
+		}
+
+		// Cache by email & by ID
+		emailKey := cache.GenerateKey("auth", "user_by_email", req.Email)
+		idKey := cache.GenerateKey("auth", "user_by_id", userID)
+
+		s.cache.Set(ctx, emailKey, user, s.config.UserProfileTTL)
+		s.cache.Set(ctx, idKey, user, s.config.UserProfileTTL)
+	}
+
 	authLog.LogInfo(fmt.Sprintf("User registered successfully with ID: %d", userID))
 	return &pb.RegisterResponse{
 		Success: true,
@@ -184,33 +290,68 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 	}, nil
 }
 
-// RefreshToken implementuje odświeżanie tokena
 func (s *AuthServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
-	claims, err := pb.ValidateToken(req.RefreshToken)
-	if err != nil {
+	var session *Session
+	if s.cache != nil {
+		refreshKey := cache.GenerateKey("auth", "refresh", req.RefreshToken)
+		var cachedSession Session
+		err := s.cache.Get(ctx, refreshKey, &cachedSession)
+		if err == nil {
+			session = &cachedSession
+		}
+	}
+
+	if session == nil {
+		claims, err := pb.ValidateToken(req.RefreshToken)
+		if err != nil {
+			return &pb.RefreshTokenResponse{
+				Message:   "Invalid refresh token",
+				ExpiresIn: 0,
+			}, nil
+		}
+
+		var isBlacklisted bool
+		err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", req.RefreshToken).Scan(&isBlacklisted)
+		if err != nil {
+			log.Printf("Blacklist check error: %v", err)
+		} else if isBlacklisted {
+			return &pb.RefreshTokenResponse{
+				Message:   "Token has been invalidated",
+				ExpiresIn: 0,
+			}, nil
+		}
+
+		session = &Session{
+			UserID:    claims.UserID,
+			ExpiresAt: time.Now().Add(time.Hour),
+		}
+	}
+
+	if time.Now().After(session.ExpiresAt) {
 		return &pb.RefreshTokenResponse{
-			Message:   "Invalid refresh token",
+			Message:   "Refresh token expired",
 			ExpiresIn: 0,
 		}, nil
 	}
 
-	var isBlacklisted bool
-	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", req.RefreshToken).Scan(&isBlacklisted)
-	if err != nil {
-		log.Printf("Blacklist check error: %v", err)
-	} else if isBlacklisted {
-		return &pb.RefreshTokenResponse{
-			Message:   "Token has been invalidated",
-			ExpiresIn: 0,
-		}, nil
-	}
-
-	newAccessToken, _, err := auth.GenerateTokens(claims.UserID)
+	newAccessToken, _, err := auth.GenerateTokens(session.UserID)
 	if err != nil {
 		return &pb.RefreshTokenResponse{
 			Message:   "Token generation failed",
 			ExpiresIn: 0,
 		}, nil
+	}
+
+	if s.cache != nil {
+		newSession := &Session{
+			Token:     newAccessToken,
+			UserID:    session.UserID,
+			CreatedAt: time.Now(),
+			ExpiresAt: time.Now().Add(s.config.SessionTTL),
+		}
+
+		sessionKey := cache.GenerateKey("auth", "session", newAccessToken)
+		s.cache.Set(ctx, sessionKey, newSession, s.config.SessionTTL)
 	}
 
 	md := metadata.Pairs(
@@ -225,7 +366,6 @@ func (s *AuthServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenReque
 	}, nil
 }
 
-// ForgotPassword implementuje resetowanie hasła
 func (s *AuthServer) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*pb.ForgotPasswordResponse, error) {
 	// Validate input data
 	if errors := validation.ValidateForgotPasswordRequest(req.Email); len(errors) > 0 {
@@ -253,7 +393,17 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordR
 	resetToken := generateResetToken()
 	expiresAt := time.Now().Add(1 * time.Hour) // 1 hour expiry
 
-	// Store reset token
+	// Store reset token w cache & DB
+	if s.cache != nil {
+		resetKey := cache.GenerateKey("auth", "reset_token", resetToken)
+		resetData := map[string]interface{}{
+			"user_id":    userID,
+			"email":      email,
+			"expires_at": expiresAt,
+		}
+		s.cache.Set(ctx, resetKey, resetData, time.Hour)
+	}
+
 	_, err = s.db.Exec(
 		"INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
 		userID, resetToken, expiresAt,
@@ -270,7 +420,6 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordR
 	emailSent := sendPasswordResetEmail(email, resetToken)
 	if !emailSent {
 		authLog.LogWarn(fmt.Sprintf("Failed to send password reset email to: %s", email))
-		// Don't return error to user for security reasons
 	} else {
 		authLog.LogInfo(fmt.Sprintf("Password reset email sent successfully to: %s", email))
 	}
@@ -281,7 +430,6 @@ func (s *AuthServer) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordR
 	}, nil
 }
 
-// ResetPassword implementuje ustawienie nowego hasła
 func (s *AuthServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
 	// Validate input data
 	if errors := validation.ValidateResetPasswordRequest(req.Token, req.NewPassword); len(errors) > 0 {
@@ -292,40 +440,47 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 		}, status.Error(codes.InvalidArgument, errors.Error())
 	}
 
-	// Validate reset token
 	var userID int
 	var expiresAt time.Time
 	var used bool
-	err := s.db.QueryRow(
-		"SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = $1",
-		req.Token,
-	).Scan(&userID, &expiresAt, &used)
 
-	if err != nil {
-		authLog.LogWarn(fmt.Sprintf("Invalid reset token attempted: %s", req.Token))
+	if s.cache != nil {
+		resetKey := cache.GenerateKey("auth", "reset_token", req.Token)
+		var resetData map[string]interface{}
+		err := s.cache.Get(ctx, resetKey, &resetData)
+		if err == nil {
+			if userIDFloat, ok := resetData["user_id"].(float64); ok {
+				userID = int(userIDFloat)
+			}
+			if expiresAtStr, ok := resetData["expires_at"].(string); ok {
+				expiresAt, _ = time.Parse(time.RFC3339, expiresAtStr)
+			}
+			used = false
+		}
+	}
+
+	if userID == 0 {
+		err := s.db.QueryRow(
+			"SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = $1",
+			req.Token,
+		).Scan(&userID, &expiresAt, &used)
+
+		if err != nil {
+			authLog.LogWarn(fmt.Sprintf("Invalid reset token attempted: %s", req.Token))
+			return &pb.ResetPasswordResponse{
+				Success: false,
+				Message: "Invalid or expired reset token",
+			}, nil
+		}
+	}
+
+	if time.Now().After(expiresAt) || used {
 		return &pb.ResetPasswordResponse{
 			Success: false,
-			Message: "Invalid or expired reset token",
+			Message: "Reset token has expired or already been used",
 		}, nil
 	}
 
-	if used {
-		authLog.LogWarn(fmt.Sprintf("Attempt to reuse reset token for user %d", userID))
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "Reset token has already been used",
-		}, nil
-	}
-
-	if time.Now().After(expiresAt) {
-		authLog.LogWarn(fmt.Sprintf("Expired reset token attempted for user %d", userID))
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "Reset token has expired",
-		}, nil
-	}
-
-	// Hash new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		authLog.LogError("Failed to hash new password", err)
@@ -335,18 +490,7 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 		}, nil
 	}
 
-	// Update password and mark token as used
-	tx, err := s.db.Begin()
-	if err != nil {
-		authLog.LogError("Failed to begin transaction", err)
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "Failed to process password reset",
-		}, nil
-	}
-	defer tx.Rollback()
-
-	_, err = tx.Exec("UPDATE users SET password = $1 WHERE user_id = $2", string(hashedPassword), userID)
+	_, err = s.db.Exec("UPDATE users SET password = $1 WHERE user_id = $2", hashedPassword, userID)
 	if err != nil {
 		authLog.LogError("Failed to update password", err)
 		return &pb.ResetPasswordResponse{
@@ -355,118 +499,65 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 		}, nil
 	}
 
-	_, err = tx.Exec("UPDATE password_reset_tokens SET used = TRUE WHERE token = $1", req.Token)
+	_, err = s.db.Exec("UPDATE password_reset_tokens SET used = true WHERE token = $1", req.Token)
 	if err != nil {
-		authLog.LogError("Failed to mark token as used", err)
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "Failed to mark token as used",
-		}, nil
+		authLog.LogWarn("Failed to mark reset token as used")
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		authLog.LogError("Failed to commit transaction", err)
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "Failed to complete password reset",
-		}, nil
+	if s.cache != nil {
+		resetKey := cache.GenerateKey("auth", "reset_token", req.Token)
+		s.cache.Delete(ctx, resetKey)
+
+		s.invalidateUserCache(ctx, int64(userID))
 	}
 
-	authLog.LogInfo(fmt.Sprintf("Password reset successfully for user %d", userID))
+	authLog.LogInfo(fmt.Sprintf("Password reset successful for user ID: %d", userID))
 	return &pb.ResetPasswordResponse{
 		Success: true,
-		Message: "Password has been reset successfully",
-	}, nil
-}
-
-// SayHello implementuje prosty endpoint testowy dla AuthHello
-func (s *AuthServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	authLog.LogInfo("Hello request received")
-
-	return &pb.HelloResponse{
-		Message: "Hello from Common Service! Auth module is working! 👋",
+		Message: "Password reset successful",
 	}, nil
 }
 
 // Helper functions
-
-func generateSimpleToken(userID int) string {
-	// Simple token generation (replace with proper JWT later)
-	bytes := make([]byte, 16)
-	rand.Read(bytes)
-	return fmt.Sprintf("token_%d_%x", userID, bytes)
-}
-
 func generateResetToken() string {
-	// Generate a random 32-byte token
 	bytes := make([]byte, 32)
 	rand.Read(bytes)
 	return fmt.Sprintf("%x", bytes)
 }
 
-// AuthError reprezentuje błąd autoryzacji
-type AuthError struct {
-	Message string
-}
-
-func (e *AuthError) Error() string {
-	return e.Message
-}
-
-// sendPasswordResetEmail wysyła email z linkiem do resetowania hasła przez Messaging Service
-func sendPasswordResetEmail(email, resetToken string) bool {
-	// Połączenie z Messaging Service
-	conn, err := grpc.Dial(
-		fmt.Sprintf("%s:%s", configs.Envs.MessagingServiceHost, configs.Envs.MessagingServicePort),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+func sendPasswordResetEmail(email, token string) bool {
+	conn, err := grpc.Dial("messaging:3002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		authLog.LogError("Failed to connect to messaging service", err)
+		log.Printf("Failed to connect to messaging service: %v", err)
 		return false
 	}
 	defer conn.Close()
 
 	client := messagingpb.NewMessagingServiceClient(conn)
 
-	// Tworzenie linku do resetowania hasła
-	resetLink := fmt.Sprintf("%s/reset-password?token=%s", configs.Envs.PublicHost, resetToken)
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", configs.Envs.PublicHost, token)
+	body := fmt.Sprintf("Click here to reset your password: %s", resetLink)
 
-	// Zawartość emaila
-	emailSubject := "Reset hasła - USOSWEB"
-	emailBody := fmt.Sprintf(`
-Witaj!
-
-Otrzymałeś tę wiadomość, ponieważ zostało zgłoszone żądanie resetowania hasła dla Twojego konta w systemie USOSWEB.
-
-Aby zresetować hasło, kliknij poniższy link:
-%s
-
-Link będzie ważny przez 1 godzinę.
-
-Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
-
-Pozdrawiamy,
-Zespół USOSWEB
-`, resetLink)
-
-	// Wysłanie emaila
-	response, err := client.SendEmail(context.Background(), &messagingpb.SendEmailRequest{
+	_, err = client.SendEmail(context.Background(), &messagingpb.SendEmailRequest{
 		To:      email,
-		From:    "noreply@usosweb.edu.pl",
-		Subject: emailSubject,
-		Body:    emailBody,
+		From:    "noreply@usosweb.com",
+		Subject: "Password Reset Request",
+		Body:    body,
 	})
 
-	if err != nil {
-		authLog.LogError("Failed to call messaging service", err)
-		return false
+	return err == nil
+}
+
+func (s *AuthServer) invalidateUserCache(ctx context.Context, userID int64) {
+	if s.cache == nil {
+		return
 	}
 
-	if !response.Success {
-		authLog.LogWarn(fmt.Sprintf("Messaging service failed to send email: %s", response.Message))
-		return false
+	keys := []string{
+		cache.GenerateKey("auth", "user_by_id", userID),
 	}
 
-	return true
+	for _, key := range keys {
+		s.cache.Delete(ctx, key)
+	}
 }
