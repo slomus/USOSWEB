@@ -605,3 +605,141 @@ baa7ecd17ec8 | 2025-08-02 19:41:21.439 | info | Request completed: GET /api/cour
 850e7a0a52d6 | 2025-08-02 19:59:22.278 | info | Request completed: GET /api/courses/search -> 200 in 8ms
 850e7a0a52d6 | 2025-08-02 20:02:28.001 | info | Incoming request: GET /api/courses from 172.18.0.1
 850e7a0a52d6 | 2025-08-02 20:02:28.028 | info | Request completed: GET /api/courses -> 200 in 27ms
+af8e8308eb38 | 2025-08-05 13:51:21.381 | info | Starting API Gateway
+af8e8308eb38 | 2025-08-05 13:51:21.382 | info | Registering AuthService endpoints
+af8e8308eb38 | 2025-08-05 13:51:21.389 | info | AuthService endpoints registered successfully
+af8e8308eb38 | 2025-08-05 13:51:21.389 | info | Registering AuthHello endpoints
+af8e8308eb38 | 2025-08-05 13:51:21.389 | info | AuthHello endpoints registered successfully
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info | CourseService endpoints registered successfully
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info | API Gateway configured with endpoints:
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   POST /api/auth/login
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   POST /api/auth/register
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   POST /api/auth/refresh
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   POST /api/auth/logout
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   GET  /api/hello
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   GET  /api/courses
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   GET  /api/courses/{id}
+af8e8308eb38 | 2025-08-05 13:51:21.390 | info |   GET  /api/courses/{id}/subjects
+af8e8308eb38 | 2025-08-05 13:51:21.391 | info |   GET  /api/courses/search
+af8e8308eb38 | 2025-08-05 13:51:21.391 | info |   GET  /api/courses/stats
+af8e8308eb38 | 2025-08-05 13:51:21.391 | info |   GET  /api/faculties
+af8e8308eb38 | 2025-08-05 13:51:21.391 | info |   GET  /api/student/course-info/{album_nr}
+af8e8308eb38 | 2025-08-05 13:51:21.392 | info | Starting HTTP server on port :8083
+af8e8308eb38 | 2025-08-05 13:51:21.392 | info | Gateway ready to handle requests
+af8e8308eb38 | 2025-08-05 13:52:27.671 | info | Incoming request: GET /api/courses from 172.19.0.1
+af8e8308eb38 | 2025-08-05 13:52:27.720 | info | Request completed: GET /api/courses -> 200 in 48ms
+21d0ce2e7384 | 2025-08-05 13:58:51.437 | info | Starting API Gateway
+21d0ce2e7384 | 2025-08-05 13:58:51.437 | info | Registering AuthService endpoints
+21d0ce2e7384 | 2025-08-05 13:58:51.437 | info | AuthService endpoints registered successfully
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info | Registering AuthHello endpoints
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info | AuthHello endpoints registered successfully
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info | CourseService endpoints registered successfully
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info | API Gateway configured with endpoints:
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   POST /api/auth/login
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   POST /api/auth/register
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   POST /api/auth/refresh
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   POST /api/auth/logout
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   GET  /api/hello
+21d0ce2e7384 | 2025-08-05 13:58:51.438 | info |   GET  /api/courses
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/courses/{id}
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/courses/{id}/subjects
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/courses/search
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/courses/stats
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/faculties
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info |   GET  /api/student/course-info/{album_nr}
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info | Starting HTTP server on port :8083
+21d0ce2e7384 | 2025-08-05 13:58:51.439 | info | Gateway ready to handle requests
+21d0ce2e7384 | 2025-08-05 14:35:04.704 | info | Incoming request: GET /api/courses/search from 172.19.0.1
+21d0ce2e7384 | 2025-08-05 14:35:04.742 | info | Request completed: GET /api/courses/search -> 200 in 38ms
+149c3083c336 | 2025-08-10 14:58:34.771 | info | Starting API Gateway
+149c3083c336 | 2025-08-10 14:58:34.772 | info | Registering AuthService endpoints
+149c3083c336 | 2025-08-10 14:58:34.772 | info | AuthService endpoints registered successfully
+149c3083c336 | 2025-08-10 14:58:34.772 | info | Registering AuthHello endpoints
+149c3083c336 | 2025-08-10 14:58:34.772 | info | AuthHello endpoints registered successfully
+149c3083c336 | 2025-08-10 14:58:34.773 | info | CourseService endpoints registered successfully
+149c3083c336 | 2025-08-10 14:58:34.773 | info | API Gateway configured with endpoints:
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   POST /api/auth/login
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   POST /api/auth/register
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   POST /api/auth/refresh
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   POST /api/auth/logout
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/hello
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/courses
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/courses/{id}
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/courses/{id}/subjects
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/courses/search
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/courses/stats
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/faculties
+149c3083c336 | 2025-08-10 14:58:34.773 | info |   GET  /api/student/course-info/{album_nr}
+149c3083c336 | 2025-08-10 14:58:34.773 | info | Starting HTTP server on port :8083
+149c3083c336 | 2025-08-10 14:58:34.774 | info | Gateway ready to handle requests
+ba19581b3e1c | 2025-08-10 15:08:04.022 | info | Starting API Gateway
+ba19581b3e1c | 2025-08-10 15:08:04.022 | info | Registering AuthService endpoints
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | AuthService endpoints registered successfully
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | Registering AuthHello endpoints
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | AuthHello endpoints registered successfully
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | CourseService endpoints registered successfully
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | API Gateway configured with endpoints:
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   POST /api/auth/login
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   POST /api/auth/register
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   POST /api/auth/refresh
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   POST /api/auth/logout
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/hello
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/courses
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/courses/{id}
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/courses/{id}/subjects
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/courses/search
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/courses/stats
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/faculties
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info |   GET  /api/student/course-info/{album_nr}
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | Starting HTTP server on port :8083
+ba19581b3e1c | 2025-08-10 15:08:04.023 | info | Gateway ready to handle requests
+c553bc95bb5e | 2025-08-10 15:21:17.515 | info | Starting API Gateway
+c553bc95bb5e | 2025-08-10 15:21:17.515 | info | Registering AuthService endpoints
+c553bc95bb5e | 2025-08-10 15:21:17.515 | info | AuthService endpoints registered successfully
+c553bc95bb5e | 2025-08-10 15:21:17.516 | info | Registering AuthHello endpoints
+c553bc95bb5e | 2025-08-10 15:21:17.516 | info | AuthHello endpoints registered successfully
+c553bc95bb5e | 2025-08-10 15:21:17.516 | info | CourseService endpoints registered successfully
+c553bc95bb5e | 2025-08-10 15:21:17.517 | info | API Gateway configured with endpoints:
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   POST /api/auth/login
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   POST /api/auth/register
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   POST /api/auth/refresh
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   POST /api/auth/logout
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   GET  /api/hello
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   GET  /api/courses
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   GET  /api/courses/{id}
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   GET  /api/courses/{id}/subjects
+c553bc95bb5e | 2025-08-10 15:21:17.518 | info |   GET  /api/courses/search
+c553bc95bb5e | 2025-08-10 15:21:17.532 | info |   GET  /api/courses/stats
+c553bc95bb5e | 2025-08-10 15:21:17.532 | info |   GET  /api/faculties
+c553bc95bb5e | 2025-08-10 15:21:17.532 | info |   GET  /api/student/course-info/{album_nr}
+c553bc95bb5e | 2025-08-10 15:21:17.532 | info | Starting HTTP server on port :8083
+c553bc95bb5e | 2025-08-10 15:21:17.532 | info | Gateway ready to handle requests
+c553bc95bb5e | 2025-08-10 15:23:08.007 | info | Incoming request: GET /api/courses from 172.19.0.1
+c553bc95bb5e | 2025-08-10 15:23:08.050 | info | Request completed: GET /api/courses -> 200 in 42ms
+c553bc95bb5e | 2025-08-10 15:24:15.353 | info | Incoming request: GET /api/courses/1 from 172.19.0.1
+c553bc95bb5e | 2025-08-10 15:24:15.393 | info | Request completed: GET /api/courses/1 -> 200 in 40ms
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | Starting API Gateway
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | Registering AuthService endpoints
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | AuthService endpoints registered successfully
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | Registering AuthHello endpoints
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | AuthHello endpoints registered successfully
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | CourseService endpoints registered successfully
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info | API Gateway configured with endpoints:
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info |   POST /api/auth/login
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info |   POST /api/auth/register
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info |   POST /api/auth/refresh
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info |   POST /api/auth/logout
+f7d6ef488cdb | 2025-08-10 15:27:29.983 | info |   GET  /api/hello
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/courses
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/courses/{id}
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/courses/{id}/subjects
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/courses/search
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/courses/stats
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/faculties
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info |   GET  /api/student/course-info/{album_nr}
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info | Starting HTTP server on port :8083
+f7d6ef488cdb | 2025-08-10 15:27:29.984 | info | Gateway ready to handle requests
+f7d6ef488cdb | 2025-08-10 15:29:13.587 | info | Incoming request: GET /api/courses/1/subjects from 172.19.0.1
+f7d6ef488cdb | 2025-08-10 15:29:13.630 | info | Request completed: GET /api/courses/1/subjects -> 200 in 43ms
+f7d6ef488cdb | 2025-08-10 15:30:28.844 | info | Incoming request: GET /api/courses/search from 172.19.0.1
+f7d6ef488cdb | 2025-08-10 15:30:28.855 | info | Request completed: GET /api/courses/search -> 200 in 11ms

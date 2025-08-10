@@ -31,7 +31,7 @@ func DefaultCacheConfig() *CacheConfig {
 	}
 }
 
-// GenerateKey tworzy standardowy klucz cache
+// GenerateKey creates a defauly cache key
 func GenerateKey(service, entity string, id interface{}) string {
 	return fmt.Sprintf("usosweb:%s:%s:%v", service, entity, id)
 }

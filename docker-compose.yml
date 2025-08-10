@@ -170,6 +170,34 @@ services:
       redis:
         condition: service_healthy
 
+  logstash:
+      image: docker.elastic.co/logstash/logstash:8.11.0
+      container_name: usosweb-logstash
+      volumes:
+        - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+        - ./logs:/app/logs:ro
+        - ./logstash-output:/app/processed-logs
+      ports:
+        - "8080:8080"
+        - "9600:9600"
+      environment:
+        - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
+        - "LOG_LEVEL=info"
+        - "PIPELINE_WORKERS=1"
+        - "PIPELINE_BATCH_SIZE=50"
+        - "HTTP_HOST=0.0.0.0"
+        - "HTTP_PORT=9600"
+        - "xpack.monitoring.enabled=false"
+        - "xpack.management.enabled=false"
+      depends_on:
+        - redis
+      healthcheck:
+        test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+      restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
