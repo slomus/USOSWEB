@@ -20,3 +20,78 @@ d781fdeab73d | 2025-07-06 23:13:52.872 | info | Auth Service running on port :30
 9fd18cb7a4bd | 2025-07-09 14:47:22.237 | info | Starting Auth Service
 9fd18cb7a4bd | 2025-07-09 14:47:22.256 | info | Database connection established
 9fd18cb7a4bd | 2025-07-09 14:47:22.258 | info | Auth Service running on port :3003
+dd333d358d29 | 2025-08-10 14:24:49.024 | info | Starting Auth Service
+dd333d358d29 | 2025-08-10 14:24:49.035 | info | Database connection established
+dd333d358d29 | 2025-08-10 14:24:49.035 | info | Auth Service running on port :3003
+e66dfba32ff6 | 2025-08-10 14:27:34.261 | info | Starting Auth Service
+e66dfba32ff6 | 2025-08-10 14:27:34.267 | info | Database connection established
+e66dfba32ff6 | 2025-08-10 14:27:34.267 | info | Auth Service running on port :3003
+8505a5764906 | 2025-08-10 14:33:51.546 | info | Starting Auth Service
+8505a5764906 | 2025-08-10 14:33:51.552 | info | Database connection established
+8505a5764906 | 2025-08-10 14:33:51.553 | info | Auth Service running on port :3003
+1dd8e4a7b13b | 2025-08-10 14:37:40.594 | info | Starting Auth Service
+1dd8e4a7b13b | 2025-08-10 14:37:40.600 | info | Database connection established
+1dd8e4a7b13b | 2025-08-10 14:37:40.600 | info | Auth Service running on port :3003
+f4a1a36ff4fa | 2025-08-10 14:45:23.984 | info | Starting Auth Service
+f4a1a36ff4fa | 2025-08-10 14:45:23.994 | info | Database connection established
+f4a1a36ff4fa | 2025-08-10 14:45:23.994 | info | Auth Service running on port :3003
+c6b23304f492 | 2025-08-10 14:50:09.826 | info | Starting Auth Service
+c6b23304f492 | 2025-08-10 14:50:09.838 | info | Database connection established
+c6b23304f492 | 2025-08-10 14:50:09.839 | info | Auth Service running on port :3003
+07e63534caae | 2025-08-10 15:19:18.974 | info | Starting Auth Service
+07e63534caae | 2025-08-10 15:19:18.981 | info | Database connection established
+07e63534caae | 2025-08-10 15:19:18.981 | info | Auth Service running on port :3003
+05a12e42f237 | 2025-08-10 15:27:30.897 | info | Starting Auth Service
+05a12e42f237 | 2025-08-10 15:27:30.903 | info | Database connection established
+05a12e42f237 | 2025-08-10 15:27:30.903 | info | Auth Service running on port :3003
+2c665a903ead | 2025-08-10 15:29:33.676 | info | Starting Auth Service
+2c665a903ead | 2025-08-10 15:29:33.686 | info | Database connection established
+2c665a903ead | 2025-08-10 15:29:33.687 | info | Auth Service running on port :3003
+bbe5db668a8a | 2025-08-10 15:32:16.229 | info | Starting Auth Service
+bbe5db668a8a | 2025-08-10 15:32:16.244 | info | Database connection established
+bbe5db668a8a | 2025-08-10 15:32:16.245 | info | Auth Service running on port :3003
+d014a0b91ef1 | 2025-08-10 15:35:42.049 | info | Starting Auth Service
+d014a0b91ef1 | 2025-08-10 15:35:42.057 | info | Database connection established
+d014a0b91ef1 | 2025-08-10 15:35:42.058 | info | Auth Service running on port :3003
+aa19faa5d011 | 2025-08-10 15:44:36.991 | info | Starting Auth Service
+aa19faa5d011 | 2025-08-10 15:44:36.998 | info | Database connection established
+aa19faa5d011 | 2025-08-10 15:44:36.998 | info | Auth Service running on port :3003
+6cab9bb621d8 | 2025-08-10 15:51:25.071 | info | Starting Auth Service
+6cab9bb621d8 | 2025-08-10 15:51:25.098 | info | Database connection established
+6cab9bb621d8 | 2025-08-10 15:51:25.099 | info | Auth Service running on port :3003
+e8874bc6ec88 | 2025-08-10 15:56:32.232 | info | Starting Auth Service
+e8874bc6ec88 | 2025-08-10 15:56:32.244 | info | Database connection established
+e8874bc6ec88 | 2025-08-10 15:56:32.244 | info | Auth Service running on port :3003
+bdec3768cc53 | 2025-08-10 15:58:48.868 | info | Starting Auth Service
+bdec3768cc53 | 2025-08-10 15:58:48.881 | info | Database connection established
+bdec3768cc53 | 2025-08-10 15:58:48.882 | info | Auth Service running on port :3003
+dc40a88c6ac4 | 2025-08-10 16:00:46.392 | info | Starting Auth Service
+dc40a88c6ac4 | 2025-08-10 16:00:46.399 | info | Database connection established
+dc40a88c6ac4 | 2025-08-10 16:00:46.399 | info | Auth Service running on port :3003
+5c44a763ab46 | 2025-08-10 16:04:24.515 | info | Starting Auth Service
+5c44a763ab46 | 2025-08-10 16:04:24.524 | info | Database connection established
+5c44a763ab46 | 2025-08-10 16:04:24.524 | info | Auth Service running on port :3003
+7ada351b2ee5 | 2025-08-10 16:08:33.180 | info | Starting Auth Service
+7ada351b2ee5 | 2025-08-10 16:08:33.190 | info | Database connection established
+7ada351b2ee5 | 2025-08-10 16:08:33.190 | info | Auth Service running on port :3003
+f95cd86bb995 | 2025-08-10 16:11:12.515 | info | Starting Auth Service
+f95cd86bb995 | 2025-08-10 16:11:12.521 | info | Database connection established
+f95cd86bb995 | 2025-08-10 16:11:12.521 | info | Auth Service running on port :3003
+3d079a4c9ab3 | 2025-08-10 16:12:59.924 | info | Starting Auth Service
+3d079a4c9ab3 | 2025-08-10 16:12:59.936 | info | Database connection established
+3d079a4c9ab3 | 2025-08-10 16:12:59.936 | info | Auth Service running on port :3003
+facf9aec1414 | 2025-08-10 16:34:25.669 | info | Starting Auth Service
+facf9aec1414 | 2025-08-10 16:34:25.681 | info | Database connection established
+facf9aec1414 | 2025-08-10 16:34:25.681 | info | Auth Service running on port :3003
+b252d2bb4816 | 2025-08-10 16:42:10.361 | info | Starting Auth Service
+b252d2bb4816 | 2025-08-10 16:42:10.369 | info | Database connection established
+b252d2bb4816 | 2025-08-10 16:42:10.369 | info | Auth Service running on port :3003
+60ff9f722cec | 2025-08-10 16:49:02.573 | info | Starting Auth Service
+60ff9f722cec | 2025-08-10 16:49:02.599 | info | Database connection established
+60ff9f722cec | 2025-08-10 16:49:02.599 | info | Auth Service running on port :3003
+85ab7e3ab45b | 2025-08-10 16:51:53.325 | info | Starting Auth Service
+85ab7e3ab45b | 2025-08-10 16:51:53.332 | info | Database connection established
+85ab7e3ab45b | 2025-08-10 16:51:53.332 | info | Auth Service running on port :3003
+48b74d2d0bca | 2025-08-10 16:54:57.263 | info | Starting Auth Service
+48b74d2d0bca | 2025-08-10 16:54:57.273 | info | Database connection established
+48b74d2d0bca | 2025-08-10 16:54:57.273 | info | Auth Service running on port :3003

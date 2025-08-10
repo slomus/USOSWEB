@@ -173,3 +173,332 @@ d72b0738ca25 | 2025-07-06 21:40:50.584 | info | Gateway ready to handle requests
 4e67afb19dc8 | 2025-07-09 14:48:32.948 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
 4e67afb19dc8 | 2025-07-09 14:48:32.954 | info | Incoming request: POST /api/auth/login from 172.18.0.1
 4e67afb19dc8 | 2025-07-09 14:48:33.035 | info | Request completed: POST /api/auth/login -> 200 in 81ms
+89d4a7fb0b9f | 2025-08-10 14:24:47.558 | info | Starting API Gateway
+89d4a7fb0b9f | 2025-08-10 14:24:47.558 | info | Registering AuthService endpoints
+89d4a7fb0b9f | 2025-08-10 14:24:47.558 | info | AuthService endpoints registered successfully
+89d4a7fb0b9f | 2025-08-10 14:24:47.558 | info | Registering AuthHello endpoints
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info | AuthHello endpoints registered successfully
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info | API Gateway configured with endpoints:
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info |   POST /api/auth/login
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info |   POST /api/auth/register
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info |   POST /api/auth/refresh
+89d4a7fb0b9f | 2025-08-10 14:24:47.559 | info |   POST /api/auth/logout
+89d4a7fb0b9f | 2025-08-10 14:24:47.560 | info |   GET  /api/hello
+89d4a7fb0b9f | 2025-08-10 14:24:47.560 | info | Starting HTTP server on port :8083
+89d4a7fb0b9f | 2025-08-10 14:24:47.560 | info | Gateway ready to handle requests
+30662fcf1b72 | 2025-08-10 14:27:32.257 | info | Starting API Gateway
+30662fcf1b72 | 2025-08-10 14:27:32.257 | info | Registering AuthService endpoints
+30662fcf1b72 | 2025-08-10 14:27:32.259 | info | AuthService endpoints registered successfully
+30662fcf1b72 | 2025-08-10 14:27:32.260 | info | Registering AuthHello endpoints
+30662fcf1b72 | 2025-08-10 14:27:32.260 | info | AuthHello endpoints registered successfully
+30662fcf1b72 | 2025-08-10 14:27:32.260 | info | API Gateway configured with endpoints:
+30662fcf1b72 | 2025-08-10 14:27:32.260 | info |   POST /api/auth/login
+30662fcf1b72 | 2025-08-10 14:27:32.261 | info |   POST /api/auth/register
+30662fcf1b72 | 2025-08-10 14:27:32.262 | info |   POST /api/auth/refresh
+30662fcf1b72 | 2025-08-10 14:27:32.262 | info |   POST /api/auth/logout
+30662fcf1b72 | 2025-08-10 14:27:32.262 | info |   GET  /api/hello
+30662fcf1b72 | 2025-08-10 14:27:32.262 | info | Starting HTTP server on port :8083
+30662fcf1b72 | 2025-08-10 14:27:32.262 | info | Gateway ready to handle requests
+b96dbfa89812 | 2025-08-10 14:33:49.744 | info | Starting API Gateway
+b96dbfa89812 | 2025-08-10 14:33:49.745 | info | Registering AuthService endpoints
+b96dbfa89812 | 2025-08-10 14:33:49.745 | info | AuthService endpoints registered successfully
+b96dbfa89812 | 2025-08-10 14:33:49.745 | info | Registering AuthHello endpoints
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info | AuthHello endpoints registered successfully
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info | API Gateway configured with endpoints:
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info |   POST /api/auth/login
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info |   POST /api/auth/register
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info |   POST /api/auth/refresh
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info |   POST /api/auth/logout
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info |   GET  /api/hello
+b96dbfa89812 | 2025-08-10 14:33:49.746 | info | Starting HTTP server on port :8083
+b96dbfa89812 | 2025-08-10 14:33:49.747 | info | Gateway ready to handle requests
+562fd2fa785c | 2025-08-10 14:37:39.472 | info | Starting API Gateway
+562fd2fa785c | 2025-08-10 14:37:39.473 | info | Registering AuthService endpoints
+562fd2fa785c | 2025-08-10 14:37:39.473 | info | AuthService endpoints registered successfully
+562fd2fa785c | 2025-08-10 14:37:39.473 | info | Registering AuthHello endpoints
+562fd2fa785c | 2025-08-10 14:37:39.474 | info | AuthHello endpoints registered successfully
+562fd2fa785c | 2025-08-10 14:37:39.474 | info | API Gateway configured with endpoints:
+562fd2fa785c | 2025-08-10 14:37:39.474 | info |   POST /api/auth/login
+562fd2fa785c | 2025-08-10 14:37:39.474 | info |   POST /api/auth/register
+562fd2fa785c | 2025-08-10 14:37:39.474 | info |   POST /api/auth/refresh
+562fd2fa785c | 2025-08-10 14:37:39.474 | info |   POST /api/auth/logout
+562fd2fa785c | 2025-08-10 14:37:39.475 | info |   GET  /api/hello
+562fd2fa785c | 2025-08-10 14:37:39.475 | info | Starting HTTP server on port :8083
+562fd2fa785c | 2025-08-10 14:37:39.475 | info | Gateway ready to handle requests
+09643c485402 | 2025-08-10 14:45:22.622 | info | Starting API Gateway
+09643c485402 | 2025-08-10 14:45:22.622 | info | Registering AuthService endpoints
+09643c485402 | 2025-08-10 14:45:22.622 | info | AuthService endpoints registered successfully
+09643c485402 | 2025-08-10 14:45:22.623 | info | Registering AuthHello endpoints
+09643c485402 | 2025-08-10 14:45:22.623 | info | AuthHello endpoints registered successfully
+09643c485402 | 2025-08-10 14:45:22.623 | info | API Gateway configured with endpoints:
+09643c485402 | 2025-08-10 14:45:22.623 | info |   POST /api/auth/login
+09643c485402 | 2025-08-10 14:45:22.623 | info |   POST /api/auth/register
+09643c485402 | 2025-08-10 14:45:22.624 | info |   POST /api/auth/refresh
+09643c485402 | 2025-08-10 14:45:22.624 | info |   POST /api/auth/logout
+09643c485402 | 2025-08-10 14:45:22.624 | info |   GET  /api/hello
+09643c485402 | 2025-08-10 14:45:22.624 | info | Starting HTTP server on port :8083
+09643c485402 | 2025-08-10 14:45:22.624 | info | Gateway ready to handle requests
+2616ee964333 | 2025-08-10 14:50:08.685 | info | Starting API Gateway
+2616ee964333 | 2025-08-10 14:50:08.685 | info | Registering AuthService endpoints
+2616ee964333 | 2025-08-10 14:50:08.688 | info | AuthService endpoints registered successfully
+2616ee964333 | 2025-08-10 14:50:08.688 | info | Registering AuthHello endpoints
+2616ee964333 | 2025-08-10 14:50:08.688 | info | AuthHello endpoints registered successfully
+2616ee964333 | 2025-08-10 14:50:08.688 | info | API Gateway configured with endpoints:
+2616ee964333 | 2025-08-10 14:50:08.688 | info |   POST /api/auth/login
+2616ee964333 | 2025-08-10 14:50:08.688 | info |   POST /api/auth/register
+2616ee964333 | 2025-08-10 14:50:08.688 | info |   POST /api/auth/refresh
+2616ee964333 | 2025-08-10 14:50:08.689 | info |   POST /api/auth/logout
+2616ee964333 | 2025-08-10 14:50:08.689 | info |   GET  /api/hello
+2616ee964333 | 2025-08-10 14:50:08.689 | info | Starting HTTP server on port :8083
+2616ee964333 | 2025-08-10 14:50:08.689 | info | Gateway ready to handle requests
+2616ee964333 | 2025-08-10 14:50:42.254 | info | Incoming request: OPTIONS /api/auth/login from 172.18.0.1
+2616ee964333 | 2025-08-10 14:50:42.254 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+2616ee964333 | 2025-08-10 14:50:42.259 | info | Incoming request: POST /api/auth/login from 172.18.0.1
+2616ee964333 | 2025-08-10 14:50:42.414 | info | Request completed: POST /api/auth/login -> 200 in 155ms
+743772a67e80 | 2025-08-10 15:19:17.399 | info | Starting API Gateway
+743772a67e80 | 2025-08-10 15:19:17.399 | info | Registering AuthService endpoints
+743772a67e80 | 2025-08-10 15:19:17.399 | info | AuthService endpoints registered successfully
+743772a67e80 | 2025-08-10 15:19:17.399 | info | Registering AuthHello endpoints
+743772a67e80 | 2025-08-10 15:19:17.399 | info | AuthHello endpoints registered successfully
+743772a67e80 | 2025-08-10 15:19:17.400 | info | API Gateway configured with endpoints:
+743772a67e80 | 2025-08-10 15:19:17.400 | info |   POST /api/auth/login
+743772a67e80 | 2025-08-10 15:19:17.400 | info |   POST /api/auth/register
+743772a67e80 | 2025-08-10 15:19:17.400 | info |   POST /api/auth/refresh
+743772a67e80 | 2025-08-10 15:19:17.400 | info |   POST /api/auth/logout
+743772a67e80 | 2025-08-10 15:19:17.400 | info |   GET  /api/hello
+743772a67e80 | 2025-08-10 15:19:17.400 | info | Starting HTTP server on port :8083
+743772a67e80 | 2025-08-10 15:19:17.400 | info | Gateway ready to handle requests
+4ab00342c7ff | 2025-08-10 15:27:29.855 | info | Starting API Gateway
+4ab00342c7ff | 2025-08-10 15:27:29.855 | info | Registering AuthService endpoints
+4ab00342c7ff | 2025-08-10 15:27:29.856 | info | AuthService endpoints registered successfully
+4ab00342c7ff | 2025-08-10 15:27:29.856 | info | Registering AuthHello endpoints
+4ab00342c7ff | 2025-08-10 15:27:29.856 | info | AuthHello endpoints registered successfully
+4ab00342c7ff | 2025-08-10 15:27:29.857 | info | API Gateway configured with endpoints:
+4ab00342c7ff | 2025-08-10 15:27:29.857 | info |   POST /api/auth/login
+4ab00342c7ff | 2025-08-10 15:27:29.857 | info |   POST /api/auth/register
+4ab00342c7ff | 2025-08-10 15:27:29.857 | info |   POST /api/auth/refresh
+4ab00342c7ff | 2025-08-10 15:27:29.858 | info |   POST /api/auth/logout
+4ab00342c7ff | 2025-08-10 15:27:29.858 | info |   GET  /api/hello
+4ab00342c7ff | 2025-08-10 15:27:29.858 | info | Starting HTTP server on port :8083
+4ab00342c7ff | 2025-08-10 15:27:29.858 | info | Gateway ready to handle requests
+d7b1d91927ee | 2025-08-10 15:29:32.241 | info | Starting API Gateway
+d7b1d91927ee | 2025-08-10 15:29:32.241 | info | Registering AuthService endpoints
+d7b1d91927ee | 2025-08-10 15:29:32.241 | info | AuthService endpoints registered successfully
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info | Registering AuthHello endpoints
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info | AuthHello endpoints registered successfully
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info | API Gateway configured with endpoints:
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info |   POST /api/auth/login
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info |   POST /api/auth/register
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info |   POST /api/auth/refresh
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info |   POST /api/auth/logout
+d7b1d91927ee | 2025-08-10 15:29:32.242 | info |   GET  /api/hello
+d7b1d91927ee | 2025-08-10 15:29:32.243 | info | Starting HTTP server on port :8083
+d7b1d91927ee | 2025-08-10 15:29:32.243 | info | Gateway ready to handle requests
+4321ca624870 | 2025-08-10 15:32:14.663 | info | Starting API Gateway
+4321ca624870 | 2025-08-10 15:32:14.663 | info | Registering AuthService endpoints
+4321ca624870 | 2025-08-10 15:32:14.663 | info | AuthService endpoints registered successfully
+4321ca624870 | 2025-08-10 15:32:14.663 | info | Registering AuthHello endpoints
+4321ca624870 | 2025-08-10 15:32:14.663 | info | AuthHello endpoints registered successfully
+4321ca624870 | 2025-08-10 15:32:14.664 | info | API Gateway configured with endpoints:
+4321ca624870 | 2025-08-10 15:32:14.664 | info |   POST /api/auth/login
+4321ca624870 | 2025-08-10 15:32:14.664 | info |   POST /api/auth/register
+4321ca624870 | 2025-08-10 15:32:14.664 | info |   POST /api/auth/refresh
+4321ca624870 | 2025-08-10 15:32:14.664 | info |   POST /api/auth/logout
+4321ca624870 | 2025-08-10 15:32:14.664 | info |   GET  /api/hello
+4321ca624870 | 2025-08-10 15:32:14.664 | info | Starting HTTP server on port :8083
+4321ca624870 | 2025-08-10 15:32:14.665 | info | Gateway ready to handle requests
+21db5a55a182 | 2025-08-10 15:35:40.944 | info | Starting API Gateway
+21db5a55a182 | 2025-08-10 15:35:40.944 | info | Registering AuthService endpoints
+21db5a55a182 | 2025-08-10 15:35:40.944 | info | AuthService endpoints registered successfully
+21db5a55a182 | 2025-08-10 15:35:40.944 | info | Registering AuthHello endpoints
+21db5a55a182 | 2025-08-10 15:35:40.945 | info | AuthHello endpoints registered successfully
+21db5a55a182 | 2025-08-10 15:35:40.945 | info | API Gateway configured with endpoints:
+21db5a55a182 | 2025-08-10 15:35:40.945 | info |   POST /api/auth/login
+21db5a55a182 | 2025-08-10 15:35:40.945 | info |   POST /api/auth/register
+21db5a55a182 | 2025-08-10 15:35:40.945 | info |   POST /api/auth/refresh
+21db5a55a182 | 2025-08-10 15:35:40.945 | info |   POST /api/auth/logout
+21db5a55a182 | 2025-08-10 15:35:40.946 | info |   GET  /api/hello
+21db5a55a182 | 2025-08-10 15:35:40.946 | info | Starting HTTP server on port :8083
+21db5a55a182 | 2025-08-10 15:35:40.946 | info | Gateway ready to handle requests
+eb0c7056351a | 2025-08-10 15:44:33.767 | info | Starting API Gateway
+eb0c7056351a | 2025-08-10 15:44:33.767 | info | Registering AuthService endpoints
+eb0c7056351a | 2025-08-10 15:44:33.767 | info | AuthService endpoints registered successfully
+eb0c7056351a | 2025-08-10 15:44:33.768 | info | Registering AuthHello endpoints
+eb0c7056351a | 2025-08-10 15:44:33.768 | info | AuthHello endpoints registered successfully
+eb0c7056351a | 2025-08-10 15:44:33.768 | info | API Gateway configured with endpoints:
+eb0c7056351a | 2025-08-10 15:44:33.768 | info |   POST /api/auth/login
+eb0c7056351a | 2025-08-10 15:44:33.768 | info |   POST /api/auth/register
+eb0c7056351a | 2025-08-10 15:44:33.769 | info |   POST /api/auth/refresh
+eb0c7056351a | 2025-08-10 15:44:33.769 | info |   POST /api/auth/logout
+eb0c7056351a | 2025-08-10 15:44:33.769 | info |   GET  /api/hello
+eb0c7056351a | 2025-08-10 15:44:33.769 | info | Starting HTTP server on port :8083
+eb0c7056351a | 2025-08-10 15:44:33.769 | info | Gateway ready to handle requests
+16549cffa9a3 | 2025-08-10 15:51:23.262 | info | Starting API Gateway
+16549cffa9a3 | 2025-08-10 15:51:23.263 | info | Registering AuthService endpoints
+16549cffa9a3 | 2025-08-10 15:51:23.265 | info | AuthService endpoints registered successfully
+16549cffa9a3 | 2025-08-10 15:51:23.265 | info | Registering AuthHello endpoints
+16549cffa9a3 | 2025-08-10 15:51:23.265 | info | AuthHello endpoints registered successfully
+16549cffa9a3 | 2025-08-10 15:51:23.265 | info | API Gateway configured with endpoints:
+16549cffa9a3 | 2025-08-10 15:51:23.266 | info |   POST /api/auth/login
+16549cffa9a3 | 2025-08-10 15:51:23.266 | info |   POST /api/auth/register
+16549cffa9a3 | 2025-08-10 15:51:23.266 | info |   POST /api/auth/refresh
+16549cffa9a3 | 2025-08-10 15:51:23.266 | info |   POST /api/auth/logout
+16549cffa9a3 | 2025-08-10 15:51:23.266 | info |   GET  /api/hello
+16549cffa9a3 | 2025-08-10 15:51:23.267 | info | Starting HTTP server on port :8083
+16549cffa9a3 | 2025-08-10 15:51:23.268 | info | Gateway ready to handle requests
+693aa4e2efcc | 2025-08-10 15:56:30.699 | info | Starting API Gateway
+693aa4e2efcc | 2025-08-10 15:56:30.699 | info | Registering AuthService endpoints
+693aa4e2efcc | 2025-08-10 15:56:30.700 | info | AuthService endpoints registered successfully
+693aa4e2efcc | 2025-08-10 15:56:30.700 | info | Registering AuthHello endpoints
+693aa4e2efcc | 2025-08-10 15:56:30.700 | info | AuthHello endpoints registered successfully
+693aa4e2efcc | 2025-08-10 15:56:30.700 | info | API Gateway configured with endpoints:
+693aa4e2efcc | 2025-08-10 15:56:30.700 | info |   POST /api/auth/login
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info |   POST /api/auth/register
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info |   POST /api/auth/refresh
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info |   POST /api/auth/logout
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info |   GET  /api/hello
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info | Starting HTTP server on port :8083
+693aa4e2efcc | 2025-08-10 15:56:30.701 | info | Gateway ready to handle requests
+80fa26e3dbb7 | 2025-08-10 15:58:46.493 | info | Starting API Gateway
+80fa26e3dbb7 | 2025-08-10 15:58:46.493 | info | Registering AuthService endpoints
+80fa26e3dbb7 | 2025-08-10 15:58:46.494 | info | AuthService endpoints registered successfully
+80fa26e3dbb7 | 2025-08-10 15:58:46.494 | info | Registering AuthHello endpoints
+80fa26e3dbb7 | 2025-08-10 15:58:46.494 | info | AuthHello endpoints registered successfully
+80fa26e3dbb7 | 2025-08-10 15:58:46.494 | info | API Gateway configured with endpoints:
+80fa26e3dbb7 | 2025-08-10 15:58:46.495 | info |   POST /api/auth/login
+80fa26e3dbb7 | 2025-08-10 15:58:46.495 | info |   POST /api/auth/register
+80fa26e3dbb7 | 2025-08-10 15:58:46.495 | info |   POST /api/auth/refresh
+80fa26e3dbb7 | 2025-08-10 15:58:46.495 | info |   POST /api/auth/logout
+80fa26e3dbb7 | 2025-08-10 15:58:46.495 | info |   GET  /api/hello
+80fa26e3dbb7 | 2025-08-10 15:58:46.496 | info | Starting HTTP server on port :8083
+80fa26e3dbb7 | 2025-08-10 15:58:46.496 | info | Gateway ready to handle requests
+ff07c28545f4 | 2025-08-10 16:00:45.336 | info | Starting API Gateway
+ff07c28545f4 | 2025-08-10 16:00:45.337 | info | Registering AuthService endpoints
+ff07c28545f4 | 2025-08-10 16:00:45.337 | info | AuthService endpoints registered successfully
+ff07c28545f4 | 2025-08-10 16:00:45.338 | info | Registering AuthHello endpoints
+ff07c28545f4 | 2025-08-10 16:00:45.338 | info | AuthHello endpoints registered successfully
+ff07c28545f4 | 2025-08-10 16:00:45.338 | info | API Gateway configured with endpoints:
+ff07c28545f4 | 2025-08-10 16:00:45.338 | info |   POST /api/auth/login
+ff07c28545f4 | 2025-08-10 16:00:45.339 | info |   POST /api/auth/register
+ff07c28545f4 | 2025-08-10 16:00:45.339 | info |   POST /api/auth/refresh
+ff07c28545f4 | 2025-08-10 16:00:45.339 | info |   POST /api/auth/logout
+ff07c28545f4 | 2025-08-10 16:00:45.339 | info |   GET  /api/hello
+ff07c28545f4 | 2025-08-10 16:00:45.340 | info | Starting HTTP server on port :8083
+ff07c28545f4 | 2025-08-10 16:00:45.340 | info | Gateway ready to handle requests
+1a0c083c6ca0 | 2025-08-10 16:04:23.340 | info | Starting API Gateway
+1a0c083c6ca0 | 2025-08-10 16:04:23.340 | info | Registering AuthService endpoints
+1a0c083c6ca0 | 2025-08-10 16:04:23.341 | info | AuthService endpoints registered successfully
+1a0c083c6ca0 | 2025-08-10 16:04:23.341 | info | Registering AuthHello endpoints
+1a0c083c6ca0 | 2025-08-10 16:04:23.341 | info | AuthHello endpoints registered successfully
+1a0c083c6ca0 | 2025-08-10 16:04:23.341 | info | API Gateway configured with endpoints:
+1a0c083c6ca0 | 2025-08-10 16:04:23.341 | info |   POST /api/auth/login
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info |   POST /api/auth/register
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info |   POST /api/auth/refresh
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info |   POST /api/auth/logout
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info |   GET  /api/hello
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info | Starting HTTP server on port :8083
+1a0c083c6ca0 | 2025-08-10 16:04:23.342 | info | Gateway ready to handle requests
+b30dcfde7ac8 | 2025-08-10 16:08:31.585 | info | Starting API Gateway
+b30dcfde7ac8 | 2025-08-10 16:08:31.585 | info | Registering AuthService endpoints
+b30dcfde7ac8 | 2025-08-10 16:08:31.586 | info | AuthService endpoints registered successfully
+b30dcfde7ac8 | 2025-08-10 16:08:31.586 | info | Registering AuthHello endpoints
+b30dcfde7ac8 | 2025-08-10 16:08:31.587 | info | AuthHello endpoints registered successfully
+b30dcfde7ac8 | 2025-08-10 16:08:31.587 | info | API Gateway configured with endpoints:
+b30dcfde7ac8 | 2025-08-10 16:08:31.587 | info |   POST /api/auth/login
+b30dcfde7ac8 | 2025-08-10 16:08:31.587 | info |   POST /api/auth/register
+b30dcfde7ac8 | 2025-08-10 16:08:31.587 | info |   POST /api/auth/refresh
+b30dcfde7ac8 | 2025-08-10 16:08:31.588 | info |   POST /api/auth/logout
+b30dcfde7ac8 | 2025-08-10 16:08:31.588 | info |   GET  /api/hello
+b30dcfde7ac8 | 2025-08-10 16:08:31.588 | info | Starting HTTP server on port :8083
+b30dcfde7ac8 | 2025-08-10 16:08:31.588 | info | Gateway ready to handle requests
+304ad873ebd2 | 2025-08-10 16:11:11.493 | info | Starting API Gateway
+304ad873ebd2 | 2025-08-10 16:11:11.493 | info | Registering AuthService endpoints
+304ad873ebd2 | 2025-08-10 16:11:11.493 | info | AuthService endpoints registered successfully
+304ad873ebd2 | 2025-08-10 16:11:11.494 | info | Registering AuthHello endpoints
+304ad873ebd2 | 2025-08-10 16:11:11.494 | info | AuthHello endpoints registered successfully
+304ad873ebd2 | 2025-08-10 16:11:11.494 | info | API Gateway configured with endpoints:
+304ad873ebd2 | 2025-08-10 16:11:11.494 | info |   POST /api/auth/login
+304ad873ebd2 | 2025-08-10 16:11:11.495 | info |   POST /api/auth/register
+304ad873ebd2 | 2025-08-10 16:11:11.495 | info |   POST /api/auth/refresh
+304ad873ebd2 | 2025-08-10 16:11:11.496 | info |   POST /api/auth/logout
+304ad873ebd2 | 2025-08-10 16:11:11.497 | info |   GET  /api/hello
+304ad873ebd2 | 2025-08-10 16:11:11.497 | info | Starting HTTP server on port :8083
+304ad873ebd2 | 2025-08-10 16:11:11.497 | info | Gateway ready to handle requests
+18f5b3ce4aa5 | 2025-08-10 16:12:58.423 | info | Starting API Gateway
+18f5b3ce4aa5 | 2025-08-10 16:12:58.423 | info | Registering AuthService endpoints
+18f5b3ce4aa5 | 2025-08-10 16:12:58.423 | info | AuthService endpoints registered successfully
+18f5b3ce4aa5 | 2025-08-10 16:12:58.423 | info | Registering AuthHello endpoints
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info | AuthHello endpoints registered successfully
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info | API Gateway configured with endpoints:
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info |   POST /api/auth/login
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info |   POST /api/auth/register
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info |   POST /api/auth/refresh
+18f5b3ce4aa5 | 2025-08-10 16:12:58.424 | info |   POST /api/auth/logout
+18f5b3ce4aa5 | 2025-08-10 16:12:58.425 | info |   GET  /api/hello
+18f5b3ce4aa5 | 2025-08-10 16:12:58.425 | info | Starting HTTP server on port :8083
+18f5b3ce4aa5 | 2025-08-10 16:12:58.425 | info | Gateway ready to handle requests
+b36f5f43678e | 2025-08-10 16:34:24.122 | info | Starting API Gateway
+b36f5f43678e | 2025-08-10 16:34:24.123 | info | Registering AuthService endpoints
+b36f5f43678e | 2025-08-10 16:34:24.124 | info | AuthService endpoints registered successfully
+b36f5f43678e | 2025-08-10 16:34:24.124 | info | Registering AuthHello endpoints
+b36f5f43678e | 2025-08-10 16:34:24.124 | info | AuthHello endpoints registered successfully
+b36f5f43678e | 2025-08-10 16:34:24.124 | info | API Gateway configured with endpoints:
+b36f5f43678e | 2025-08-10 16:34:24.124 | info |   POST /api/auth/login
+b36f5f43678e | 2025-08-10 16:34:24.124 | info |   POST /api/auth/register
+b36f5f43678e | 2025-08-10 16:34:24.124 | info |   POST /api/auth/refresh
+b36f5f43678e | 2025-08-10 16:34:24.125 | info |   POST /api/auth/logout
+b36f5f43678e | 2025-08-10 16:34:24.125 | info |   GET  /api/hello
+b36f5f43678e | 2025-08-10 16:34:24.125 | info | Starting HTTP server on port :8083
+b36f5f43678e | 2025-08-10 16:34:24.125 | info | Gateway ready to handle requests
+ba9d4a6d94c9 | 2025-08-10 16:42:08.644 | info | Starting API Gateway
+ba9d4a6d94c9 | 2025-08-10 16:42:08.644 | info | Registering AuthService endpoints
+ba9d4a6d94c9 | 2025-08-10 16:42:08.644 | info | AuthService endpoints registered successfully
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info | Registering AuthHello endpoints
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info | AuthHello endpoints registered successfully
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info | API Gateway configured with endpoints:
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info |   POST /api/auth/login
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info |   POST /api/auth/register
+ba9d4a6d94c9 | 2025-08-10 16:42:08.645 | info |   POST /api/auth/refresh
+ba9d4a6d94c9 | 2025-08-10 16:42:08.646 | info |   POST /api/auth/logout
+ba9d4a6d94c9 | 2025-08-10 16:42:08.646 | info |   GET  /api/hello
+ba9d4a6d94c9 | 2025-08-10 16:42:08.646 | info | Starting HTTP server on port :8083
+ba9d4a6d94c9 | 2025-08-10 16:42:08.646 | info | Gateway ready to handle requests
+5a5291072c97 | 2025-08-10 16:49:00.858 | info | Starting API Gateway
+5a5291072c97 | 2025-08-10 16:49:00.859 | info | Registering AuthService endpoints
+5a5291072c97 | 2025-08-10 16:49:00.859 | info | AuthService endpoints registered successfully
+5a5291072c97 | 2025-08-10 16:49:00.859 | info | Registering AuthHello endpoints
+5a5291072c97 | 2025-08-10 16:49:00.859 | info | AuthHello endpoints registered successfully
+5a5291072c97 | 2025-08-10 16:49:00.860 | info | API Gateway configured with endpoints:
+5a5291072c97 | 2025-08-10 16:49:00.860 | info |   POST /api/auth/login
+5a5291072c97 | 2025-08-10 16:49:00.860 | info |   POST /api/auth/register
+5a5291072c97 | 2025-08-10 16:49:00.860 | info |   POST /api/auth/refresh
+5a5291072c97 | 2025-08-10 16:49:00.860 | info |   POST /api/auth/logout
+5a5291072c97 | 2025-08-10 16:49:00.860 | info |   GET  /api/hello
+5a5291072c97 | 2025-08-10 16:49:00.860 | info | Starting HTTP server on port :8083
+5a5291072c97 | 2025-08-10 16:49:00.861 | info | Gateway ready to handle requests
+b74e50743f35 | 2025-08-10 16:51:52.333 | info | Starting API Gateway
+b74e50743f35 | 2025-08-10 16:51:52.333 | info | Registering AuthService endpoints
+b74e50743f35 | 2025-08-10 16:51:52.334 | info | AuthService endpoints registered successfully
+b74e50743f35 | 2025-08-10 16:51:52.334 | info | Registering AuthHello endpoints
+b74e50743f35 | 2025-08-10 16:51:52.334 | info | AuthHello endpoints registered successfully
+b74e50743f35 | 2025-08-10 16:51:52.334 | info | API Gateway configured with endpoints:
+b74e50743f35 | 2025-08-10 16:51:52.334 | info |   POST /api/auth/login
+b74e50743f35 | 2025-08-10 16:51:52.334 | info |   POST /api/auth/register
+b74e50743f35 | 2025-08-10 16:51:52.335 | info |   POST /api/auth/refresh
+b74e50743f35 | 2025-08-10 16:51:52.335 | info |   POST /api/auth/logout
+b74e50743f35 | 2025-08-10 16:51:52.335 | info |   GET  /api/hello
+b74e50743f35 | 2025-08-10 16:51:52.335 | info | Starting HTTP server on port :8083
+b74e50743f35 | 2025-08-10 16:51:52.335 | info | Gateway ready to handle requests
+49b831158d3c | 2025-08-10 16:54:56.077 | info | Starting API Gateway
+49b831158d3c | 2025-08-10 16:54:56.077 | info | Registering AuthService endpoints
+49b831158d3c | 2025-08-10 16:54:56.077 | info | AuthService endpoints registered successfully
+49b831158d3c | 2025-08-10 16:54:56.078 | info | Registering AuthHello endpoints
+49b831158d3c | 2025-08-10 16:54:56.078 | info | AuthHello endpoints registered successfully
+49b831158d3c | 2025-08-10 16:54:56.078 | info | API Gateway configured with endpoints:
+49b831158d3c | 2025-08-10 16:54:56.078 | info |   POST /api/auth/login
+49b831158d3c | 2025-08-10 16:54:56.079 | info |   POST /api/auth/register
+49b831158d3c | 2025-08-10 16:54:56.079 | info |   POST /api/auth/refresh
+49b831158d3c | 2025-08-10 16:54:56.079 | info |   POST /api/auth/logout
+49b831158d3c | 2025-08-10 16:54:56.079 | info |   GET  /api/hello
+49b831158d3c | 2025-08-10 16:54:56.079 | info | Starting HTTP server on port :8083
+49b831158d3c | 2025-08-10 16:54:56.079 | info | Gateway ready to handle requests
