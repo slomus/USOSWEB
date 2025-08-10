@@ -21,6 +21,7 @@ var appLog = logger.NewLogger("api-gateway")
 
 func loggingMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("DEBUG: loggingMiddleware got %s\n*", r.URL.Path)
 		start := time.Now()
 
 		clientIP := getClientIP(r)
@@ -87,11 +88,14 @@ func allowCORS(h http.Handler) http.Handler {
 }
 
 func extractTokensFromCookies(h http.Handler) http.Handler {
+
+	appLog.LogInfo("DEBUG: Middleware initialized*")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		appLog.LogDebug(fmt.Sprintf("DEBUG: Request %s\n*", r.URL.Path))
 		ctx := r.Context()
 
 		if cookie, err := r.Cookie("access_token"); err == nil {
-			appLog.LogDebug("Access token extracted from cookie")
+			appLog.LogDebug(fmt.Sprintf("Access token extracted from cookie for %s", r.URL.Path))
 			md := metadata.Pairs("authorization", cookie.Value)
 			ctx = metadata.NewIncomingContext(ctx, md)
 		}
@@ -126,11 +130,24 @@ func customHeaderMatcher(key string) (string, bool) {
 }
 
 func customMetadataAnnotator(ctx context.Context, req *http.Request) metadata.MD {
-	return metadata.New(nil)
+	md := metadata.New(nil)
+
+	if cookie, err := req.Cookie("access_token"); err == nil {
+		md.Set("authorization", cookie.Value)
+		fmt.Printf("DEBUG: Cookie extracted in annotator: %s\n", req.URL.Path)
+	}
+
+	if req.URL.Path == "/api/auth/refresh" {
+		if cookie, err := req.Cookie("refresh_token"); err == nil {
+			md.Set("refresh_token", cookie.Value)
+		}
+	}
+
+	return md
 }
 
 func main() {
-	appLog.LogInfo("Starting API Gateway")
+	appLog.LogInfo("Starting API Gateway*")
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -138,7 +155,12 @@ func main() {
 
 	appLog.LogDebug("Configuring gRPC-Gateway multiplexer")
 	mux := runtime.NewServeMux(
-		runtime.WithIncomingHeaderMatcher(customHeaderMatcher),
+		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+			if key == "Cookie" {
+				return "cookie", true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
 		runtime.WithOutgoingHeaderMatcher(customHeaderMatcher),
 		runtime.WithMetadata(customMetadataAnnotator),
 		runtime.WithForwardResponseOption(func(ctx context.Context, w http.ResponseWriter, resp proto.Message) error {
@@ -179,7 +201,7 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
-	handler := loggingMiddleware(allowCORS(extractTokensFromCookies(mux)))
+	handler := loggingMiddleware(allowCORS(mux))
 
 	appLog.LogInfo("API Gateway configured with endpoints:")
 	endpoints := []string{
@@ -187,6 +209,7 @@ func main() {
 		"POST /api/auth/register",
 		"POST /api/auth/refresh",
 		"POST /api/auth/logout",
+		"GET  /api/auth/username",
 		"GET  /api/hello",
 		"GET  /api/courses",
 		"GET  /api/courses/{id}",

@@ -44,7 +44,6 @@ type CourseServiceClient interface {
 	GetCourseStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetCourseStatsResponse, error)
 	// Pobiera wszystkie wydziały (pomocnicze dla filtrowania)
 	GetFaculties(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFacultiesResponse, error)
-	// 🎯 NOWA METODA: Pobiera informacje o kierunku studenta
 	GetStudentCourseInfo(ctx context.Context, in *GetStudentCourseInfoRequest, opts ...grpc.CallOption) (*GetStudentCourseInfoResponse, error)
 }
 
@@ -141,7 +140,6 @@ type CourseServiceServer interface {
 	GetCourseStats(context.Context, *emptypb.Empty) (*GetCourseStatsResponse, error)
 	// Pobiera wszystkie wydziały (pomocnicze dla filtrowania)
 	GetFaculties(context.Context, *emptypb.Empty) (*GetFacultiesResponse, error)
-	// 🎯 NOWA METODA: Pobiera informacje o kierunku studenta
 	GetStudentCourseInfo(context.Context, *GetStudentCourseInfoRequest) (*GetStudentCourseInfoResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }

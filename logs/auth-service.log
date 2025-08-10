@@ -507,3 +507,475 @@ b038c38372f0 | 2025-08-10 15:29:13.629 | info | Successfully returned 2 subjects
 b038c38372f0 | 2025-08-10 15:30:28.844 | info | Received request for course search
 b038c38372f0 | 2025-08-10 15:30:28.845 | info | Executing search query with 1 filters
 b038c38372f0 | 2025-08-10 15:30:28.855 | info | Successfully returned 2 courses from search
+163adc3552cd | 2025-08-10 16:28:12.869 | info | Starting Common Service
+163adc3552cd | 2025-08-10 16:28:12.895 | info | Attempting to connect to Redis at: redis:6379
+163adc3552cd | 2025-08-10 16:28:12.897 | info | Redis connection established
+163adc3552cd | 2025-08-10 16:28:12.898 | info | Database connection established
+163adc3552cd | 2025-08-10 16:28:12.898 | info | AuthService registered
+163adc3552cd | 2025-08-10 16:28:12.898 | info | CourseService registered
+163adc3552cd | 2025-08-10 16:28:12.898 | info | Common Service registered and listening on :3003
+163adc3552cd | 2025-08-10 16:28:12.898 | info | Available services:
+163adc3552cd | 2025-08-10 16:28:12.898 | info |    AuthService:
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/login
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/register
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/refresh
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/logout
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/forgot-password
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - POST /api/auth/reset-password
+163adc3552cd | 2025-08-10 16:28:12.898 | info |    CourseService:
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/courses
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/courses/{id}
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/courses/{id}/subjects
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/courses/search
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/courses/stats
+163adc3552cd | 2025-08-10 16:28:12.898 | info |     - GET  /api/faculties
+163adc3552cd | 2025-08-10 16:28:12.899 | info |     - GET  /api/student/course-info/{album_nr}
+163adc3552cd | 2025-08-10 16:30:44.837 | info | Starting Common Service
+163adc3552cd | 2025-08-10 16:30:44.853 | info | Attempting to connect to Redis at: redis:6379
+163adc3552cd | 2025-08-10 16:30:44.869 | info | Redis connection established
+163adc3552cd | 2025-08-10 16:30:44.869 | info | Database connection established
+163adc3552cd | 2025-08-10 16:30:44.869 | info | AuthService registered
+163adc3552cd | 2025-08-10 16:30:44.869 | info | CourseService registered
+163adc3552cd | 2025-08-10 16:30:44.869 | info | Common Service registered and listening on :3003
+163adc3552cd | 2025-08-10 16:30:44.869 | info | Available services:
+163adc3552cd | 2025-08-10 16:30:44.869 | info |    AuthService:
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/login
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/register
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/refresh
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/logout
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/forgot-password
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - POST /api/auth/reset-password
+163adc3552cd | 2025-08-10 16:30:44.869 | info |    CourseService:
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - GET  /api/courses
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - GET  /api/courses/{id}
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - GET  /api/courses/{id}/subjects
+163adc3552cd | 2025-08-10 16:30:44.869 | info |     - GET  /api/courses/search
+163adc3552cd | 2025-08-10 16:30:44.870 | info |     - GET  /api/courses/stats
+163adc3552cd | 2025-08-10 16:30:44.870 | info |     - GET  /api/faculties
+163adc3552cd | 2025-08-10 16:30:44.870 | info |     - GET  /api/student/course-info/{album_nr}
+9a3c26358fd1 | 2025-08-10 16:32:11.071 | info | Starting Common Service
+9a3c26358fd1 | 2025-08-10 16:32:11.142 | info | Attempting to connect to Redis at: redis:6379
+9a3c26358fd1 | 2025-08-10 16:32:11.229 | info | Redis connection established
+9a3c26358fd1 | 2025-08-10 16:32:11.229 | info | Database connection established
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info | AuthService registered
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info | CourseService registered
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info | Common Service registered and listening on :3003
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info | Available services:
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |    AuthService:
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/login
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/register
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/refresh
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/logout
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/forgot-password
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - POST /api/auth/reset-password
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |    CourseService:
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/courses
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/courses/{id}
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/courses/{id}/subjects
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/courses/search
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/courses/stats
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/faculties
+9a3c26358fd1 | 2025-08-10 16:32:11.230 | info |     - GET  /api/student/course-info/{album_nr}
+9a3c26358fd1 | 2025-08-10 16:34:56.742 | info | User registered successfully with ID: 9
+9a3c26358fd1 | 2025-08-10 16:35:33.999 | info | User fetched from cache for login
+9a3c26358fd1 | 2025-08-10 16:35:34.064 | info | User 9 logged in successfully
+9a3c26358fd1 | 2025-08-10 16:35:55.880 | info | User fetched from cache for login
+9a3c26358fd1 | 2025-08-10 16:35:55.954 | warning | Failed login attempt for email: test@test.com
+9a3c26358fd1 | 2025-08-10 16:37:51.273 | info | User registered successfully with ID: 9
+9a3c26358fd1 | 2025-08-10 16:38:08.042 | info | User fetched from cache for login
+9a3c26358fd1 | 2025-08-10 16:38:08.136 | info | User 9 logged in successfully
+d26fd9f13a48 | 2025-08-10 16:40:59.521 | info | Starting Common Service
+d26fd9f13a48 | 2025-08-10 16:40:59.537 | info | Attempting to connect to Redis at: redis:6379
+d26fd9f13a48 | 2025-08-10 16:40:59.544 | info | Redis connection established
+d26fd9f13a48 | 2025-08-10 16:40:59.545 | info | Database connection established
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info | AuthService registered
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info | CourseService registered
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info | Common Service registered and listening on :3003
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info | Available services:
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info |    AuthService:
+d26fd9f13a48 | 2025-08-10 16:40:59.546 | info |     - POST /api/auth/login
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - POST /api/auth/register
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - POST /api/auth/refresh
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - POST /api/auth/logout
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - POST /api/auth/forgot-password
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - POST /api/auth/reset-password
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |    CourseService:
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/courses
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/courses/{id}
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/courses/{id}/subjects
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/courses/search
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/courses/stats
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/faculties
+d26fd9f13a48 | 2025-08-10 16:40:59.547 | info |     - GET  /api/student/course-info/{album_nr}
+d26fd9f13a48 | 2025-08-10 16:41:30.804 | info | User registered successfully with ID: 1
+d26fd9f13a48 | 2025-08-10 16:41:37.339 | info | User fetched from cache for login
+d26fd9f13a48 | 2025-08-10 16:41:37.401 | info | User 1 logged in successfully
+8a87fa2244c1 | 2025-08-10 16:48:08.414 | info | Starting Common Service
+8a87fa2244c1 | 2025-08-10 16:48:08.427 | info | Attempting to connect to Redis at: redis:6379
+8a87fa2244c1 | 2025-08-10 16:48:08.429 | info | Redis connection established
+8a87fa2244c1 | 2025-08-10 16:48:08.429 | info | Database connection established
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info | AuthService registered
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info | CourseService registered
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info | Common Service registered and listening on :3003
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info | Available services:
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |    AuthService:
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/login
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/register
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/refresh
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/logout
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/forgot-password
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - POST /api/auth/reset-password
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/auth/username
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |    CourseService:
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/courses
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/courses/{id}
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/courses/{id}/subjects
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/courses/search
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/courses/stats
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/faculties
+8a87fa2244c1 | 2025-08-10 16:48:08.430 | info |     - GET  /api/student/course-info/{album_nr}
+8a87fa2244c1 | 2025-08-10 16:48:14.214 | info | User registered successfully with ID: 1
+8a87fa2244c1 | 2025-08-10 16:48:21.736 | info | User fetched from cache for login
+8a87fa2244c1 | 2025-08-10 16:48:21.858 | info | User 1 logged in successfully
+a6eeb78c13d0 | 2025-08-10 16:51:34.105 | info | Starting Common Service
+a6eeb78c13d0 | 2025-08-10 16:51:34.127 | info | Attempting to connect to Redis at: redis:6379
+a6eeb78c13d0 | 2025-08-10 16:51:34.130 | info | Redis connection established
+a6eeb78c13d0 | 2025-08-10 16:51:34.131 | info | Database connection established
+a6eeb78c13d0 | 2025-08-10 16:51:34.134 | info | AuthService registered
+a6eeb78c13d0 | 2025-08-10 16:51:34.136 | info | CourseService registered
+a6eeb78c13d0 | 2025-08-10 16:51:34.138 | info | Common Service registered and listening on :3003
+a6eeb78c13d0 | 2025-08-10 16:51:34.139 | info | Available services:
+a6eeb78c13d0 | 2025-08-10 16:51:34.141 | info |    AuthService:
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/login
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/register
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/refresh
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/logout
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/forgot-password
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - POST /api/auth/reset-password
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/auth/username
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |    CourseService:
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/courses
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/courses/{id}
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/courses/{id}/subjects
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/courses/search
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/courses/stats
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/faculties
+a6eeb78c13d0 | 2025-08-10 16:51:34.143 | info |     - GET  /api/student/course-info/{album_nr}
+a6eeb78c13d0 | 2025-08-10 16:51:46.566 | info | User registered successfully with ID: 1
+a6eeb78c13d0 | 2025-08-10 16:51:50.423 | info | User fetched from cache for login
+a6eeb78c13d0 | 2025-08-10 16:51:50.550 | info | User 1 logged in successfully
+180bf1cff513 | 2025-08-10 16:56:51.303 | info | Starting Common Service
+180bf1cff513 | 2025-08-10 16:56:51.331 | info | Attempting to connect to Redis at: redis:6379
+180bf1cff513 | 2025-08-10 16:56:51.337 | info | Redis connection established
+180bf1cff513 | 2025-08-10 16:56:51.337 | info | Database connection established
+180bf1cff513 | 2025-08-10 16:56:51.338 | info | AuthService registered
+180bf1cff513 | 2025-08-10 16:56:51.338 | info | CourseService registered
+180bf1cff513 | 2025-08-10 16:56:51.338 | info | Common Service registered and listening on :3003
+180bf1cff513 | 2025-08-10 16:56:51.338 | info | Available services:
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |    AuthService:
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/login
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/register
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/refresh
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/logout
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/forgot-password
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - POST /api/auth/reset-password
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/auth/username
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |    CourseService:
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/courses
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/courses/{id}
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/courses/{id}/subjects
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/courses/search
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/courses/stats
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/faculties
+180bf1cff513 | 2025-08-10 16:56:51.338 | info |     - GET  /api/student/course-info/{album_nr}
+180bf1cff513 | 2025-08-10 16:57:10.693 | info | User registered successfully with ID: 1
+180bf1cff513 | 2025-08-10 16:57:15.255 | info | User fetched from cache for login
+180bf1cff513 | 2025-08-10 16:57:15.341 | info | User 1 logged in successfully
+180bf1cff513 | 2025-08-10 16:57:20.525 | warning | GetUserName: Brak tokenu w authorization
+b162e70ec37d | 2025-08-10 17:02:06.226 | info | Starting Common Service
+b162e70ec37d | 2025-08-10 17:02:06.239 | info | Attempting to connect to Redis at: redis:6379
+b162e70ec37d | 2025-08-10 17:02:06.242 | info | Redis connection established
+b162e70ec37d | 2025-08-10 17:02:06.242 | info | Database connection established
+b162e70ec37d | 2025-08-10 17:02:06.243 | info | AuthService registered
+b162e70ec37d | 2025-08-10 17:02:06.243 | info | CourseService registered
+b162e70ec37d | 2025-08-10 17:02:06.243 | info | Common Service registered and listening on :3003
+b162e70ec37d | 2025-08-10 17:02:06.243 | info | Available services:
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |    AuthService:
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/login
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/register
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/refresh
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/logout
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/forgot-password
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - POST /api/auth/reset-password
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/auth/username
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |    CourseService:
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/courses
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/courses/{id}
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/courses/{id}/subjects
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/courses/search
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/courses/stats
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/faculties
+b162e70ec37d | 2025-08-10 17:02:06.243 | info |     - GET  /api/student/course-info/{album_nr}
+e1e400810e12 | 2025-08-10 17:02:36.492 | info | Starting Common Service
+e1e400810e12 | 2025-08-10 17:02:36.526 | info | Attempting to connect to Redis at: redis:6379
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | Redis connection established
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | Database connection established
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | AuthService registered
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | CourseService registered
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | Common Service registered and listening on :3003
+e1e400810e12 | 2025-08-10 17:02:36.532 | info | Available services:
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |    AuthService:
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/login
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/register
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/refresh
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/logout
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/forgot-password
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - POST /api/auth/reset-password
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/auth/username
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |    CourseService:
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/courses
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/courses/{id}
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/courses/{id}/subjects
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/courses/search
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/courses/stats
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/faculties
+e1e400810e12 | 2025-08-10 17:02:36.532 | info |     - GET  /api/student/course-info/{album_nr}
+e1e400810e12 | 2025-08-10 17:02:46.839 | info | User registered successfully with ID: 1
+e1e400810e12 | 2025-08-10 17:02:57.426 | info | User fetched from cache for login
+e1e400810e12 | 2025-08-10 17:02:57.520 | info | User 1 logged in successfully
+e1e400810e12 | 2025-08-10 17:03:23.942 | warning | GetUserName: Brak tokenu w authorization
+e1e400810e12 | 2025-08-10 17:06:35.207 | warning | GetUserName: Brak tokenu w authorization
+e1e400810e12 | 2025-08-10 17:07:15.449 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
+e1e400810e12 | 2025-08-10 17:08:46.628 | info | User registered successfully with ID: 9
+e31aba2d1d7e | 2025-08-10 17:10:25.728 | info | Starting Common Service
+e31aba2d1d7e | 2025-08-10 17:10:25.753 | info | Attempting to connect to Redis at: redis:6379
+e31aba2d1d7e | 2025-08-10 17:10:25.756 | info | Redis connection established
+e31aba2d1d7e | 2025-08-10 17:10:25.756 | info | Database connection established
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info | AuthService registered
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info | CourseService registered
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info | Common Service registered and listening on :3003
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info | Available services:
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info |    AuthService:
+e31aba2d1d7e | 2025-08-10 17:10:25.775 | info |     - POST /api/auth/login
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - POST /api/auth/register
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - POST /api/auth/refresh
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - POST /api/auth/logout
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - POST /api/auth/forgot-password
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - POST /api/auth/reset-password
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/auth/username
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |    CourseService:
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/courses
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/courses/{id}
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/courses/{id}/subjects
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/courses/search
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/courses/stats
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/faculties
+e31aba2d1d7e | 2025-08-10 17:10:25.776 | info |     - GET  /api/student/course-info/{album_nr}
+e31aba2d1d7e | 2025-08-10 17:10:53.918 | info | User registered successfully with ID: 1
+e31aba2d1d7e | 2025-08-10 17:11:21.049 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
+e31aba2d1d7e | 2025-08-10 17:11:33.097 | info | User fetched from cache for login
+e31aba2d1d7e | 2025-08-10 17:11:33.187 | info | User 1 logged in successfully
+e31aba2d1d7e | 2025-08-10 17:11:36.152 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
+e31aba2d1d7e | 2025-08-10 17:11:41.106 | warning | GetUserName: Brak tokenu w authorization
+b45836f3f6a1 | 2025-08-10 17:12:59.313 | info | Starting Common Service
+b45836f3f6a1 | 2025-08-10 17:12:59.329 | info | Attempting to connect to Redis at: redis:6379
+b45836f3f6a1 | 2025-08-10 17:12:59.334 | info | Redis connection established
+b45836f3f6a1 | 2025-08-10 17:12:59.335 | info | Database connection established
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info | AuthService registered
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info | CourseService registered
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info | Common Service registered and listening on :3003
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info | Available services:
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |    AuthService:
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/login
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/register
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/refresh
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/logout
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/forgot-password
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - POST /api/auth/reset-password
+b45836f3f6a1 | 2025-08-10 17:12:59.336 | info |     - GET  /api/auth/username
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |    CourseService:
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/courses
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/courses/{id}
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/courses/{id}/subjects
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/courses/search
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/courses/stats
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/faculties
+b45836f3f6a1 | 2025-08-10 17:12:59.337 | info |     - GET  /api/student/course-info/{album_nr}
+b45836f3f6a1 | 2025-08-10 17:14:06.970 | info | User registered successfully with ID: 1
+0d22f9b360e1 | 2025-08-10 17:22:14.497 | info | Starting Common Service
+0d22f9b360e1 | 2025-08-10 17:22:14.515 | info | Attempting to connect to Redis at: redis:6379
+0d22f9b360e1 | 2025-08-10 17:22:14.526 | info | Redis connection established
+0d22f9b360e1 | 2025-08-10 17:22:14.526 | info | Database connection established
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info | AuthService registered
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info | CourseService registered
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info | Common Service registered and listening on :3003
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info | Available services:
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |    AuthService:
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/login
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/register
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/refresh
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/logout
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/forgot-password
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - POST /api/auth/reset-password
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/auth/username
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |    CourseService:
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/courses
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/courses/{id}
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/courses/{id}/subjects
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/courses/search
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/courses/stats
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/faculties
+0d22f9b360e1 | 2025-08-10 17:22:14.527 | info |     - GET  /api/student/course-info/{album_nr}
+0d22f9b360e1 | 2025-08-10 17:22:24.740 | info | User registered successfully with ID: 1, name: 
+6111e01184ec | 2025-08-10 17:28:36.782 | info | Starting Common Service
+6111e01184ec | 2025-08-10 17:28:36.804 | info | Attempting to connect to Redis at: redis:6379
+6111e01184ec | 2025-08-10 17:28:36.807 | info | Redis connection established
+6111e01184ec | 2025-08-10 17:28:36.807 | info | Database connection established
+6111e01184ec | 2025-08-10 17:28:36.807 | info | AuthService registered
+6111e01184ec | 2025-08-10 17:28:36.807 | info | CourseService registered
+6111e01184ec | 2025-08-10 17:28:36.807 | info | Common Service registered and listening on :3003
+6111e01184ec | 2025-08-10 17:28:36.807 | info | Available services:
+6111e01184ec | 2025-08-10 17:28:36.807 | info |    AuthService:
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/login
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/register
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/refresh
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/logout
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/forgot-password
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - POST /api/auth/reset-password
+6111e01184ec | 2025-08-10 17:28:36.807 | info |     - GET  /api/auth/username
+6111e01184ec | 2025-08-10 17:28:36.807 | info |    CourseService:
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/courses
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/courses/{id}
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/courses/{id}/subjects
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/courses/search
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/courses/stats
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/faculties
+6111e01184ec | 2025-08-10 17:28:36.808 | info |     - GET  /api/student/course-info/{album_nr}
+6111e01184ec | 2025-08-10 17:28:49.264 | info | User registered successfully with ID: 1, name: Michael
+6111e01184ec | 2025-08-10 17:30:18.788 | info | User 1 logged in successfully
+6111e01184ec | 2025-08-10 17:30:54.520 | warning | GetUserName: Brak tokenu w authorization
+6111e01184ec | 2025-08-10 17:31:08.187 | info | Username retrieved for user ID: 1
+6111e01184ec | 2025-08-10 17:33:00.840 | warning | GetUserName: Brak tokenu w authorization
+e44fe30d99d2 | 2025-08-10 17:37:21.829 | info | Starting Common Service
+e44fe30d99d2 | 2025-08-10 17:37:21.846 | info | Attempting to connect to Redis at: redis:6379
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | Redis connection established
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | Database connection established
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | AuthService registered
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | CourseService registered
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | Common Service registered and listening on :3003
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info | Available services:
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |    AuthService:
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/login
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/register
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/refresh
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/logout
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/forgot-password
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - POST /api/auth/reset-password
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/auth/username
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |    CourseService:
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/courses
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/courses/{id}
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/courses/{id}/subjects
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/courses/search
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/courses/stats
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/faculties
+e44fe30d99d2 | 2025-08-10 17:37:21.848 | info |     - GET  /api/student/course-info/{album_nr}
+483877da2248 | 2025-08-10 17:42:25.451 | info | Starting Common Service
+483877da2248 | 2025-08-10 17:42:25.465 | info | Attempting to connect to Redis at: redis:6379
+483877da2248 | 2025-08-10 17:42:25.479 | info | Redis connection established
+483877da2248 | 2025-08-10 17:42:25.479 | info | Database connection established
+483877da2248 | 2025-08-10 17:42:25.479 | info | AuthService registered
+483877da2248 | 2025-08-10 17:42:25.479 | info | CourseService registered
+483877da2248 | 2025-08-10 17:42:25.479 | info | Common Service registered and listening on :3003
+483877da2248 | 2025-08-10 17:42:25.479 | info | Available services:
+483877da2248 | 2025-08-10 17:42:25.479 | info |    AuthService:
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/login
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/register
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/refresh
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/logout
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/forgot-password
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - POST /api/auth/reset-password
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/auth/username
+483877da2248 | 2025-08-10 17:42:25.479 | info |    CourseService:
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/courses
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/courses/{id}
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/courses/{id}/subjects
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/courses/search
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/courses/stats
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/faculties
+483877da2248 | 2025-08-10 17:42:25.479 | info |     - GET  /api/student/course-info/{album_nr}
+47049a1c75e3 | 2025-08-10 17:50:44.437 | info | Starting Common Service
+47049a1c75e3 | 2025-08-10 17:50:44.465 | info | Attempting to connect to Redis at: redis:6379
+47049a1c75e3 | 2025-08-10 17:50:44.470 | info | Redis connection established
+47049a1c75e3 | 2025-08-10 17:50:44.471 | info | Database connection established
+47049a1c75e3 | 2025-08-10 17:50:44.471 | info | AuthService registered
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info | CourseService registered
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info | Common Service registered and listening on :3003
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info | Available services:
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |    AuthService:
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/login
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/register
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/refresh
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/logout
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/forgot-password
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - POST /api/auth/reset-password
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/auth/username
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |    CourseService:
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/courses
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/courses/{id}
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/courses/{id}/subjects
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/courses/search
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/courses/stats
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/faculties
+47049a1c75e3 | 2025-08-10 17:50:44.472 | info |     - GET  /api/student/course-info/{album_nr}
+fd0ef8bfa6fb | 2025-08-10 17:57:00.328 | info | Starting Common Service
+fd0ef8bfa6fb | 2025-08-10 17:57:00.355 | info | Attempting to connect to Redis at: redis:6379
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | Redis connection established
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | Database connection established
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | AuthService registered
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | CourseService registered
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | Common Service registered and listening on :3003
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info | Available services:
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |    AuthService:
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/login
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/register
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/refresh
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/logout
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/forgot-password
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - POST /api/auth/reset-password
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/auth/username
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |    CourseService:
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/courses
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/courses/{id}
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/courses/{id}/subjects
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/courses/search
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/courses/stats
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/faculties
+fd0ef8bfa6fb | 2025-08-10 17:57:00.359 | info |     - GET  /api/student/course-info/{album_nr}
+54e3496d790f | 2025-08-10 18:10:33.598 | info | Starting Common Service
+54e3496d790f | 2025-08-10 18:10:33.707 | info | Attempting to connect to Redis at: redis:6379
+54e3496d790f | 2025-08-10 18:10:33.709 | info | Redis connection established
+54e3496d790f | 2025-08-10 18:10:33.710 | info | Database connection established
+54e3496d790f | 2025-08-10 18:10:33.714 | info | AuthService registered
+54e3496d790f | 2025-08-10 18:10:33.714 | info | CourseService registered
+54e3496d790f | 2025-08-10 18:10:33.714 | info | Common Service registered and listening on :3003
+54e3496d790f | 2025-08-10 18:10:33.714 | info | Available services:
+54e3496d790f | 2025-08-10 18:10:33.714 | info |    AuthService:
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/login
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/register
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/refresh
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/logout
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/forgot-password
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - POST /api/auth/reset-password
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - GET  /api/auth/username
+54e3496d790f | 2025-08-10 18:10:33.715 | info |    CourseService:
+54e3496d790f | 2025-08-10 18:10:33.715 | info |     - GET  /api/courses
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/courses/{id}
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/courses/{id}/subjects
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/courses/search
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/courses/stats
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/faculties
+54e3496d790f | 2025-08-10 18:10:33.725 | info |     - GET  /api/student/course-info/{album_nr}
+54e3496d790f | 2025-08-10 18:10:51.698 | info | User registered successfully with ID: 1, name: Michael
+54e3496d790f | 2025-08-10 18:10:58.315 | info | User 1 logged in successfully
+54e3496d790f | 2025-08-10 18:11:13.750 | info | Username retrieved for user ID: 1

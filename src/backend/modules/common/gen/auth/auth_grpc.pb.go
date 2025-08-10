@@ -25,6 +25,7 @@ const (
 	AuthService_RefreshToken_FullMethodName   = "/modules.common.api.AuthService/RefreshToken"
 	AuthService_ForgotPassword_FullMethodName = "/modules.common.api.AuthService/ForgotPassword"
 	AuthService_ResetPassword_FullMethodName  = "/modules.common.api.AuthService/ResetPassword"
+	AuthService_GetUserName_FullMethodName    = "/modules.common.api.AuthService/GetUserName"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -37,6 +38,7 @@ type AuthServiceClient interface {
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*ForgotPasswordResponse, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
+	GetUserName(ctx context.Context, in *GetUserNameRequest, opts ...grpc.CallOption) (*GetUserNameResponse, error)
 }
 
 type authServiceClient struct {
@@ -107,6 +109,16 @@ func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPassword
 	return out, nil
 }
 
+func (c *authServiceClient) GetUserName(ctx context.Context, in *GetUserNameRequest, opts ...grpc.CallOption) (*GetUserNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserNameResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUserName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type AuthServiceServer interface {
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordResponse, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
+	GetUserName(context.Context, *GetUserNameRequest) (*GetUserNameResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPas
 }
 func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedAuthServiceServer) GetUserName(context.Context, *GetUserNameRequest) (*GetUserNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserName not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +290,24 @@ func _AuthService_ResetPassword_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetUserName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetUserName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetUserName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetUserName(ctx, req.(*GetUserNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetPassword",
 			Handler:    _AuthService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "GetUserName",
+			Handler:    _AuthService_GetUserName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

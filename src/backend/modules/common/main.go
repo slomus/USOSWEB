@@ -83,6 +83,7 @@ func main() {
 	appLog.LogInfo("    - POST /api/auth/logout")
 	appLog.LogInfo("    - POST /api/auth/forgot-password")
 	appLog.LogInfo("    - POST /api/auth/reset-password")
+	appLog.LogInfo("    - GET  /api/auth/username")
 	appLog.LogInfo("   CourseService:")
 	appLog.LogInfo("    - GET  /api/courses")
 	appLog.LogInfo("    - GET  /api/courses/{id}")

@@ -4,10 +4,8 @@ COMMON_PROTO_FILES=$(wildcard $(COMMON_PROTO_DIR)/*.proto)
 GOOGLEAPIS_DIR=../../tools/third_party/googleapis
 
 generate-proto:
-	# Create the main gen directory
 	mkdir -p $(COMMON_GEN_DIR)
 
-	# Generate each proto file individually to its own subdirectory
 	@for proto in $(COMMON_PROTO_FILES); do \
 		filename=$$(basename $$proto .proto); \
 		output_dir=$(COMMON_GEN_DIR)/$$filename; \

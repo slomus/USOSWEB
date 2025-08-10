@@ -233,63 +233,58 @@ func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Log
 }
 
 func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	// Validate input data
 	if errors := validation.ValidateRegisterRequest(req.Email, req.Password); len(errors) > 0 {
-		authLog.LogWarn(fmt.Sprintf("Registration validation failed: %s", errors.Error()))
+		authLog.LogWarn(fmt.Sprintf("Register validation failed: %s", errors.Error()))
 		return &pb.RegisterResponse{
 			Success: false,
 			Message: fmt.Sprintf("Validation failed: %s", errors.Error()),
+			UserId:  0,
+		}, status.Error(codes.InvalidArgument, errors.Error())
+	}
+
+	var existingUserID int
+	err := s.db.QueryRow("SELECT user_id FROM users WHERE email = $1", req.Email).Scan(&existingUserID)
+	if err == nil {
+		authLog.LogWarn(fmt.Sprintf("Registration attempt with existing email: %s", req.Email))
+		return &pb.RegisterResponse{
+			Success: false,
+			Message: "User with this email already exists",
+			UserId:  0,
 		}, nil
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		authLog.LogError("Failed to hash password", err)
+		authLog.LogError("Password hashing failed", err)
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "Failed to hash password",
+			Message: "Failed to process password",
+			UserId:  0,
 		}, nil
 	}
 
 	var userID int
 	err = s.db.QueryRow(
-		"INSERT INTO users (email, password) VALUES ($1, $2) RETURNING user_id",
-		req.Email, string(hashedPassword),
+		"INSERT INTO users (email, password, name, active, activation_date) VALUES ($1, $2, $3, $4, $5) RETURNING user_id",
+		req.Email, string(hashedPassword), req.Name, true, time.Now(),
 	).Scan(&userID)
 
 	if err != nil {
-		authLog.LogError("Failed to create user", err)
+		authLog.LogError("User insertion failed", err)
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "User registration failed",
+			Message: "Failed to create user",
+			UserId:  0,
 		}, nil
 	}
 
-	// Cache new user
-	if s.cache != nil {
-		user := &User{
-			ID:       int64(userID),
-			Email:    req.Email,
-			Password: string(hashedPassword),
-			Active:   true,
-		}
-
-		// Cache by email & by ID
-		emailKey := cache.GenerateKey("auth", "user_by_email", req.Email)
-		idKey := cache.GenerateKey("auth", "user_by_id", userID)
-
-		s.cache.Set(ctx, emailKey, user, s.config.UserProfileTTL)
-		s.cache.Set(ctx, idKey, user, s.config.UserProfileTTL)
-	}
-
-	authLog.LogInfo(fmt.Sprintf("User registered successfully with ID: %d", userID))
+	authLog.LogInfo(fmt.Sprintf("User registered successfully with ID: %d, name: %s", userID, req.Name))
 	return &pb.RegisterResponse{
 		Success: true,
 		Message: "User registered successfully",
 		UserId:  int64(userID),
 	}, nil
 }
-
 func (s *AuthServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	var session *Session
 	if s.cache != nil {
@@ -515,6 +510,58 @@ func (s *AuthServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 	return &pb.ResetPasswordResponse{
 		Success: true,
 		Message: "Password reset successful",
+	}, nil
+}
+
+func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest) (*pb.GetUserNameResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		authLog.LogWarn("GetUserName: Brak metadanych")
+		return &pb.GetUserNameResponse{
+			Username: "",
+			Message:  "Brak metadanych",
+			Success:  false,
+		}, nil
+	}
+
+	tokens := md.Get("authorization")
+	if len(tokens) == 0 {
+		authLog.LogWarn("GetUserName: Brak tokenu w authorization")
+		return &pb.GetUserNameResponse{
+			Username: "",
+			Message:  "Brak tokenu autoryzacji",
+			Success:  false,
+		}, nil
+	}
+
+	accessToken := tokens[0]
+
+	claims, err := auth.ValidateToken(accessToken)
+	if err != nil {
+		authLog.LogWarn(fmt.Sprintf("Invalid token in GetUserName: %v", err))
+		return &pb.GetUserNameResponse{
+			Username: "",
+			Message:  "Nieprawidłowy token",
+			Success:  false,
+		}, nil
+	}
+
+	var name string
+	err = s.db.QueryRow("SELECT name FROM users WHERE user_id = $1", claims.UserID).Scan(&name)
+	if err != nil {
+		authLog.LogError("Failed to fetch user name", err)
+		return &pb.GetUserNameResponse{
+			Username: "",
+			Message:  "Użytkownik nie znaleziony",
+			Success:  false,
+		}, nil
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Username retrieved for user ID: %d", claims.UserID))
+	return &pb.GetUserNameResponse{
+		Username: name,
+		Message:  "Username pobrany pomyślnie",
+		Success:  true,
 	}, nil
 }
 
