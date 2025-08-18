@@ -1,0 +1,83 @@
+syntax = 'proto3';
+
+package modules.calendar.api;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar;calendar";
+
+// Calendar Event Messages
+message CalendarEvent {
+  int64 event_id = 1;
+  string title = 2;
+  string description = 3;
+  string start_time = 4; // RFC3339 format
+  string end_time = 5;   // RFC3339 format
+  string location = 6;
+  string event_type = 7; // lecture, exam, lab, etc.
+  int64 class_id = 8;    // reference to classes table
+  int64 created_by = 9;  // user_id who created
+}
+
+message GetUserEventsRequest {
+  int64 user_id = 1;
+  string start_date = 2; // RFC3339 format
+  string end_date = 3;   // RFC3339 format
+}
+
+message GetUserEventsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated CalendarEvent events = 3;
+}
+
+message CreateEventRequest {
+  string title = 1;
+  string description = 2;
+  string start_time = 3;
+  string end_time = 4;
+  string location = 5;
+  string event_type = 6;
+  int64 class_id = 7;
+  int64 created_by = 8;
+}
+
+message CreateEventResponse {
+  bool success = 1;
+  string message = 2;
+  CalendarEvent event = 3;
+}
+
+message GetClassScheduleRequest {
+  int64 class_id = 1;
+  string start_date = 2;
+  string end_date = 3;
+}
+
+message GetClassScheduleResponse {
+  bool success = 1;
+  string message = 2;
+  repeated CalendarEvent events = 3;
+}
+
+// Calendar Service
+service CalendarService {
+  rpc GetUserEvents(GetUserEventsRequest) returns (GetUserEventsResponse) {
+    option (google.api.http) = {
+      get: "/api/calendar/user/{user_id}/events"
+    };
+  }
+
+  rpc CreateEvent(CreateEventRequest) returns (CreateEventResponse) {
+    option (google.api.http) = {
+      post: "/api/calendar/events"
+      body: "*"
+    };
+  }
+
+  rpc GetClassSchedule(GetClassScheduleRequest) returns (GetClassScheduleResponse) {
+    option (google.api.http) = {
+      get: "/api/calendar/class/{class_id}/schedule"
+    };
+  }
+} 

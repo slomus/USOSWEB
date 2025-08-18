@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/slomus/USOSWEB/src/backend/configs"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
+	"github.com/slomus/USOSWEB/src/backend/pkg/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"net/http"
-	"strings"
-	"time"
 )
 
 var appLog = logger.NewLogger("api-gateway")
@@ -127,8 +130,34 @@ func customMetadataAnnotator(ctx context.Context, req *http.Request) metadata.MD
 	return metadata.New(nil)
 }
 
+// healthHandler provides health check endpoint
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	health := service.GlobalRegistry.HealthCheck(ctx)
+
+	allHealthy := true
+	for _, isHealthy := range health {
+		if !isHealthy {
+			allHealthy = false
+			break
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if allHealthy {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"healthy","services":%+v}`, health)
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, `{"status":"unhealthy","services":%+v}`, health)
+	}
+}
+
 func main() {
 	appLog.LogInfo("Starting API Gateway")
+
+	// Initialize service discovery
+	defer service.GlobalRegistry.Close()
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -152,17 +181,21 @@ func main() {
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	appLog.LogInfo("Registering AuthService endpoints")
-	authServiceEndpoint := "common:3003"
+	// Register services using service discovery
+	appLog.LogInfo("Registering microservices via service discovery")
 
+	// Common/Auth Service
+	appLog.LogInfo("Registering AuthService endpoints")
+	authServiceEndpoint := configs.Envs.GetCommonEndpoint()
 	appLog.LogDebug(fmt.Sprintf("Connecting to AuthService at: %s", authServiceEndpoint))
+
 	err := pb.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
 	if err != nil {
 		appLog.LogError("Failed to register AuthService gateway", err)
 		panic(err)
 	}
 	appLog.LogInfo("AuthService endpoints registered successfully")
-	appLog.LogInfo("Registering AuthHello endpoints")
+
 	err = pb.RegisterAuthHelloHandlerFromEndpoint(ctx, mux, authServiceEndpoint, opts)
 	if err != nil {
 		appLog.LogError("Failed to register AuthHello gateway", err)
@@ -170,14 +203,32 @@ func main() {
 	}
 	appLog.LogInfo("AuthHello endpoints registered successfully")
 
-	handler := loggingMiddleware(allowCORS(extractTokensFromCookies(mux)))
+	// TODO: Register Calendar and Messaging services when they have protobuf definitions
+	// calendarEndpoint := configs.Envs.GetCalendarEndpoint()
+	// messagingEndpoint := configs.Envs.GetMessagingEndpoint()
+
+	// Create HTTP mux for additional routes
+	httpMux := http.NewServeMux()
+
+	// Add health check endpoint
+	httpMux.HandleFunc("/health", healthHandler)
+	httpMux.HandleFunc("/ready", healthHandler) // Same as health for now
+
+	// Add gRPC gateway to main path
+	httpMux.Handle("/", mux)
+
+	handler := loggingMiddleware(allowCORS(extractTokensFromCookies(httpMux)))
 
 	appLog.LogInfo("API Gateway configured with endpoints:")
 	endpoints := []string{
+		"GET  /health",
+		"GET  /ready",
 		"POST /api/auth/login",
 		"POST /api/auth/register",
 		"POST /api/auth/refresh",
 		"POST /api/auth/logout",
+		"POST /api/auth/forgot-password",
+		"POST /api/auth/reset-password",
 		"GET  /api/hello",
 	}
 
