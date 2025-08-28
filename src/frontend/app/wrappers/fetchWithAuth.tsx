@@ -32,3 +32,6 @@ export async function fetchWithAuth(input: RequestInfo, init?: RequestInit): Pro
     throw error;
   }
 }
+export type User = {
+  name: string;
+};

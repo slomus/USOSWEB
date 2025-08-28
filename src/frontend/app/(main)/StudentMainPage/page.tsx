@@ -10,30 +10,6 @@ export default function StudentMainPage() {
           <div className="text-[#9C9793] text-center">
             <p className="text-lg">
               [Tu będzie widok kalendarza / planu zajęć]
-              {/*Przykład użycia fetchWithAuth(odkomentować import) do pobrania profilu użytkownika:
-              const UserProfile = () => {
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetchWithAuth('/api/user');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        }
-      } catch (error) {
-        // Dodatkowa obsługa błędów (opcjonalnie)
-        console.error(error);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  if (!user) return <div>Ładowanie...</div>;
-  return <div>Witaj, {user.name}!</div>;
-};*/}
             </p>
           </div>
         </div>
