@@ -3,6 +3,8 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from "../wrappers/fetchWithAuth";
+import { User } from '../wrappers/fetchWithAuth';
 
 export default function TopBar({
   isNavVisible,
@@ -78,6 +80,28 @@ export default function TopBar({
     } catch (error) {
       console.error('Error during logout:', error);
     }
+  };
+
+  const UserProfile = () => {
+    const [user, setUser] = useState<User | null>(null);
+    useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const response = await fetchWithAuth("/api/auth/username");
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data);
+          }
+        } catch (error) {
+          // Dodatkowa obsługa błędów (opcjonalnie)
+          console.error(error);
+        }
+      };
+
+      fetchUser();
+    }, []);
+    if (!user) return <div>Ładowanie...</div>;
+    return <div>Witaj, {user.name}!</div>;
   };
 
   return (
@@ -169,7 +193,7 @@ export default function TopBar({
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm text-[#DFD4CA]">Witaj Studencie!</span>
+        <span className="text-sm text-[#DFD4CA]"><UserProfile /></span>
         <button
           onClick={() => setIsNavVisible(!isNavVisible)}
           className="bg-[#3A6A68] hover:bg-[#2f5553] text-white text-xs px-3 py-1 rounded"
