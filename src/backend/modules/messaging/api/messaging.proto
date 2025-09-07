@@ -21,8 +21,8 @@ message SendEmailResponse {
 service MessagingService {
   rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {
     option (google.api.http) = {
-      post: "/api/messaging/send-email"
-      body: "*"
+      post : "/api/messaging/send-email"
+      body : "*"
     };
   }
-} 
+}

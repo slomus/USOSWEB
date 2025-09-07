@@ -29,6 +29,16 @@ type Config struct {
 	MessagingServicePort string
 	CommonServiceHost    string
 	CommonServicePort    string
+
+	// Redis
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
+	RedisDB       int
+
+	// Cache
+	CacheEnabled    bool
+	CacheDefaultTTL string
 }
 
 var Envs = initConfig()
@@ -48,7 +58,7 @@ func initConfig() Config {
 		DBHost:                getEnv("DB_HOST", "localhost"),
 		DBPort:                getEnv("DB_PORT", "5432"),
 		DBName:                getEnv("DB_NAME", "ecom"),
-		DBSSLMode:             getEnv("DB_SSL_MODE", "disable"),
+		DBSSLMode:             getEnv("DB_SSLMODE", "disable"),
 		JWTSecretKey:          getEnv("JWT_SECRET_KEY", "supersecret"),
 		JWTAccessTokenExpiry:  getEnvAsInt("JWT_ACCESS_TOKEN_EXPIRY", 15),
 		JWTRefreshTokenExpiry: getEnvAsInt("JWT_REFRESH_TOKEN_EXPIRY", 168), // 7 dni
@@ -60,6 +70,15 @@ func initConfig() Config {
 		MessagingServicePort: getEnv("MESSAGING_SERVICE_PORT", "3002"),
 		CommonServiceHost:    getEnv("COMMON_SERVICE_HOST", "common"),
 		CommonServicePort:    getEnv("COMMON_SERVICE_PORT", "3003"),
+
+		RedisHost:     getEnv("REDIS_HOST", "localhost"),
+		RedisPort:     getEnv("REDIS_PORT", "6379"),
+		RedisPassword: getEnv("REDIS_PASSWORD", ""),
+		RedisDB:       getEnvAsInt("REDIS_DB", 0),
+
+		// Cache
+		CacheEnabled:    getEnvAsBool("CACHE_ENABLED", true),
+		CacheDefaultTTL: getEnv("CACHE_DEFAULT_TTL", "1h"),
 	}
 }
 
@@ -92,4 +111,19 @@ func getEnvAsInt(key string, fallback int) int {
 		return intValue
 	}
 	return fallback
+}
+
+func getEnvAsBool(key string, fallback bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		boolValue, err := strconv.ParseBool(value)
+		if err != nil {
+			return fallback
+		}
+		return boolValue
+	}
+	return fallback
+}
+
+func (c Config) GetRedisEndpoint() string {
+	return fmt.Sprintf("%s:%s", c.RedisHost, c.RedisPort)
 }
