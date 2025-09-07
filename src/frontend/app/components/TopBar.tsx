@@ -87,7 +87,7 @@ export default function TopBar({
     useEffect(() => {
       const fetchUser = async () => {
         try {
-          const response = await fetchWithAuth("/api/auth/username");
+          const response = await fetchWithAuth("http://localhost:8083/api/auth/username");
           if (response.ok) {
             const data = await response.json();
             setUser(data);

@@ -138,3 +138,7 @@ b3f5fcbfa6e8 | 2025-08-10 18:10:24.167 | info | Starting Messaging Service
 b3f5fcbfa6e8 | 2025-08-10 18:10:24.185 | info | Messaging Service running on port :3002
 b3f5fcbfa6e8 | 2025-08-10 18:10:24.185 | info | Available endpoints:
 b3f5fcbfa6e8 | 2025-08-10 18:10:24.185 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development
+52539188d421 | 2025-09-07 13:52:39.604 | info | Starting Messaging Service
+52539188d421 | 2025-09-07 13:52:39.605 | info | Messaging Service running on port :3002
+52539188d421 | 2025-09-07 13:52:39.606 | info | Available endpoints:
+52539188d421 | 2025-09-07 13:52:39.607 | info |   - SendEmail (gRPC): sends emails via SMTP or logs in development

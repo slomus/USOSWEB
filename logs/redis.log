@@ -74,3 +74,10 @@ b45836f3f6a1 | 2025-08-10 17:14:06.970 | info | Cache SET: usosweb:auth:user_by_
 54e3496d790f | 2025-08-10 18:10:58.229 | info | Cache SET: usosweb:auth:user_by_email:test@test.com (TTL: 10m0s)
 54e3496d790f | 2025-08-10 18:10:58.314 | info | Cache SET: usosweb:auth:session:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTQ4NTAzNTgsImlhdCI6MTc1NDg0OTQ1OH0.RNdD-LH_9wM5mMZEtnx9XcRUPFBExaC03i0S7PwR294 (TTL: 30m0s)
 54e3496d790f | 2025-08-10 18:10:58.315 | info | Cache SET: usosweb:auth:refresh:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTQ4NTk1MzgsImlhdCI6MTc1NDg0OTQ1OH0.yG46n_cYIuGJmpPjP0cvzTGmll1W-Adlvd-pIjTCFSI (TTL: 3h30m0s)
+1ea58937ed10 | 2025-09-07 13:58:03.506 | info | Cache MISS: usosweb:auth:user_by_email:emil@emil.com
+1ea58937ed10 | 2025-09-07 13:58:03.518 | info | Cache SET: usosweb:auth:user_by_email:emil@emil.com (TTL: 10m0s)
+1ea58937ed10 | 2025-09-07 13:58:03.565 | info | Cache SET: usosweb:auth:session:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTcyNTQzODMsImlhdCI6MTc1NzI1MzQ4M30.2J5E80O2GrY7iKIkljpfnRm79s0yGxc0daKBJ4OC7kk (TTL: 30m0s)
+1ea58937ed10 | 2025-09-07 13:58:03.566 | info | Cache SET: usosweb:auth:refresh:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTcyNjM1NjMsImlhdCI6MTc1NzI1MzQ4M30.21PRqebe-vXhAmXU-tb4NS2PSfQnsju4rCmZ3WxV_sQ (TTL: 3h30m0s)
+1ea58937ed10 | 2025-09-07 14:02:54.053 | info | Cache HIT: usosweb:auth:user_by_email:emil@emil.com
+1ea58937ed10 | 2025-09-07 14:02:54.102 | info | Cache SET: usosweb:auth:session:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTcyNTQ2NzQsImlhdCI6MTc1NzI1Mzc3NH0.H627s8Z2HdQm6XlwrvngQHk9ziLaAkE9HY2NDvdQkFQ (TTL: 30m0s)
+1ea58937ed10 | 2025-09-07 14:02:54.102 | info | Cache SET: usosweb:auth:refresh:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJhdXRoLXNlcnZpY2UiLCJleHAiOjE3NTcyNjM4NTQsImlhdCI6MTc1NzI1Mzc3NH0.gEYxbhZzhZEIQ58VJhZzyU-r3XtuhU5qTfS0TIPEOL8 (TTL: 3h30m0s)

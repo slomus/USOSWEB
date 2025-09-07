@@ -55,3 +55,12 @@ aae837bd13e2 | 2025-07-06 21:40:51.027 | info | Migration service completed in 6
 0a480fb348f0 | 2025-07-09 14:47:20.912 | info | No new migrations to apply
 0a480fb348f0 | 2025-07-09 14:47:20.914 | info | Final migration version: 21 (dirty: false)
 0a480fb348f0 | 2025-07-09 14:47:20.915 | info | Migration service completed in 93ms
+cf7465f153f6 | 2025-09-07 13:52:38.616 | info | Starting database migration service
+cf7465f153f6 | 2025-09-07 13:52:38.620 | info | Migration command: up
+cf7465f153f6 | 2025-09-07 13:52:38.620 | info | Connecting to database: postgres:5432/mydb
+cf7465f153f6 | 2025-09-07 13:52:38.659 | info | Database connection established
+cf7465f153f6 | 2025-09-07 13:52:38.821 | info | Current migration version: 23 (dirty: false)
+cf7465f153f6 | 2025-09-07 13:52:38.821 | info | Running UP migrations...
+cf7465f153f6 | 2025-09-07 13:52:39.036 | info | UP migrations completed successfully
+cf7465f153f6 | 2025-09-07 13:52:39.036 | info | Final migration version: 24 (dirty: false)
+cf7465f153f6 | 2025-09-07 13:52:39.036 | info | Migration service completed in 420ms
