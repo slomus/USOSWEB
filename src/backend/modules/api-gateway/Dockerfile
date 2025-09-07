@@ -1,7 +1,7 @@
 FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
-RUN apk add --no-cache git make protobuf
+RUN apk add --no-cache git make protobuf-dev
 
 
 COPY . .
@@ -11,8 +11,8 @@ RUN go mod download
 
 
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
-    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
-    && go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
+  && go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
 
 
 WORKDIR /app/modules/api-gateway

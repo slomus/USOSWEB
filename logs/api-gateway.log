@@ -173,29 +173,42 @@ d72b0738ca25 | 2025-07-06 21:40:50.584 | info | Gateway ready to handle requests
 4e67afb19dc8 | 2025-07-09 14:48:32.948 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
 4e67afb19dc8 | 2025-07-09 14:48:32.954 | info | Incoming request: POST /api/auth/login from 172.18.0.1
 4e67afb19dc8 | 2025-07-09 14:48:33.035 | info | Request completed: POST /api/auth/login -> 200 in 81ms
-68a77337081d | 2025-08-10 14:29:10.184 | info | Starting API Gateway
-68a77337081d | 2025-08-10 14:29:10.184 | info | Registering AuthService endpoints
-68a77337081d | 2025-08-10 14:29:10.185 | info | AuthService endpoints registered successfully
-68a77337081d | 2025-08-10 14:29:10.185 | info | Registering AuthHello endpoints
-68a77337081d | 2025-08-10 14:29:10.185 | info | AuthHello endpoints registered successfully
-68a77337081d | 2025-08-10 14:29:10.185 | info | API Gateway configured with endpoints:
-68a77337081d | 2025-08-10 14:29:10.186 | info |   POST /api/auth/login
-68a77337081d | 2025-08-10 14:29:10.186 | info |   POST /api/auth/register
-68a77337081d | 2025-08-10 14:29:10.186 | info |   POST /api/auth/refresh
-68a77337081d | 2025-08-10 14:29:10.186 | info |   POST /api/auth/logout
-68a77337081d | 2025-08-10 14:29:10.187 | info |   GET  /api/hello
-68a77337081d | 2025-08-10 14:29:10.187 | info | Starting HTTP server on port :8083
-68a77337081d | 2025-08-10 14:29:10.187 | info | Gateway ready to handle requests
-6340767ccf88 | 2025-08-10 15:06:45.934 | info | Starting API Gateway
-6340767ccf88 | 2025-08-10 15:06:45.936 | info | Registering AuthService endpoints
-6340767ccf88 | 2025-08-10 15:06:45.940 | info | AuthService endpoints registered successfully
-6340767ccf88 | 2025-08-10 15:06:45.948 | info | Registering AuthHello endpoints
-6340767ccf88 | 2025-08-10 15:06:45.961 | info | AuthHello endpoints registered successfully
-6340767ccf88 | 2025-08-10 15:06:45.961 | info | API Gateway configured with endpoints:
-6340767ccf88 | 2025-08-10 15:06:45.961 | info |   POST /api/auth/login
-6340767ccf88 | 2025-08-10 15:06:45.961 | info |   POST /api/auth/register
-6340767ccf88 | 2025-08-10 15:06:45.961 | info |   POST /api/auth/refresh
-6340767ccf88 | 2025-08-10 15:06:45.962 | info |   POST /api/auth/logout
-6340767ccf88 | 2025-08-10 15:06:45.962 | info |   GET  /api/hello
-6340767ccf88 | 2025-08-10 15:06:45.962 | info | Starting HTTP server on port :8083
-6340767ccf88 | 2025-08-10 15:06:45.962 | info | Gateway ready to handle requests
+7ef5726429b1 | 2025-09-07 13:52:38.614 | info | Starting API Gateway*
+7ef5726429b1 | 2025-09-07 13:52:38.617 | info | Registering microservices via service discovery
+7ef5726429b1 | 2025-09-07 13:52:38.617 | info | Registering AuthService endpoints
+7ef5726429b1 | 2025-09-07 13:52:38.620 | info | AuthService endpoints registered successfully
+7ef5726429b1 | 2025-09-07 13:52:38.620 | info | Registering AuthHello endpoints
+7ef5726429b1 | 2025-09-07 13:52:38.620 | info | AuthHello endpoints registered successfully
+7ef5726429b1 | 2025-09-07 13:52:38.621 | info | CourseService endpoints registered successfully
+7ef5726429b1 | 2025-09-07 13:52:38.621 | info | API Gateway configured with endpoints:
+7ef5726429b1 | 2025-09-07 13:52:38.621 | info |   GET  /health
+7ef5726429b1 | 2025-09-07 13:52:38.622 | info |   GET  /ready
+7ef5726429b1 | 2025-09-07 13:52:38.622 | info |   POST /api/auth/login
+7ef5726429b1 | 2025-09-07 13:52:38.622 | info |   POST /api/auth/register
+7ef5726429b1 | 2025-09-07 13:52:38.623 | info |   POST /api/auth/refresh
+7ef5726429b1 | 2025-09-07 13:52:38.623 | info |   POST /api/auth/logout
+7ef5726429b1 | 2025-09-07 13:52:38.623 | info |   GET  /api/auth/username
+7ef5726429b1 | 2025-09-07 13:52:38.623 | info |   GET  /api/hello
+7ef5726429b1 | 2025-09-07 13:52:38.624 | info |   GET  /api/courses
+7ef5726429b1 | 2025-09-07 13:52:38.624 | info |   GET  /api/courses/{id}
+7ef5726429b1 | 2025-09-07 13:52:38.624 | info |   GET  /api/courses/{id}/subjects
+7ef5726429b1 | 2025-09-07 13:52:38.624 | info |   GET  /api/courses/search
+7ef5726429b1 | 2025-09-07 13:52:38.624 | info |   GET  /api/courses/stats
+7ef5726429b1 | 2025-09-07 13:52:38.625 | info |   GET  /api/faculties
+7ef5726429b1 | 2025-09-07 13:52:38.625 | info |   GET  /api/student/course-info/{album_nr}
+7ef5726429b1 | 2025-09-07 13:52:38.625 | info | Starting HTTP server on port :8083
+7ef5726429b1 | 2025-09-07 13:52:38.625 | info | Gateway ready to handle requests
+7ef5726429b1 | 2025-09-07 13:58:03.436 | info | Incoming request: OPTIONS /api/auth/login from 172.19.0.1
+7ef5726429b1 | 2025-09-07 13:58:03.436 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+7ef5726429b1 | 2025-09-07 13:58:03.439 | info | Incoming request: POST /api/auth/login from 172.19.0.1
+7ef5726429b1 | 2025-09-07 13:58:03.567 | info | Request completed: POST /api/auth/login -> 200 in 127ms
+7ef5726429b1 | 2025-09-07 14:00:36.635 | info | Incoming request: GET /api/auth/username from 172.19.0.1
+7ef5726429b1 | 2025-09-07 14:00:36.666 | info | Request completed: GET /api/auth/username -> 200 in 31ms
+7ef5726429b1 | 2025-09-07 14:02:54.043 | info | Incoming request: OPTIONS /api/auth/login from 172.19.0.1
+7ef5726429b1 | 2025-09-07 14:02:54.044 | info | Request completed: OPTIONS /api/auth/login -> 200 in 0ms
+7ef5726429b1 | 2025-09-07 14:02:54.048 | info | Incoming request: POST /api/auth/login from 172.19.0.1
+7ef5726429b1 | 2025-09-07 14:02:54.103 | info | Request completed: POST /api/auth/login -> 200 in 55ms
+7ef5726429b1 | 2025-09-07 14:02:54.713 | info | Incoming request: GET /api/auth/username from 172.19.0.1
+7ef5726429b1 | 2025-09-07 14:02:54.732 | info | Incoming request: GET /api/auth/username from 172.19.0.1
+7ef5726429b1 | 2025-09-07 14:02:54.742 | info | Request completed: GET /api/auth/username -> 200 in 29ms
+7ef5726429b1 | 2025-09-07 14:02:54.743 | info | Request completed: GET /api/auth/username -> 200 in 11ms

@@ -20,9 +20,33 @@ d781fdeab73d | 2025-07-06 23:13:52.872 | info | Auth Service running on port :30
 9fd18cb7a4bd | 2025-07-09 14:47:22.237 | info | Starting Auth Service
 9fd18cb7a4bd | 2025-07-09 14:47:22.256 | info | Database connection established
 9fd18cb7a4bd | 2025-07-09 14:47:22.258 | info | Auth Service running on port :3003
-d86f4dbe80e4 | 2025-08-10 14:29:11.030 | info | Starting Auth Service
-d86f4dbe80e4 | 2025-08-10 14:29:11.037 | info | Database connection established
-d86f4dbe80e4 | 2025-08-10 14:29:11.038 | info | Auth Service running on port :3003
-6160d8cae0be | 2025-08-10 15:06:46.776 | info | Starting Auth Service
-6160d8cae0be | 2025-08-10 15:06:46.792 | info | Database connection established
-6160d8cae0be | 2025-08-10 15:06:46.794 | info | Auth Service running on port :3003
+1ea58937ed10 | 2025-09-07 13:52:49.156 | info | Starting Common Service
+1ea58937ed10 | 2025-09-07 13:52:49.166 | info | Attempting to connect to Redis at: redis:6379
+1ea58937ed10 | 2025-09-07 13:52:49.184 | info | Redis connection established
+1ea58937ed10 | 2025-09-07 13:52:49.184 | info | Database connection established
+1ea58937ed10 | 2025-09-07 13:52:49.198 | info | AuthService registered
+1ea58937ed10 | 2025-09-07 13:52:49.198 | info | CourseService registered
+1ea58937ed10 | 2025-09-07 13:52:49.199 | info | Common Service registered and listening on :3003
+1ea58937ed10 | 2025-09-07 13:52:49.199 | info | Available services:
+1ea58937ed10 | 2025-09-07 13:52:49.199 | info |    AuthService:
+1ea58937ed10 | 2025-09-07 13:52:49.199 | info |     - POST /api/auth/login
+1ea58937ed10 | 2025-09-07 13:52:49.200 | info |     - POST /api/auth/register
+1ea58937ed10 | 2025-09-07 13:52:49.200 | info |     - POST /api/auth/refresh
+1ea58937ed10 | 2025-09-07 13:52:49.200 | info |     - POST /api/auth/logout
+1ea58937ed10 | 2025-09-07 13:52:49.200 | info |     - POST /api/auth/forgot-password
+1ea58937ed10 | 2025-09-07 13:52:49.201 | info |     - POST /api/auth/reset-password
+1ea58937ed10 | 2025-09-07 13:52:49.201 | info |     - GET  /api/auth/username
+1ea58937ed10 | 2025-09-07 13:52:49.201 | info |    CourseService:
+1ea58937ed10 | 2025-09-07 13:52:49.201 | info |     - GET  /api/courses
+1ea58937ed10 | 2025-09-07 13:52:49.201 | info |     - GET  /api/courses/{id}
+1ea58937ed10 | 2025-09-07 13:52:49.202 | info |     - GET  /api/courses/{id}/subjects
+1ea58937ed10 | 2025-09-07 13:52:49.202 | info |     - GET  /api/courses/search
+1ea58937ed10 | 2025-09-07 13:52:49.202 | info |     - GET  /api/courses/stats
+1ea58937ed10 | 2025-09-07 13:52:49.202 | info |     - GET  /api/faculties
+1ea58937ed10 | 2025-09-07 13:52:49.203 | info |     - GET  /api/student/course-info/{album_nr}
+1ea58937ed10 | 2025-09-07 13:58:03.566 | info | User 1 logged in successfully
+1ea58937ed10 | 2025-09-07 14:00:36.665 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
+1ea58937ed10 | 2025-09-07 14:02:54.055 | info | User fetched from cache for login
+1ea58937ed10 | 2025-09-07 14:02:54.103 | info | User 1 logged in successfully
+1ea58937ed10 | 2025-09-07 14:02:54.739 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
+1ea58937ed10 | 2025-09-07 14:02:54.743 | error | Failed to fetch user name | error: sql: Scan error on column index 0, name "name": converting NULL to string is unsupported
