@@ -70,6 +70,7 @@ message GetUserNameResponse {
   string username = 10;
   string message = 11;
   bool success = 12;
+  int64 status = 13;
 }
 
 message HelloRequest {}
