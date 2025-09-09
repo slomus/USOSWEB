@@ -58,6 +58,16 @@ type Session struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
+// UserRole represents the users role
+type UserRole string
+
+const (
+	RoleStudent UserRole = "student"
+	RoleTeacher UserRole = "teacher"
+	RoleAdmin   UserRole = "admin"
+	RoleUnknown UserRole = "unknown"
+)
+
 func NewAuthServer(db *sql.DB) *AuthServer {
 	return &AuthServer{
 		db:     db,
@@ -521,6 +531,7 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 			Username: "",
 			Message:  "Brak metadanych",
 			Success:  false,
+			Status:   401,
 		}, nil
 	}
 
@@ -531,6 +542,7 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 			Username: "",
 			Message:  "Brak tokenu autoryzacji",
 			Success:  false,
+			Status:   401,
 		}, nil
 	}
 
@@ -543,25 +555,245 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 			Username: "",
 			Message:  "Nieprawidłowy token",
 			Success:  false,
+			Status:   401,
 		}, nil
 	}
 
 	var name string
 	err = s.db.QueryRow("SELECT name FROM users WHERE user_id = $1", claims.UserID).Scan(&name)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			authLog.LogWarn(fmt.Sprintf("User not found: %d", claims.UserID))
+			return &pb.GetUserNameResponse{
+				Username: "",
+				Message:  "Użytkownik nie znaleziony",
+				Success:  false,
+				Status:   404,
+			}, nil
+		}
+
 		authLog.LogError("Failed to fetch user name", err)
 		return &pb.GetUserNameResponse{
 			Username: "",
-			Message:  "Użytkownik nie znaleziony",
+			Message:  "Błąd serwera przy pobieraniu nazwy użytkownika",
 			Success:  false,
+			Status:   500,
 		}, nil
 	}
 
-	authLog.LogInfo(fmt.Sprintf("Username retrieved for user ID: %d", claims.UserID))
+	authLog.LogInfo(fmt.Sprintf("Username retrieved successfully for user ID: %d", claims.UserID))
 	return &pb.GetUserNameResponse{
 		Username: name,
-		Message:  "Username pobrany pomyślnie",
+		Message:  "Sukces",
 		Success:  true,
+		Status:   200,
+	}, nil
+}
+
+func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest) (*pb.GetUserRoleResponse, error) {
+	var userID int64
+
+	if req.UserId == 0 {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return &pb.GetUserRoleResponse{
+				Role:    "",
+				Success: false,
+				Message: "Brak metadanych",
+				Status:  401,
+			}, nil
+		}
+
+		tokens := md.Get("authorization")
+		if len(tokens) == 0 {
+			return &pb.GetUserRoleResponse{
+				Role:    "",
+				Success: false,
+				Message: "Brak tokenu autoryzacji",
+				Status:  401,
+			}, nil
+		}
+
+		claims, err := auth.ValidateToken(tokens[0])
+		if err != nil {
+			return &pb.GetUserRoleResponse{
+				Role:    "",
+				Success: false,
+				Message: "Nieprawidłowy token",
+				Status:  401,
+			}, nil
+		}
+		userID = claims.UserID
+	} else {
+		userID = req.UserId
+	}
+
+	role, err := s.getUserRoleFromDB(ctx, userID)
+	if err != nil {
+		return &pb.GetUserRoleResponse{
+			Role:    "",
+			Success: false,
+			Message: "Błąd pobierania roli",
+			Status:  500,
+		}, nil
+	}
+
+	return &pb.GetUserRoleResponse{
+		Role:    string(role),
+		Success: true,
+		Message: "Rola pobrana pomyślnie",
+		Status:  200,
+	}, nil
+}
+
+func (s *AuthServer) getUserRoleFromDB(ctx context.Context, userID int64) (UserRole, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM students WHERE user_id = $1)", userID).Scan(&exists)
+	if err != nil {
+		return RoleUnknown, err
+	}
+	if exists {
+		return RoleStudent, nil
+	}
+
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM teaching_staff WHERE user_id = $1)", userID).Scan(&exists)
+	if err != nil {
+		return RoleUnknown, err
+	}
+	if exists {
+		return RoleTeacher, nil
+	}
+
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM administrative_staff WHERE user_id = $1)", userID).Scan(&exists)
+	if err != nil {
+		return RoleUnknown, err
+	}
+	if exists {
+		return RoleAdmin, nil
+	}
+
+	return RoleUnknown, nil
+}
+
+func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
+	query := `
+        SELECT u.user_id, u.name, u.surname, u.email, u.active,
+               CASE
+                   WHEN s.user_id IS NOT NULL THEN 'student'
+                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
+                   WHEN as.user_id IS NOT NULL THEN 'admin'
+                   ELSE 'unknown'
+               END as role
+        FROM users u
+        LEFT JOIN students s ON u.user_id = s.user_id
+        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+        LEFT JOIN administrative_staff as ON u.user_id = as.user_id
+        ORDER BY u.user_id
+    `
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "Błąd pobierania użytkowników",
+			Status:  500,
+		}, nil
+	}
+	defer rows.Close()
+
+	var users []*pb.User
+	for rows.Next() {
+		user := &pb.User{}
+		err := rows.Scan(&user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role)
+		if err != nil {
+			continue
+		}
+		users = append(users, user)
+	}
+
+	return &pb.GetUsersResponse{
+		Users:   users,
+		Success: true,
+		Message: "Użytkownicy pobrani pomyślnie",
+		Status:  200,
+	}, nil
+}
+
+func (s *AuthServer) GetUserData(ctx context.Context, req *pb.GetUserDataRequest) (*pb.GetUserDataResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return &pb.GetUserDataResponse{
+			User:    nil,
+			Success: false,
+			Message: "Brak metadanych",
+			Status:  401,
+		}, nil
+	}
+
+	tokens := md.Get("authorization")
+	if len(tokens) == 0 {
+		return &pb.GetUserDataResponse{
+			User:    nil,
+			Success: false,
+			Message: "Brak tokenu autoryzacji",
+			Status:  401,
+		}, nil
+	}
+
+	claims, err := auth.ValidateToken(tokens[0])
+	if err != nil {
+		return &pb.GetUserDataResponse{
+			User:    nil,
+			Success: false,
+			Message: "Nieprawidłowy token",
+			Status:  401,
+		}, nil
+	}
+
+	query := `
+        SELECT u.user_id, u.name, u.surname, u.email, u.active,
+               CASE
+                   WHEN s.user_id IS NOT NULL THEN 'student'
+                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
+                   WHEN as.user_id IS NOT NULL THEN 'admin'
+                   ELSE 'unknown'
+               END as role
+        FROM users u
+        LEFT JOIN students s ON u.user_id = s.user_id
+        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+        LEFT JOIN administrative_staff as ON u.user_id = as.user_id
+        WHERE u.user_id = $1
+    `
+
+	var user pb.User
+	err = s.db.QueryRow(query, claims.UserID).Scan(
+		&user.UserId, &user.Name, &user.Surname,
+		&user.Email, &user.Active, &user.Role,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &pb.GetUserDataResponse{
+				User:    nil,
+				Success: false,
+				Message: "Użytkownik nie znaleziony",
+				Status:  404,
+			}, nil
+		}
+		return &pb.GetUserDataResponse{
+			User:    nil,
+			Success: false,
+			Message: "Błąd serwera",
+			Status:  500,
+		}, nil
+	}
+
+	return &pb.GetUserDataResponse{
+		User:    &user,
+		Success: true,
+		Message: "Dane pobrane pomyślnie",
+		Status:  200,
 	}, nil
 }
 

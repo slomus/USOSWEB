@@ -77,6 +77,42 @@ message HelloRequest {}
 
 message HelloResponse { string message = 10; }
 
+message User {
+  int64 user_id = 10;
+  string name = 11;
+  string surname = 12;
+  string email = 13;
+  bool active = 14;
+  string role = 15; // "student", "teacher", "admin", "unknown"
+}
+
+message GetUsersRequest {}
+
+message GetUsersResponse {
+  repeated User users = 10;
+  bool success = 11;
+  string message = 12;
+  int64 status = 13;
+}
+
+message GetUserDataRequest {}
+
+message GetUserDataResponse {
+  User user = 10;
+  bool success = 11;
+  string message = 12;
+  int64 status = 13;
+}
+
+message GetUserRoleRequest { int64 user_id = 10; }
+
+message GetUserRoleResponse {
+  string role = 10;
+  bool success = 11;
+  string message = 12;
+  int64 status = 13;
+}
+
 // Serwis
 
 service AuthService {
@@ -125,6 +161,24 @@ service AuthService {
   rpc GetUserName(GetUserNameRequest) returns (GetUserNameResponse) {
     option (google.api.http) = {
       get : "/api/auth/username"
+    };
+  }
+
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/users"
+    };
+  }
+
+  rpc GetUserData(GetUserDataRequest) returns (GetUserDataResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/user"
+    };
+  }
+
+  rpc GetUserRole(GetUserRoleRequest) returns (GetUserRoleResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/role"
     };
   }
 }
