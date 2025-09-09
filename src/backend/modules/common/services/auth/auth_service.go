@@ -566,7 +566,7 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 			authLog.LogWarn(fmt.Sprintf("User not found: %d", claims.UserID))
 			return &pb.GetUserNameResponse{
 				Username: "",
-				Message:  "Użytkownik nie znaleziony",
+				Message:  "User found",
 				Success:  false,
 				Status:   404,
 			}, nil
@@ -575,7 +575,7 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 		authLog.LogError("Failed to fetch user name", err)
 		return &pb.GetUserNameResponse{
 			Username: "",
-			Message:  "Błąd serwera przy pobieraniu nazwy użytkownika",
+			Message:  "Server error while getting the users name",
 			Success:  false,
 			Status:   500,
 		}, nil
@@ -584,7 +584,7 @@ func (s *AuthServer) GetUserName(ctx context.Context, req *pb.GetUserNameRequest
 	authLog.LogInfo(fmt.Sprintf("Username retrieved successfully for user ID: %d", claims.UserID))
 	return &pb.GetUserNameResponse{
 		Username: name,
-		Message:  "Sukces",
+		Message:  "Success",
 		Success:  true,
 		Status:   200,
 	}, nil
@@ -599,7 +599,7 @@ func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest
 			return &pb.GetUserRoleResponse{
 				Role:    "",
 				Success: false,
-				Message: "Brak metadanych",
+				Message: "No metadata",
 				Status:  401,
 			}, nil
 		}
@@ -609,7 +609,7 @@ func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest
 			return &pb.GetUserRoleResponse{
 				Role:    "",
 				Success: false,
-				Message: "Brak tokenu autoryzacji",
+				Message: "No authorization token",
 				Status:  401,
 			}, nil
 		}
@@ -619,7 +619,7 @@ func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest
 			return &pb.GetUserRoleResponse{
 				Role:    "",
 				Success: false,
-				Message: "Nieprawidłowy token",
+				Message: "Invalid token",
 				Status:  401,
 			}, nil
 		}
@@ -633,7 +633,7 @@ func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest
 		return &pb.GetUserRoleResponse{
 			Role:    "",
 			Success: false,
-			Message: "Błąd pobierania roli",
+			Message: "Error while getting user role",
 			Status:  500,
 		}, nil
 	}
@@ -641,7 +641,7 @@ func (s *AuthServer) GetUserRole(ctx context.Context, req *pb.GetUserRoleRequest
 	return &pb.GetUserRoleResponse{
 		Role:    string(role),
 		Success: true,
-		Message: "Rola pobrana pomyślnie",
+		Message: "Role retrieved successfully",
 		Status:  200,
 	}, nil
 }
@@ -676,27 +676,84 @@ func (s *AuthServer) getUserRoleFromDB(ctx context.Context, userID int64) (UserR
 }
 
 func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		authLog.LogWarn("GetUsers: Brak metadanych")
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "No metadata",
+			Status:  401,
+		}, nil
+	}
+
+	tokens := md.Get("authorization")
+	if len(tokens) == 0 {
+		authLog.LogWarn("GetUsers: Brak tokenu autoryzacji")
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "No authorization token",
+			Status:  401,
+		}, nil
+	}
+
+	claims, err := auth.ValidateToken(tokens[0])
+	if err != nil {
+		authLog.LogWarn(fmt.Sprintf("GetUsers: Invalid token: %v", err))
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "Invalid token",
+			Status:  401,
+		}, nil
+	}
+
+	userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
+	if err != nil {
+		authLog.LogError(fmt.Sprintf("GetUsers: Error checking user role for user %d: %v", claims.UserID, err), err)
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "Error while checking credentials",
+			Status:  500,
+		}, nil
+	}
+
+	if userRole != RoleAdmin {
+		authLog.LogWarn(fmt.Sprintf("GetUsers: Access denied for user %d with role %s", claims.UserID, userRole))
+		return &pb.GetUsersResponse{
+			Users:   nil,
+			Success: false,
+			Message: "Only administrators can access this data",
+			Status:  403,
+		}, nil
+	}
+
+	authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
+
 	query := `
         SELECT u.user_id, u.name, u.surname, u.email, u.active,
                CASE
                    WHEN s.user_id IS NOT NULL THEN 'student'
                    WHEN ts.user_id IS NOT NULL THEN 'teacher'
-                   WHEN as.user_id IS NOT NULL THEN 'admin'
+                   WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
                    ELSE 'unknown'
                END as role
         FROM users u
         LEFT JOIN students s ON u.user_id = s.user_id
         LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
-        LEFT JOIN administrative_staff as ON u.user_id = as.user_id
+        LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
         ORDER BY u.user_id
     `
 
 	rows, err := s.db.Query(query)
 	if err != nil {
+		authLog.LogError(fmt.Sprintf("GetUsers SQL error: %v", err), err)
 		return &pb.GetUsersResponse{
 			Users:   nil,
 			Success: false,
-			Message: "Błąd pobierania użytkowników",
+			Message: "Error fetching users",
 			Status:  500,
 		}, nil
 	}
@@ -707,92 +764,18 @@ func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
 		user := &pb.User{}
 		err := rows.Scan(&user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role)
 		if err != nil {
+			authLog.LogWarn(fmt.Sprintf("Error scanning user row: %v", err))
 			continue
 		}
 		users = append(users, user)
 	}
 
+	authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to admin user %d", len(users), claims.UserID))
+
 	return &pb.GetUsersResponse{
 		Users:   users,
 		Success: true,
-		Message: "Użytkownicy pobrani pomyślnie",
-		Status:  200,
-	}, nil
-}
-
-func (s *AuthServer) GetUserData(ctx context.Context, req *pb.GetUserDataRequest) (*pb.GetUserDataResponse, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return &pb.GetUserDataResponse{
-			User:    nil,
-			Success: false,
-			Message: "Brak metadanych",
-			Status:  401,
-		}, nil
-	}
-
-	tokens := md.Get("authorization")
-	if len(tokens) == 0 {
-		return &pb.GetUserDataResponse{
-			User:    nil,
-			Success: false,
-			Message: "Brak tokenu autoryzacji",
-			Status:  401,
-		}, nil
-	}
-
-	claims, err := auth.ValidateToken(tokens[0])
-	if err != nil {
-		return &pb.GetUserDataResponse{
-			User:    nil,
-			Success: false,
-			Message: "Nieprawidłowy token",
-			Status:  401,
-		}, nil
-	}
-
-	query := `
-        SELECT u.user_id, u.name, u.surname, u.email, u.active,
-               CASE
-                   WHEN s.user_id IS NOT NULL THEN 'student'
-                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
-                   WHEN as.user_id IS NOT NULL THEN 'admin'
-                   ELSE 'unknown'
-               END as role
-        FROM users u
-        LEFT JOIN students s ON u.user_id = s.user_id
-        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
-        LEFT JOIN administrative_staff as ON u.user_id = as.user_id
-        WHERE u.user_id = $1
-    `
-
-	var user pb.User
-	err = s.db.QueryRow(query, claims.UserID).Scan(
-		&user.UserId, &user.Name, &user.Surname,
-		&user.Email, &user.Active, &user.Role,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return &pb.GetUserDataResponse{
-				User:    nil,
-				Success: false,
-				Message: "Użytkownik nie znaleziony",
-				Status:  404,
-			}, nil
-		}
-		return &pb.GetUserDataResponse{
-			User:    nil,
-			Success: false,
-			Message: "Błąd serwera",
-			Status:  500,
-		}, nil
-	}
-
-	return &pb.GetUserDataResponse{
-		User:    &user,
-		Success: true,
-		Message: "Dane pobrane pomyślnie",
+		Message: "Users retrieved successfully",
 		Status:  200,
 	}, nil
 }
