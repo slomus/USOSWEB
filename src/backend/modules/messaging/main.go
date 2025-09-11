@@ -199,9 +199,3 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
-
-
-curl -i -c /tmp/usos_cookies.txt \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"karol.kudlacz@edu.pl","password":"Password123!"}' \
-  http://localhost:8083/api/auth/login
