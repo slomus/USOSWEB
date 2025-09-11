@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
@@ -206,6 +207,16 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
+	// Applications Service
+	appLog.LogInfo("Registering ApplicationsService endpoints")
+	commonEndpoint := configs.Envs.GetCommonEndpoint()
+	err = applicationsPb.RegisterApplicationsServiceHandlerFromEndpoint(ctx, mux, commonEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register ApplicationsService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("ApplicationsService endpoints registered successfully")
+
 	handler := loggingMiddleware(allowCORS(mux))
 
 	appLog.LogInfo("API Gateway configured with endpoints:")
@@ -225,6 +236,8 @@ func main() {
 		"GET  /api/courses/stats",
 		"GET  /api/faculties",
 		"GET  /api/student/course-info/{album_nr}",
+		"GET  /api/applications",
+		"POST /api/applications",
 	}
 
 	for _, endpoint := range endpoints {
