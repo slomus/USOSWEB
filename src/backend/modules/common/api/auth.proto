@@ -32,15 +32,20 @@ message RegisterRequest {
   string email = 11;
   string password = 12;
   string name = 13;
-
   string surname = 14;
   string pesel = 15;
   string phone_nr = 16;
   string postal_address = 17;
   string registration_address = 18;
   string bank_account_nr = 19;
-}
+  string role = 20; // "student", "teacher", "admin"
 
+  string degree = 21;
+  string title = 22;
+  int32 faculty_id = 23;
+
+  string admin_role = 24;
+}
 message RegisterResponse {
   bool success = 10;
   string message = 11;

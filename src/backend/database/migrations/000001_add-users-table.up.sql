@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS users(
    postal_address VARCHAR (255) NULL,
    registration_address VARCHAR (255) NULL,
    bank_account_nr VARCHAR (26) UNIQUE NULL,
-   active BOOLEAN NULL,
-   activation_date TIMESTAMP NULL,
+   active BOOLEAN DEFAULT TRUE,
+   activation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
    deactivation_date TIMESTAMP NULL
 );
+
+
+

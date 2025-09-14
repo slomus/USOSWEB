@@ -241,6 +241,11 @@ type RegisterRequest struct {
 	PostalAddress       string                 `protobuf:"bytes,17,opt,name=postal_address,json=postalAddress,proto3" json:"postal_address,omitempty"`
 	RegistrationAddress string                 `protobuf:"bytes,18,opt,name=registration_address,json=registrationAddress,proto3" json:"registration_address,omitempty"`
 	BankAccountNr       string                 `protobuf:"bytes,19,opt,name=bank_account_nr,json=bankAccountNr,proto3" json:"bank_account_nr,omitempty"`
+	Role                string                 `protobuf:"bytes,20,opt,name=role,proto3" json:"role,omitempty"` // "student", "teacher", "admin"
+	Degree              string                 `protobuf:"bytes,21,opt,name=degree,proto3" json:"degree,omitempty"`
+	Title               string                 `protobuf:"bytes,22,opt,name=title,proto3" json:"title,omitempty"`
+	FacultyId           int32                  `protobuf:"varint,23,opt,name=faculty_id,json=facultyId,proto3" json:"faculty_id,omitempty"`
+	AdminRole           string                 `protobuf:"bytes,24,opt,name=admin_role,json=adminRole,proto3" json:"admin_role,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -334,6 +339,41 @@ func (x *RegisterRequest) GetRegistrationAddress() string {
 func (x *RegisterRequest) GetBankAccountNr() string {
 	if x != nil {
 		return x.BankAccountNr
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetDegree() string {
+	if x != nil {
+		return x.Degree
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetFacultyId() int32 {
+	if x != nil {
+		return x.FacultyId
+	}
+	return 0
+}
+
+func (x *RegisterRequest) GetAdminRole() string {
+	if x != nil {
+		return x.AdminRole
 	}
 	return ""
 }
@@ -1444,7 +1484,7 @@ const file_auth_proto_rawDesc = "" +
 	"\x0eLogoutResponse\x12\x18\n" +
 	"\asuccess\x18\n" +
 	" \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\v \x01(\tR\amessage\"\xa4\x02\n" +
+	"\amessage\x18\v \x01(\tR\amessage\"\xa4\x03\n" +
 	"\x0fRegisterRequest\x12\x14\n" +
 	"\x05email\x18\v \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\f \x01(\tR\bpassword\x12\x12\n" +
@@ -1454,7 +1494,14 @@ const file_auth_proto_rawDesc = "" +
 	"\bphone_nr\x18\x10 \x01(\tR\aphoneNr\x12%\n" +
 	"\x0epostal_address\x18\x11 \x01(\tR\rpostalAddress\x121\n" +
 	"\x14registration_address\x18\x12 \x01(\tR\x13registrationAddress\x12&\n" +
-	"\x0fbank_account_nr\x18\x13 \x01(\tR\rbankAccountNr\"\x9a\x01\n" +
+	"\x0fbank_account_nr\x18\x13 \x01(\tR\rbankAccountNr\x12\x12\n" +
+	"\x04role\x18\x14 \x01(\tR\x04role\x12\x16\n" +
+	"\x06degree\x18\x15 \x01(\tR\x06degree\x12\x14\n" +
+	"\x05title\x18\x16 \x01(\tR\x05title\x12\x1d\n" +
+	"\n" +
+	"faculty_id\x18\x17 \x01(\x05R\tfacultyId\x12\x1d\n" +
+	"\n" +
+	"admin_role\x18\x18 \x01(\tR\tadminRole\"\x9a\x01\n" +
 	"\x10RegisterResponse\x12\x18\n" +
 	"\asuccess\x18\n" +
 	" \x01(\bR\asuccess\x12\x18\n" +
