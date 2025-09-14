@@ -32,12 +32,35 @@ message RegisterRequest {
   string email = 11;
   string password = 12;
   string name = 13;
+
+  string surname = 14;
+  string pesel = 15;
+  string phone_nr = 16;
+  string postal_address = 17;
+  string registration_address = 18;
+  string bank_account_nr = 19;
 }
 
 message RegisterResponse {
   bool success = 10;
   string message = 11;
   int64 user_id = 12;
+  UserData user_data = 13;
+}
+
+message UserData {
+  int64 user_id = 10;
+  string name = 11;
+  string surname = 12;
+  string email = 13;
+  string pesel = 14;
+  string phone_nr = 15;
+  string postal_address = 16;
+  string registration_address = 17;
+  string bank_account_nr = 18;
+  bool active = 19;
+  string activation_date = 20;
+  string role = 21;
 }
 
 message RefreshTokenRequest { string refresh_token = 10; }

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/slomus/USOSWEB/src/backend/configs"
@@ -243,58 +244,362 @@ func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Log
 }
 
 func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	if errors := validation.ValidateRegisterRequest(req.Email, req.Password); len(errors) > 0 {
-		authLog.LogWarn(fmt.Sprintf("Register validation failed: %s", errors.Error()))
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: fmt.Sprintf("Validation failed: %s", errors.Error()),
-			UserId:  0,
-		}, status.Error(codes.InvalidArgument, errors.Error())
-	}
+	authLog.LogInfo("Registration request received", logger.Fields{
+		"email": req.Email,
+		"name":  req.Name,
+	})
 
-	var existingUserID int
-	err := s.db.QueryRow("SELECT user_id FROM users WHERE email = $1", req.Email).Scan(&existingUserID)
-	if err == nil {
-		authLog.LogWarn(fmt.Sprintf("Registration attempt with existing email: %s", req.Email))
+	// 1. Walidacja danych wejściowych
+	if err := s.validateRegisterRequest(req); err != nil {
+		authLog.LogWarning("Registration validation failed", logger.Fields{
+			"error": err.Error(),
+			"email": req.Email,
+		})
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "User with this email already exists",
+			Message: err.Error(),
 			UserId:  0,
 		}, nil
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// 2. Sprawdzenie unikalności pól (email, PESEL, telefon, konto bankowe)
+	conflicts, err := s.checkUniqueFields(req)
+	if err != nil {
+		authLog.LogError("Database error during uniqueness check", err)
+		return &pb.RegisterResponse{
+			Success: false,
+			Message: "Internal server error",
+			UserId:  0,
+		}, status.Error(codes.Internal, "Database error")
+	}
+
+	if len(conflicts) > 0 {
+		conflictMsg := fmt.Sprintf("The following fields are already taken: %s", strings.Join(conflicts, ", "))
+		authLog.LogWarning("Registration conflicts detected", logger.Fields{
+			"email":     req.Email,
+			"conflicts": conflicts,
+		})
+		return &pb.RegisterResponse{
+			Success: false,
+			Message: conflictMsg,
+			UserId:  0,
+		}, nil
+	}
+
+	// 3. Hashowanie hasła
+	hashedPassword, err := s.hashPassword(req.Password)
 	if err != nil {
 		authLog.LogError("Password hashing failed", err)
 		return &pb.RegisterResponse{
 			Success: false,
-			Message: "Failed to process password",
+			Message: "Internal server error",
 			UserId:  0,
-		}, nil
+		}, status.Error(codes.Internal, "Password hashing error")
 	}
 
-	var userID int
-	err = s.db.QueryRow(
-		"INSERT INTO users (email, password, name, active, activation_date) VALUES ($1, $2, $3, $4, $5) RETURNING user_id",
-		req.Email, string(hashedPassword), req.Name, true, time.Now(),
-	).Scan(&userID)
-
+	// 4. Wstawienie użytkownika do bazy danych ze wszystkimi polami
+	userID, err := s.createUserWithAllFields(req, hashedPassword)
 	if err != nil {
-		authLog.LogError("User insertion failed", err)
+		authLog.LogError("User creation failed", err)
 		return &pb.RegisterResponse{
 			Success: false,
 			Message: "Failed to create user",
 			UserId:  0,
+		}, status.Error(codes.Internal, "User creation error")
+	}
+
+	// 5. Pobranie danych użytkownika do zwrócenia w odpowiedzi
+	userData, err := s.getUserDataByID(userID)
+	if err != nil {
+		authLog.LogError("Failed to retrieve user data", err)
+		// Sukces rejestracji, ale problem z pobraniem danych
+		return &pb.RegisterResponse{
+			Success: true,
+			Message: "User registered successfully",
+			UserId:  userID,
 		}, nil
 	}
 
-	authLog.LogInfo(fmt.Sprintf("User registered successfully with ID: %d, name: %s", userID, req.Name))
+	// 6. Cache: Zapisanie użytkownika w cache (jeśli dostępny)
+	if s.cache != nil {
+		user := &User{
+			ID:       userID,
+			Email:    req.Email,
+			Password: hashedPassword,
+			Active:   true,
+		}
+
+		// Cache user by email (dla logowania)
+		emailCacheKey := cache.GenerateKey("auth", "user_by_email", req.Email)
+		s.cache.Set(ctx, emailCacheKey, user, s.config.UserProfileTTL)
+
+		// Cache user by ID
+		idCacheKey := cache.GenerateKey("auth", "user_by_id", userID)
+		s.cache.Set(ctx, idCacheKey, user, s.config.UserProfileTTL)
+
+		// Cache user data
+		userDataCacheKey := cache.GenerateKey("auth", "user_data", userID)
+		s.cache.Set(ctx, userDataCacheKey, userData, s.config.UserProfileTTL)
+	}
+
+	authLog.LogInfo("User registered successfully", logger.Fields{
+		"user_id": userID,
+		"email":   req.Email,
+		"name":    req.Name,
+	})
+
 	return &pb.RegisterResponse{
-		Success: true,
-		Message: "User registered successfully",
-		UserId:  int64(userID),
+		Success:  true,
+		Message:  "User registered successfully and is active",
+		UserId:   userID,
+		UserData: userData,
 	}, nil
 }
+
+// validateRegisterRequest waliduje wszystkie pola z żądania rejestracji
+func (s *AuthServer) validateRegisterRequest(req *pb.RegisterRequest) error {
+	// Walidacja wymaganych pól
+	if !validation.IsValidEmail(req.Email) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	if !validation.IsValidPassword(req.Password) {
+		return fmt.Errorf("password must be at least 8 characters long and contain uppercase, lowercase, number and special character")
+	}
+
+	if len(req.Name) < 2 || len(req.Name) > 255 {
+		return fmt.Errorf("name must be between 2 and 255 characters")
+	}
+
+	// Walidacja opcjonalnych pól (tylko jeśli są wypełnione)
+	if req.Surname != "" && (len(req.Surname) < 2 || len(req.Surname) > 255) {
+		return fmt.Errorf("surname must be between 2 and 255 characters")
+	}
+
+	if req.Pesel != "" && !validation.IsValidPESEL(req.Pesel) {
+		return fmt.Errorf("invalid PESEL format")
+	}
+
+	if req.PhoneNr != "" && !validation.IsValidPhoneNumber(req.PhoneNr) {
+		return fmt.Errorf("invalid phone number format")
+	}
+
+	if req.BankAccountNr != "" && !validation.IsValidBankAccount(req.BankAccountNr) {
+		return fmt.Errorf("invalid bank account number format")
+	}
+
+	// Walidacja długości pól adresowych
+	if len(req.PostalAddress) > 255 {
+		return fmt.Errorf("postal address too long (max 255 characters)")
+	}
+
+	if len(req.RegistrationAddress) > 255 {
+		return fmt.Errorf("registration address too long (max 255 characters)")
+	}
+
+	return nil
+}
+
+func (s *AuthServer) checkUniqueFields(req *pb.RegisterRequest) ([]string, error) {
+	var conflicts []string
+
+	if exists, err := s.checkFieldExists("email", req.Email); err != nil {
+		return nil, err
+	} else if exists {
+		conflicts = append(conflicts, "email")
+	}
+
+	if req.Pesel != "" {
+		if exists, err := s.checkFieldExists("pesel", req.Pesel); err != nil {
+			return nil, err
+		} else if exists {
+			conflicts = append(conflicts, "PESEL")
+		}
+	}
+
+	if req.PhoneNr != "" {
+		if exists, err := s.checkFieldExists("phone_nr", req.PhoneNr); err != nil {
+			return nil, err
+		} else if exists {
+			conflicts = append(conflicts, "phone number")
+		}
+	}
+
+	if req.BankAccountNr != "" {
+		if exists, err := s.checkFieldExists("bank_account_nr", req.BankAccountNr); err != nil {
+			return nil, err
+		} else if exists {
+			conflicts = append(conflicts, "bank account number")
+		}
+	}
+
+	return conflicts, nil
+}
+
+func (s *AuthServer) checkFieldExists(fieldName, value string) (bool, error) {
+	var count int
+	query := fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s = $1", fieldName)
+
+	err := s.db.QueryRow(query, value).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("database query failed for field %s: %w", fieldName, err)
+	}
+
+	return count > 0, nil
+}
+
+func (s *AuthServer) createUserWithAllFields(req *pb.RegisterRequest, hashedPassword string) (int64, error) {
+	var userID int64
+
+	query := `
+		INSERT INTO users (
+			email, password, name, surname, pesel, phone_nr,
+			postal_address, registration_address, bank_account_nr,
+			active, activation_date
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING user_id`
+
+	var surname, pesel, phoneNr, postalAddr, regAddr, bankAccount interface{}
+
+	if req.Surname != "" {
+		surname = req.Surname
+	} else {
+		surname = nil
+	}
+
+	if req.Pesel != "" {
+		pesel = req.Pesel
+	} else {
+		pesel = nil
+	}
+
+	if req.PhoneNr != "" {
+		phoneNr = req.PhoneNr
+	} else {
+		phoneNr = nil
+	}
+
+	if req.PostalAddress != "" {
+		postalAddr = req.PostalAddress
+	} else {
+		postalAddr = nil
+	}
+
+	if req.RegistrationAddress != "" {
+		regAddr = req.RegistrationAddress
+	} else {
+		regAddr = nil
+	}
+
+	if req.BankAccountNr != "" {
+		bankAccount = req.BankAccountNr
+	} else {
+		bankAccount = nil
+	}
+
+	err := s.db.QueryRow(
+		query,
+		req.Email,      // $1 - email (NOT NULL)
+		hashedPassword, // $2 - password (NOT NULL)
+		req.Name,       // $3 - name (NOT NULL)
+		surname,        // $4 - surname (NULL jeśli puste)
+		pesel,          // $5 - pesel (NULL jeśli puste)
+		phoneNr,        // $6 - phone_nr (NULL jeśli puste)
+		postalAddr,     // $7 - postal_address (NULL jeśli puste)
+		regAddr,        // $8 - registration_address (NULL jeśli puste)
+		bankAccount,    // $9 - bank_account_nr (NULL jeśli puste)
+		true,           // $10 - active = TRUE (od razu aktywny)
+		time.Now(),     // $11 - activation_date = NOW()
+	).Scan(&userID)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert user: %w", err)
+	}
+
+	authLog.LogInfo("User created in database", logger.Fields{
+		"user_id":               userID,
+		"email":                 req.Email,
+		"has_surname":           req.Surname != "",
+		"has_pesel":             req.Pesel != "",
+		"has_phone":             req.PhoneNr != "",
+		"has_postal_address":    req.PostalAddress != "",
+		"has_registration_addr": req.RegistrationAddress != "",
+		"has_bank_account":      req.BankAccountNr != "",
+	})
+
+	return userID, nil
+}
+
+func (s *AuthServer) getUserDataByID(userID int64) (*pb.UserData, error) {
+	query := `
+		SELECT
+			user_id, name, surname, email, pesel, phone_nr,
+			postal_address, registration_address, bank_account_nr,
+			active, activation_date
+		FROM users
+		WHERE user_id = $1`
+
+	var userData pb.UserData
+	var surname, pesel, phoneNr, postalAddr, regAddr, bankAccount sql.NullString
+	var activationDate sql.NullTime
+
+	err := s.db.QueryRow(query, userID).Scan(
+		&userData.UserId,
+		&userData.Name,
+		&surname,
+		&userData.Email,
+		&pesel,
+		&phoneNr,
+		&postalAddr,
+		&regAddr,
+		&bankAccount,
+		&userData.Active,
+		&activationDate,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve user data: %w", err)
+	}
+
+	// Konwersja NULL values do stringów (puste jeśli NULL)
+	if surname.Valid {
+		userData.Surname = surname.String
+	}
+	if pesel.Valid {
+		userData.Pesel = pesel.String
+	}
+	if phoneNr.Valid {
+		userData.PhoneNr = phoneNr.String
+	}
+	if postalAddr.Valid {
+		userData.PostalAddress = postalAddr.String
+	}
+	if regAddr.Valid {
+		userData.RegistrationAddress = regAddr.String
+	}
+	if bankAccount.Valid {
+		userData.BankAccountNr = bankAccount.String
+	}
+	if activationDate.Valid {
+		userData.ActivationDate = activationDate.Time.Format("2006-01-02 15:04:05")
+	}
+
+	// Rola - można później rozszerzyć o logikę sprawdzania w tabelach ról
+	userData.Role = "user" // domyślnie
+
+	return &userData, nil
+}
+
+// hashPassword hashuje hasło używając bcrypt
+func (s *AuthServer) hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("failed to hash password: %w", err)
+	}
+	return string(hash), nil
+}
+
 func (s *AuthServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	var session *Session
 	if s.cache != nil {
