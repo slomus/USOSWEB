@@ -1012,7 +1012,7 @@ func (s *AuthServer) GetUserData(ctx context.Context, req *pb.GetUserDataRequest
 
 	// Get user data from database
 	query := `
-		SELECT user_id, name, surname, email, active,
+		SELECT u.user_id, u.name, u.surname, u.email, u.active,
 		       CASE
 		           WHEN s.user_id IS NOT NULL THEN 'student'
 		           WHEN ts.user_id IS NOT NULL THEN 'teacher'
@@ -1025,7 +1025,6 @@ func (s *AuthServer) GetUserData(ctx context.Context, req *pb.GetUserDataRequest
 		LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
 		WHERE u.user_id = $1
 	`
-
 	var user pb.User
 	err = s.db.QueryRow(query, claims.UserID).Scan(
 		&user.UserId, &user.Name, &user.Surname,
@@ -1274,7 +1273,6 @@ func (s *AuthServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.He
 	}, nil
 }
 
-// getUserRoleDetails - nowa funkcja do pobierania szczegółów roli
 func (s *AuthServer) getUserRoleDetails(ctx context.Context, userID int64) (map[string]interface{}, error) {
 	role, err := s.getUserRoleFromDB(ctx, userID)
 	if err != nil {
