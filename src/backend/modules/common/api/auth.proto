@@ -141,6 +141,71 @@ message GetUserRoleResponse {
   int64 status = 13;
 }
 
+message GetUserEditDataRequest { int64 user_id = 10; }
+
+message GetUserEditDataResponse {
+  int64 user_id = 10;
+  string name = 11;
+  string surname = 12;
+  string email = 13;
+  string phone_nr = 14;
+  string registration_address = 15;
+  string postal_address = 16;
+  string bank_account_nr = 17;
+  bool active = 18;
+}
+
+message UpdateUserDataRequest {
+  int64 user_id = 1;
+
+  optional string name = 2;
+  optional string surname = 3;
+  optional string password = 4;
+  optional string email = 5;
+  optional string phone_nr = 6;
+  optional string registration_address = 7;
+  optional string postal_address = 8;
+  optional string bank_account_nr = 9;
+  optional bool active = 10;
+}
+
+message UpdateUserDataResponse {
+  bool success = 10;
+  string message = 11;
+  GetUserEditDataResponse updated_data = 12;
+}
+
+message SearchUsersRequest {
+  optional string name = 10;
+  optional string surname = 11;
+  optional string email = 12;
+  optional string pesel = 13;
+  optional string phone_nr = 14;
+  optional bool active = 15;
+
+  int32 page = 16;
+  int32 page_size = 17;
+}
+
+message SearchUsersResponse {
+  repeated UserSearchResult users = 10;
+  int32 total_count = 11;
+  int32 page = 12;
+  int32 page_size = 13;
+  int32 total_pages = 14;
+}
+
+message UserSearchResult {
+  int64 user_id = 10;
+  string name = 11;
+  string surname = 12;
+  string email = 13;
+  string pesel = 14;
+  string phone_nr = 15;
+  bool active = 16;
+  string role = 17; // "student", "teacher", "admin"
+}
+
 // Serwis
 
 service AuthService {
@@ -207,6 +272,26 @@ service AuthService {
   rpc GetUserRole(GetUserRoleRequest) returns (GetUserRoleResponse) {
     option (google.api.http) = {
       get : "/api/auth/role"
+    };
+  }
+
+  rpc GetUserEditData(GetUserEditDataRequest)
+      returns (GetUserEditDataResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/edit/{user_id}"
+    };
+  }
+
+  rpc UpdateUserData(UpdateUserDataRequest) returns (UpdateUserDataResponse) {
+    option (google.api.http) = {
+      put : "/api/auth/edit/{user_id}"
+      body : "*"
+    };
+  }
+
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/search"
     };
   }
 }

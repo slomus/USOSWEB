@@ -19,16 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Login_FullMethodName          = "/modules.common.api.AuthService/Login"
-	AuthService_Logout_FullMethodName         = "/modules.common.api.AuthService/Logout"
-	AuthService_Register_FullMethodName       = "/modules.common.api.AuthService/Register"
-	AuthService_RefreshToken_FullMethodName   = "/modules.common.api.AuthService/RefreshToken"
-	AuthService_ForgotPassword_FullMethodName = "/modules.common.api.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName  = "/modules.common.api.AuthService/ResetPassword"
-	AuthService_GetUserName_FullMethodName    = "/modules.common.api.AuthService/GetUserName"
-	AuthService_GetUsers_FullMethodName       = "/modules.common.api.AuthService/GetUsers"
-	AuthService_GetUserData_FullMethodName    = "/modules.common.api.AuthService/GetUserData"
-	AuthService_GetUserRole_FullMethodName    = "/modules.common.api.AuthService/GetUserRole"
+	AuthService_Login_FullMethodName           = "/modules.common.api.AuthService/Login"
+	AuthService_Logout_FullMethodName          = "/modules.common.api.AuthService/Logout"
+	AuthService_Register_FullMethodName        = "/modules.common.api.AuthService/Register"
+	AuthService_RefreshToken_FullMethodName    = "/modules.common.api.AuthService/RefreshToken"
+	AuthService_ForgotPassword_FullMethodName  = "/modules.common.api.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName   = "/modules.common.api.AuthService/ResetPassword"
+	AuthService_GetUserName_FullMethodName     = "/modules.common.api.AuthService/GetUserName"
+	AuthService_GetUsers_FullMethodName        = "/modules.common.api.AuthService/GetUsers"
+	AuthService_GetUserData_FullMethodName     = "/modules.common.api.AuthService/GetUserData"
+	AuthService_GetUserRole_FullMethodName     = "/modules.common.api.AuthService/GetUserRole"
+	AuthService_GetUserEditData_FullMethodName = "/modules.common.api.AuthService/GetUserEditData"
+	AuthService_UpdateUserData_FullMethodName  = "/modules.common.api.AuthService/UpdateUserData"
+	AuthService_SearchUsers_FullMethodName     = "/modules.common.api.AuthService/SearchUsers"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -45,6 +48,9 @@ type AuthServiceClient interface {
 	GetUsers(ctx context.Context, in *GetUsersRequest, opts ...grpc.CallOption) (*GetUsersResponse, error)
 	GetUserData(ctx context.Context, in *GetUserDataRequest, opts ...grpc.CallOption) (*GetUserDataResponse, error)
 	GetUserRole(ctx context.Context, in *GetUserRoleRequest, opts ...grpc.CallOption) (*GetUserRoleResponse, error)
+	GetUserEditData(ctx context.Context, in *GetUserEditDataRequest, opts ...grpc.CallOption) (*GetUserEditDataResponse, error)
+	UpdateUserData(ctx context.Context, in *UpdateUserDataRequest, opts ...grpc.CallOption) (*UpdateUserDataResponse, error)
+	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 }
 
 type authServiceClient struct {
@@ -155,6 +161,36 @@ func (c *authServiceClient) GetUserRole(ctx context.Context, in *GetUserRoleRequ
 	return out, nil
 }
 
+func (c *authServiceClient) GetUserEditData(ctx context.Context, in *GetUserEditDataRequest, opts ...grpc.CallOption) (*GetUserEditDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserEditDataResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUserEditData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) UpdateUserData(ctx context.Context, in *UpdateUserDataRequest, opts ...grpc.CallOption) (*UpdateUserDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserDataResponse)
+	err := c.cc.Invoke(ctx, AuthService_UpdateUserData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchUsersResponse)
+	err := c.cc.Invoke(ctx, AuthService_SearchUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -169,6 +205,9 @@ type AuthServiceServer interface {
 	GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error)
 	GetUserData(context.Context, *GetUserDataRequest) (*GetUserDataResponse, error)
 	GetUserRole(context.Context, *GetUserRoleRequest) (*GetUserRoleResponse, error)
+	GetUserEditData(context.Context, *GetUserEditDataRequest) (*GetUserEditDataResponse, error)
+	UpdateUserData(context.Context, *UpdateUserDataRequest) (*UpdateUserDataResponse, error)
+	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -208,6 +247,15 @@ func (UnimplementedAuthServiceServer) GetUserData(context.Context, *GetUserDataR
 }
 func (UnimplementedAuthServiceServer) GetUserRole(context.Context, *GetUserRoleRequest) (*GetUserRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserRole not implemented")
+}
+func (UnimplementedAuthServiceServer) GetUserEditData(context.Context, *GetUserEditDataRequest) (*GetUserEditDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserEditData not implemented")
+}
+func (UnimplementedAuthServiceServer) UpdateUserData(context.Context, *UpdateUserDataRequest) (*UpdateUserDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserData not implemented")
+}
+func (UnimplementedAuthServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchUsers not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -410,6 +458,60 @@ func _AuthService_GetUserRole_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetUserEditData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserEditDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetUserEditData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetUserEditData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetUserEditData(ctx, req.(*GetUserEditDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_UpdateUserData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdateUserData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UpdateUserData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdateUserData(ctx, req.(*UpdateUserDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SearchUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_SearchUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SearchUsers(ctx, req.(*SearchUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -456,6 +558,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserRole",
 			Handler:    _AuthService_GetUserRole_Handler,
+		},
+		{
+			MethodName: "GetUserEditData",
+			Handler:    _AuthService_GetUserEditData_Handler,
+		},
+		{
+			MethodName: "UpdateUserData",
+			Handler:    _AuthService_UpdateUserData_Handler,
+		},
+		{
+			MethodName: "SearchUsers",
+			Handler:    _AuthService_SearchUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -186,3 +186,45 @@ UNION ALL
 SELECT 'applications', COUNT(*), 'Podania studentów' FROM applications;
 
 SELECT 'Mock dane zostały pomyślnie załadowane!' as status;
+
+
+INSERT INTO academic_calendar (event_type, title, description, start_date, end_date, academic_year, applies_to, is_recurring) VALUES
+-- Semestry
+('semester_start', 'Rozpoczęcie semestru zimowego', 'Pierwszy dzień zajęć w semestrze zimowym', '2024-10-01', NULL, '2024/2025', 'winter', TRUE),
+('semester_end', 'Zakończenie semestru zimowego', 'Ostatni dzień zajęć w semestrze zimowym', '2025-01-31', NULL, '2024/2025', 'winter', TRUE),
+('semester_start', 'Rozpoczęcie semestru letniego', 'Pierwszy dzień zajęć w semestrze letnim', '2025-02-17', NULL, '2024/2025', 'summer', TRUE),
+('semester_end', 'Zakończenie semestru letniego', 'Ostatni dzień zajęć w semestrze letnim', '2025-06-13', NULL, '2024/2025', 'summer', TRUE),
+
+-- Sesje egzaminacyjne
+('exam_session', 'Sesja egzaminacyjna zimowa', 'Sesja egzaminacyjna semestr zimowy', '2025-02-01', '2025-02-14', '2024/2025', 'winter', TRUE),
+('exam_session', 'Sesja egzaminacyjna letnia', 'Sesja egzaminacyjna semestr letni', '2025-06-16', '2025-06-30', '2024/2025', 'summer', TRUE),
+('exam_session', 'Sesja poprawkowa letnia', 'Sesja poprawkowa', '2025-09-01', '2025-09-15', '2024/2025', 'all', TRUE),
+
+-- Święta stałe (powtarzają się każdego roku)
+('holiday', 'Wszystkich Świętych', 'Dzień Wszystkich Świętych', '2024-11-01', NULL, '2024/2025', 'all', TRUE),
+('holiday', 'Święto Niepodległości', 'Narodowe Święto Niepodległości', '2024-11-11', NULL, '2024/2025', 'all', TRUE),
+('holiday', 'Wigilia', 'Wigilia Bożego Narodzenia', '2024-12-24', NULL, '2024/2025', 'all', TRUE),
+('holiday', 'Boże Narodzenie', 'Święta Bożego Narodzenia', '2024-12-25', '2024-12-26', '2024/2025', 'all', TRUE),
+('holiday', 'Sylwester/Nowy Rok', 'Sylwester i Nowy Rok', '2024-12-31', '2025-01-01', '2024/2025', 'all', TRUE),
+('holiday', 'Trzech Króli', 'Święto Trzech Króli', '2025-01-06', NULL, '2024/2025', 'all', TRUE),
+
+-- Święta ruchome (zmienne daty - przykład dla 2025)
+('holiday', 'Wielkanoc', 'Święta Wielkanocne 2025', '2025-04-20', '2025-04-21', '2024/2025', 'all', FALSE),
+('holiday', 'Poniedziałek Wielkanocny', '', '2025-04-21', NULL, '2024/2025', 'all', FALSE),
+('holiday', 'Boże Ciało', 'Boże Ciało 2025', '2025-06-19', NULL, '2024/2025', 'all', FALSE),
+
+-- Święta majowe
+('holiday', 'Święto Pracy', 'Święto Państwowe', '2025-05-01', NULL, '2024/2025', 'all', TRUE),
+('holiday', 'Święto Konstytucji 3 Maja', 'Święto Narodowe', '2025-05-03', NULL, '2024/2025', 'all', TRUE),
+
+-- Przerwy świąteczne
+('break', 'Ferie zimowe', 'Przerwa zimowa w zajęciach', '2025-01-27', '2025-01-31', '2024/2025', 'all', FALSE),
+('break', 'Przerwa wielkanocna', 'Przerwa świąteczna', '2025-04-17', '2025-04-22', '2024/2025', 'all', FALSE),
+
+-- Zapisy
+('registration', 'Zapisy na semestr zimowy', 'Okres zapisów na zajęcia', '2024-09-15', '2024-09-30', '2024/2025', 'all', TRUE),
+('registration', 'Zapisy na semestr letni', 'Okres zapisów na zajęcia', '2025-02-01', '2025-02-15', '2024/2025', 'all', TRUE),
+
+-- Ważne daty administracyjne
+('deadline', 'Koniec roku akademickiego', 'Zakończenie roku akademickiego 2024/2025', '2025-09-30', NULL, '2024/2025', 'all', FALSE),
+('event', 'Dzień Otwarty', 'Dni otwarte uczelni', '2025-03-15', NULL, '2024/2025', 'all', FALSE);

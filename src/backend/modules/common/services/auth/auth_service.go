@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -1320,6 +1321,392 @@ func (s *AuthServer) getUserRoleDetails(ctx context.Context, userID int64) (map[
 	}
 
 	return details, nil
+}
+
+func (s *AuthServer) GetUserEditData(ctx context.Context, req *pb.GetUserEditDataRequest) (*pb.GetUserEditDataResponse, error) {
+	authLog.LogInfo(fmt.Sprintf("GetUserEditData request received for user_id: %d", req.UserId))
+
+	if req.UserId <= 0 {
+		authLog.LogWarn("Invalid user_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		loggedUserIDValues := md.Get("user_id")
+		if len(loggedUserIDValues) > 0 {
+			var loggedUserID int64
+			fmt.Sscanf(loggedUserIDValues[0], "%d", &loggedUserID)
+
+			authLog.LogDebug(fmt.Sprintf("Request by user_id: %d to edit user_id: %d", loggedUserID, req.UserId))
+		}
+	}
+
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("auth", "edit_data", req.UserId)
+		var cachedResponse pb.GetUserEditDataResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			authLog.LogInfo("Edit data fetched from cache")
+			return &cachedResponse, nil
+		}
+	}
+
+	query := `
+		SELECT
+			user_id,
+			name,
+			COALESCE(surname, '') as surname,
+			COALESCE(email, '') as email,
+			COALESCE(phone_nr, '') as phone_nr,
+			COALESCE(registration_address, '') as registration_address,
+			COALESCE(postal_address, '') as postal_address,
+			COALESCE(bank_account_nr, '') as bank_account_nr,
+			active
+		FROM users
+		WHERE user_id = $1
+	`
+
+	var response pb.GetUserEditDataResponse
+	err := s.db.QueryRow(query, req.UserId).Scan(
+		&response.UserId,
+		&response.Name,
+		&response.Surname,
+		&response.Email,
+		&response.PhoneNr,
+		&response.RegistrationAddress,
+		&response.PostalAddress,
+		&response.BankAccountNr,
+		&response.Active,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			authLog.LogWarn(fmt.Sprintf("User not found: %d", req.UserId))
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		authLog.LogError("Failed to fetch user edit data", err)
+		return nil, status.Error(codes.Internal, "failed to fetch user data")
+	}
+
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("auth", "edit_data", req.UserId)
+		s.cache.Set(ctx, cacheKey, &response, 5*time.Minute)
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Successfully fetched edit data for user_id: %d", req.UserId))
+	return &response, nil
+}
+
+func (s *AuthServer) UpdateUserData(ctx context.Context, req *pb.UpdateUserDataRequest) (*pb.UpdateUserDataResponse, error) {
+	authLog.LogInfo(fmt.Sprintf("UpdateUserData request received for user_id: %d", req.UserId))
+
+	if req.UserId <= 0 {
+		authLog.LogWarn("Invalid user_id provided")
+		return &pb.UpdateUserDataResponse{
+			Success: false,
+			Message: "Invalid user_id",
+		}, nil
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		loggedUserIDValues := md.Get("user_id")
+		if len(loggedUserIDValues) > 0 {
+			var loggedUserID int64
+			fmt.Sscanf(loggedUserIDValues[0], "%d", &loggedUserID)
+
+			authLog.LogDebug(fmt.Sprintf("User %d attempting to update user %d", loggedUserID, req.UserId))
+		}
+	}
+
+	updates := []string{}
+	args := []interface{}{req.UserId}
+	argCount := 2
+
+	addUpdate := func(fieldName string, value interface{}) {
+		updates = append(updates, fmt.Sprintf("%s = $%d", fieldName, argCount))
+		args = append(args, value)
+		argCount++
+	}
+
+	if req.Name != nil {
+		addUpdate("name", *req.Name)
+	}
+	if req.Surname != nil {
+		addUpdate("surname", *req.Surname)
+	}
+	if req.Email != nil {
+		email := strings.ToLower(strings.TrimSpace(*req.Email))
+		if !strings.Contains(email, "@") {
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "Invalid email format",
+			}, nil
+		}
+		addUpdate("email", email)
+	}
+	if req.PhoneNr != nil {
+		addUpdate("phone_nr", *req.PhoneNr)
+	}
+	if req.RegistrationAddress != nil {
+		addUpdate("registration_address", *req.RegistrationAddress)
+	}
+	if req.PostalAddress != nil {
+		addUpdate("postal_address", *req.PostalAddress)
+	}
+	if req.BankAccountNr != nil {
+		bankAccount := strings.ReplaceAll(*req.BankAccountNr, " ", "")
+		if len(bankAccount) > 0 && len(bankAccount) != 26 {
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "Bank account number must be 26 digits",
+			}, nil
+		}
+		addUpdate("bank_account_nr", *req.BankAccountNr)
+	}
+	if req.Active != nil {
+		addUpdate("active", *req.Active)
+		if !*req.Active {
+			addUpdate("deactivation_date", time.Now())
+		}
+	}
+	if req.Password != nil {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			authLog.LogError("Failed to hash password", err)
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "Password processing error",
+			}, nil
+		}
+		addUpdate("password", string(hashedPassword))
+	}
+
+	if len(updates) == 0 {
+		authLog.LogWarn("No fields to update")
+		return &pb.UpdateUserDataResponse{
+			Success: false,
+			Message: "No fields to update",
+		}, nil
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE users
+		SET %s
+		WHERE user_id = $1
+		RETURNING
+			user_id,
+			name,
+			COALESCE(surname, '') as surname,
+			COALESCE(email, '') as email,
+			COALESCE(phone_nr, '') as phone_nr,
+			COALESCE(registration_address, '') as registration_address,
+			COALESCE(postal_address, '') as postal_address,
+			COALESCE(bank_account_nr, '') as bank_account_nr,
+			active
+	`, strings.Join(updates, ", "))
+
+	authLog.LogDebug(fmt.Sprintf("Executing update query with %d fields", len(updates)))
+
+	var updatedData pb.GetUserEditDataResponse
+	err := s.db.QueryRow(query, args...).Scan(
+		&updatedData.UserId,
+		&updatedData.Name,
+		&updatedData.Surname,
+		&updatedData.Email,
+		&updatedData.PhoneNr,
+		&updatedData.RegistrationAddress,
+		&updatedData.PostalAddress,
+		&updatedData.BankAccountNr,
+		&updatedData.Active,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			authLog.LogWarn(fmt.Sprintf("User not found: %d", req.UserId))
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "User not found",
+			}, nil
+		}
+
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "unique") {
+			authLog.LogWarn("Duplicate entry error during update")
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "Email already exists",
+			}, nil
+		}
+
+		authLog.LogError("Failed to update user data", err)
+		return &pb.UpdateUserDataResponse{
+			Success: false,
+			Message: "Failed to update user data",
+		}, nil
+	}
+
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("auth", "edit_data", req.UserId)
+		s.cache.Delete(ctx, cacheKey)
+
+		if req.Email != nil {
+			emailKey := cache.GenerateKey("auth", "user_by_email", *req.Email)
+			s.cache.Delete(ctx, emailKey)
+		}
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Successfully updated user_id: %d", req.UserId))
+
+	return &pb.UpdateUserDataResponse{
+		Success:     true,
+		Message:     "User data updated successfully",
+		UpdatedData: &updatedData,
+	}, nil
+}
+
+func (s *AuthServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error) {
+	authLog.LogInfo("SearchUsers request received")
+
+	page := req.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := req.PageSize
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	conditions := []string{}
+	args := []interface{}{}
+	argCount := 1
+
+	addCondition := func(column string, value string, operator string) {
+		if operator == "ILIKE" {
+			conditions = append(conditions, fmt.Sprintf("%s ILIKE $%d", column, argCount))
+			args = append(args, "%"+value+"%")
+		} else {
+			conditions = append(conditions, fmt.Sprintf("%s %s $%d", column, operator, argCount))
+			args = append(args, value)
+		}
+		argCount++
+	}
+
+	if req.Name != nil && *req.Name != "" {
+		addCondition("u.name", *req.Name, "ILIKE")
+	}
+	if req.Surname != nil && *req.Surname != "" {
+		addCondition("u.surname", *req.Surname, "ILIKE")
+	}
+	if req.Email != nil && *req.Email != "" {
+		addCondition("u.email", *req.Email, "ILIKE")
+	}
+	if req.Pesel != nil && *req.Pesel != "" {
+		addCondition("u.pesel", *req.Pesel, "=")
+	}
+	if req.PhoneNr != nil && *req.PhoneNr != "" {
+		addCondition("u.phone_nr", *req.PhoneNr, "ILIKE")
+	}
+	if req.Active != nil {
+		conditions = append(conditions, fmt.Sprintf("u.active = $%d", argCount))
+		args = append(args, *req.Active)
+		argCount++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM users u
+		%s
+	`, whereClause)
+
+	var totalCount int
+	err := s.db.QueryRow(countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		authLog.LogError("Failed to count users", err)
+		return nil, status.Error(codes.Internal, "failed to count users")
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(pageSize)))
+
+	offset := (page - 1) * pageSize
+
+	limitArg := argCount
+	offsetArg := argCount + 1
+
+	searchQuery := fmt.Sprintf(`
+		SELECT
+			u.user_id,
+			u.name,
+			COALESCE(u.surname, '') as surname,
+			COALESCE(u.email, '') as email,
+			COALESCE(u.pesel, '') as pesel,
+			COALESCE(u.phone_nr, '') as phone_nr,
+			u.active,
+			COALESCE(
+				CASE
+					WHEN s.album_nr IS NOT NULL THEN 'student'
+					WHEN ts.teaching_staff_id IS NOT NULL THEN 'teacher'
+					WHEN adm.administrative_staff_id IS NOT NULL THEN 'admin'
+					ELSE 'unknown'
+				END, 'unknown'
+			) as role
+		FROM users u
+		LEFT JOIN students s ON u.user_id = s.user_id
+		LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+		LEFT JOIN administrative_staff adm ON u.user_id = adm.user_id
+		%s
+		ORDER BY u.user_id
+		LIMIT $%d OFFSET $%d
+	`, whereClause, limitArg, offsetArg)
+
+	args = append(args, pageSize, offset)
+
+	rows, err := s.db.Query(searchQuery, args...)
+	if err != nil {
+		authLog.LogError("Failed to search users", err)
+		return nil, status.Error(codes.Internal, "failed to search users")
+	}
+	defer rows.Close()
+
+	var users []*pb.UserSearchResult
+	for rows.Next() {
+		var user pb.UserSearchResult
+		err := rows.Scan(
+			&user.UserId,
+			&user.Name,
+			&user.Surname,
+			&user.Email,
+			&user.Pesel,
+			&user.PhoneNr,
+			&user.Active,
+			&user.Role,
+		)
+		if err != nil {
+			authLog.LogError("Failed to scan user row", err)
+			continue
+		}
+		users = append(users, &user)
+	}
+
+	if err = rows.Err(); err != nil {
+		authLog.LogError("Error during rows iteration", err)
+		return nil, status.Error(codes.Internal, "error processing search results")
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Found %d users (total: %d)", len(users), totalCount))
+
+	return &pb.SearchUsersResponse{
+		Users:      users,
+		TotalCount: int32(totalCount),
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: int32(totalPages),
+	}, nil
 }
 
 // Helper functions
