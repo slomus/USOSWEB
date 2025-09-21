@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS grades;
+DROP TYPE IF EXISTS grade_value;
+
