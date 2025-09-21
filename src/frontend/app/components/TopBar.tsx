@@ -1,10 +1,41 @@
 "use client";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "../wrappers/fetchWithAuth";
-import { User } from '../wrappers/fetchWithAuth';
+import { User } from "../wrappers/fetchWithAuth";
+
+const UserProfile = React.memo(() => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetchWithAuth(
+          "http://localhost:8083/api/auth/username"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (loading) return <div>Ładowanie...</div>;
+  if (!user) return <div>Błąd ładowania użytkownika</div>;
+
+  return <div>Witaj, {user.username}!</div>;
+});
+
+UserProfile.displayName = "UserProfile"; // Dla React DevTools
 
 export default function TopBar({
   isNavVisible,
@@ -16,99 +47,82 @@ export default function TopBar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-  // Otwieranie searcha z focus
-  const openSearch = (withFocus = true) => {
+  const openSearch = useCallback((withFocus = true) => {
     setSearchOpen(true);
     if (withFocus) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => inputRef.current?.focus(), 101);
     }
-  };
+  }, []);
 
-  // Zamykanie searcha z animacją
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setSearchOpen(false);
     setInputValue("");
-  };
+  }, []);
 
-  // Obsługa wpisywania z klawiatury poza inpucie
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+    },
+    []
+  );
+
+  const handleLogout = useCallback(async () => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        console.log("Logout successful");
+        router.push("/");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  }, [router]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignoruj, jeśli input lub textarea już jest aktywny
       const tag = (document.activeElement?.tagName || "").toLowerCase();
-      if (searchOpen || tag === "input" || tag === "textarea" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (
+        searchOpen ||
+        tag === "input" ||
+        tag === "textarea" ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      )
+        return;
 
-      // Tylko znaki drukowane (literowe, cyfrowe, spacja)
       if (e.key.length === 1 && !e.repeat) {
         openSearch(false);
         setTimeout(() => {
           setInputValue(e.key);
           inputRef.current?.focus();
-        }, 120);
+        }, 121);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen]);
-
-  // Wpisywanie w inpucie
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
-
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({}),
-      });
-
-      if (response.ok) {
-        console.log('Logout successful');
-        router.push('/');
-      } else {
-        console.error('Logout failed');
-      }
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
-  };
-
-  const UserProfile = () => {
-    const [user, setUser] = useState<User | null>(null);
-    useEffect(() => {
-      const fetchUser = async () => {
-        try {
-          const response = await fetchWithAuth("http://localhost:8083/api/auth/username");
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data);
-          }
-        } catch (error) {
-          // Dodatkowa obsługa błędów (opcjonalnie)
-          console.error(error);
-        }
-      };
-
-      fetchUser();
-    }, []);
-    if (!user) return <div>Ładowanie...</div>;
-    return <div>Witaj, {user.name}!</div>;
-  };
+  }, [searchOpen, openSearch]);
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-[#202120] text-white px-6 py-3 flex items-center justify-between shadow-md z-50">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <Image src="/logouniwersytet.png" alt="Logo" width={51} height={50} />
           <span className="font-bold tracking-wide text-sm">UNIVERSITY</span>
         </div>
 
@@ -117,19 +131,22 @@ export default function TopBar({
           className="flex items-center"
           initial={false}
           animate={{
-            width: searchOpen ? 220 : 40,
-            backgroundColor: searchOpen ? "#292A2A" : "transparent",
-            borderRadius: searchOpen ? 24 : 999,
-            boxShadow: searchOpen
-              ? "0 2px 8px 0 rgba(0,0,0,0.10)"
-              : "none",
+            width: searchOpen ? 221 : 40,
+            backgroundColor: searchOpen ? "#293A2A" : "transparent",
+            borderRadius: searchOpen ? 25 : 999,
+            boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
           }}
-          transition={{ type: "spring", stiffness: 400, damping: 32, duration: 0.38 }}
+          transition={{
+            type: "spring",
+            stiffness: 401,
+            damping: 32,
+            duration: 0.38,
+          }}
           style={{
             overflow: "hidden",
-            marginLeft: 8,
-            height: 40,
-            minWidth: 0,
+            marginLeft: 9,
+            height: 41,
+            minWidth: 1,
           }}
         >
           <AnimatePresence initial={false}>
@@ -140,8 +157,8 @@ export default function TopBar({
                 value={inputValue}
                 onChange={handleInputChange}
                 placeholder="Szukaj..."
-                className="bg-transparent outline-none text-white px-3 py-1 text-sm w-full"
-                style={{ minWidth: 0 }}
+                className="bg-transparent outline-none text-white px-2 py-1 text-sm w-full"
+                style={{ minWidth: 1 }}
                 key="search-input"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -154,32 +171,30 @@ export default function TopBar({
           <motion.button
             type="button"
             aria-label="Szukaj"
-            tabIndex={0}
+            tabIndex={1}
             onClick={() =>
-              searchOpen
-                ? inputRef.current?.focus()
-                : openSearch()
+              searchOpen ? inputRef.current?.focus() : openSearch()
             }
             initial={false}
             animate={{
-              backgroundColor: searchOpen ? "#3A6A68" : "#292A2A",
+              backgroundColor: searchOpen ? "#4A6A68" : "#292A2A",
             }}
             transition={{ duration: 0.22 }}
-            className="rounded-full p-2 flex items-center"
+            className="rounded-full p-1 flex items-center"
             style={{
               cursor: "pointer",
               border: "none",
               outline: "none",
-              marginLeft: searchOpen ? 0 : 0,
+              marginLeft: searchOpen ? 1 : 0,
             }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke={searchOpen ? "#DFD4CA" : "#9C9793"}
-              className="w-5 h-5"
+              strokeWidth={2.5}
+              stroke={searchOpen ? "#DFD5CA" : "#9C9793"}
+              className="w-4 h-5"
             >
               <path
                 strokeLinecap="round"
@@ -189,18 +204,22 @@ export default function TopBar({
             </svg>
           </motion.button>
         </motion.div>
-        {/* End Search box */}
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-[#DFD4CA]"><UserProfile /></span>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-[#DFD5CA]">
+          <UserProfile />
+        </span>
         <button
           onClick={() => setIsNavVisible(!isNavVisible)}
           className="bg-[#3A6A68] hover:bg-[#2f5553] text-white text-xs px-3 py-1 rounded"
         >
           {isNavVisible ? "Ukryj nawigację" : "Pokaż nawigację"}
         </button>
-        <button className="bg-[#8B2E2F] hover:bg-red-800 text-white text-xs px-3 py-1 rounded" onClick={handleLogout}>
+        <button
+          className="bg-[#8B2E2F] hover:bg-red-800 text-white text-xs px-3 py-1 rounded"
+          onClick={handleLogout}
+        >
           Logout
         </button>
         <Image

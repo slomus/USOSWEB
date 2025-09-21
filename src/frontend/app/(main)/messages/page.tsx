@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type Message = {
   id: number;
@@ -12,6 +12,134 @@ type Message = {
   read: boolean;
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+
+// Hook debounce
+function useDebounce(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
+}
+
+// Komponent sugestii email
+function EmailSuggestInput({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (email: string) => void;
+}) {
+  const [input, setInput] = useState(value || "");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [visible, setVisible] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const debouncedInput = useDebounce(input, 400);
+
+  // Fetch sugestii
+  useEffect(() => {
+    console.log("Debounced input:", debouncedInput);
+
+    if (debouncedInput.length < 3) {
+      console.log("Input za krótki, czyszczę sugestie");
+      setSuggestions([]);
+      return;
+    }
+
+    let canceled = false;
+    console.log("Fetching suggestions dla:", debouncedInput);
+
+    fetch(
+      `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(
+        debouncedInput
+      )}&limit=5&scope=all`,
+      {
+        method: "GET",
+        credentials: "include", // dołącza ciasteczka
+        headers: {
+          "Content-Type": "application/json",
+          // jeśli potrzebujesz dodatkowych nagłówków, np. tokenów:
+          // "Authorization": `Bearer ${token}`
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const items = data.items?.map((i: any) => i.email || i) || [];
+        setSuggestions(items);
+        setVisible(true);
+      })
+      .catch((err) => console.error("Błąd fetch:", err));
+
+    return () => {
+      canceled = true;
+      console.log("Fetch anulowany dla:", debouncedInput);
+    };
+  }, [debouncedInput]);
+
+  // Ukrycie dropdown przy kliknięciu poza
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        console.log("Kliknięcie poza dropdown, ukrywam sugestie");
+        setVisible(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => {
+          setInput(e.target.value);
+          setVisible(true);
+          console.log("Zmiana inputu:", e.target.value);
+        }}
+        className="w-full p-2 rounded border bg-[var(--color-bg-secondary)]"
+        placeholder="Do:"
+      />
+
+      {visible && (
+        <ul className="absolute z-10 mt-1 w-full bg-white border rounded shadow">
+          {input.length < 3 ? (
+            <li className="px-3 py-2 text-gray-500 italic">
+              Wprowadź przynajmniej 3 znaki
+            </li>
+          ) : suggestions.length > 0 ? (
+            suggestions.map((s, idx) => (
+              <li
+                key={idx}
+                onClick={() => {
+                  onSelect(s);
+                  setInput(s);
+                  setVisible(false);
+                  console.log("Wybrano sugestię:", s);
+                }}
+                className="px-3 py-2 hover:bg-gray-200 cursor-pointer"
+              >
+                {s}
+              </li>
+            ))
+          ) : (
+            <li className="px-3 py-2 text-gray-500 italic">Brak sugestii</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// Strona wiadomości
 export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -73,7 +201,7 @@ export default function MessagesPage() {
 
   return (
     <div className="flex h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      {/* Sidebar left with folders */}
+      {/* Sidebar left */}
       <aside className="w-60 bg-[var(--color-bg-secondary)] p-4 space-y-4 border-r border-[var(--color-accent)]">
         <button
           onClick={() =>
@@ -199,14 +327,11 @@ export default function MessagesPage() {
             {selectedMessage ? (
               selectedMessage.id === -1 ? (
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Do:"
+                  <EmailSuggestInput
                     value={formData.to}
-                    onChange={(e) =>
-                      setFormData({ ...formData, to: e.target.value })
+                    onSelect={(email) =>
+                      setFormData({ ...formData, to: email })
                     }
-                    className="w-full p-2 rounded border bg-[var(--color-bg-secondary)]"
                   />
                   <input
                     type="text"
@@ -257,11 +382,15 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <div>
-                  <h2 className="text-xl font-bold">{selectedMessage.subject}</h2>
+                  <h2 className="text-xl font-bold">
+                    {selectedMessage.subject}
+                  </h2>
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     od: {selectedMessage.from} | do: {selectedMessage.to}
                   </p>
-                  <p className="mt-4 whitespace-pre-wrap">{selectedMessage.body}</p>
+                  <p className="mt-4 whitespace-pre-wrap">
+                    {selectedMessage.body}
+                  </p>
                 </div>
               )
             ) : (

@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
-	"time"
-
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strings"
+	"time"
 )
 
 var courseLog = logger.NewLogger("course-service")
@@ -40,120 +38,6 @@ func NewCourseServerWithCache(db *sql.DB, cacheClient cache.Cache) *CourseServer
 		config: cache.DefaultCacheConfig(),
 		logger: logger.NewLogger("course-service"),
 	}
-}
-
-func (s *CourseServer) GetMarks(ctx context.Context, req *pb.GetMarksRequest) (*pb.GetMarksResponse, error) {
-	courseLog.LogInfo("Received request for marks")
-
-	// Determine caller user and optional target album
-	targetAlbum := sql.NullInt32{}
-	if req.AlbumNr != nil {
-		targetAlbum.Int32 = *req.AlbumNr
-		targetAlbum.Valid = true
-	}
-
-	// Extract user_id from context metadata set by auth middleware
-	userID := int64(0)
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if vals := md.Get("user_id"); len(vals) > 0 {
-			// best-effort parse
-			var tmp int64
-			_, _ = fmt.Sscanf(vals[0], "%d", &tmp)
-			userID = tmp
-		}
-	}
-
-	// Resolve album_nr for logged user if target not provided
-	if !targetAlbum.Valid {
-		err := s.db.QueryRow("SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&targetAlbum.Int32)
-		if err != nil {
-			return &pb.GetMarksResponse{Marks: nil, Message: "Student not found"}, nil
-		}
-		targetAlbum.Valid = true
-	}
-
-	// Authorization rules:
-	// - If caller is the student, allowed
-	// - If caller is teaching staff assigned to classes for the student's subjects, allowed
-	// - If caller is admin/administrative or teaching_staff in general, we restrict to only those classes they teach
-
-	// Check if caller is the same student
-	var callerAlbum sql.NullInt32
-	_ = s.db.QueryRow("SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&callerAlbum)
-	isSelf := callerAlbum.Valid && callerAlbum.Int32 == targetAlbum.Int32
-
-	// Check if caller is teaching staff
-	var teachingStaffID sql.NullInt32
-	_ = s.db.QueryRow("SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", userID).Scan(&teachingStaffID)
-
-	// Build query
-	// Base select
-	base := `
-        SELECT g.grade_id, g.album_nr, g.subject_id, g.class_id,
-               s.name as subject_name,
-               c.class_type,
-               g.value::text, g.weight, g.attempt,
-               u.name || ' ' || COALESCE(u.surname, '') as added_by,
-               COALESCE(g.comment, '') as comment,
-               to_char(g.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
-        FROM grades g
-        JOIN subjects s ON g.subject_id = s.subject_id
-        JOIN classes c ON g.class_id = c.class_id
-        JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
-        JOIN users u ON ts.user_id = u.user_id
-    `
-
-	var (
-		rows *sql.Rows
-		err  error
-	)
-	if isSelf {
-		// Student can see only own marks
-		q := base + " WHERE g.album_nr = $1 ORDER BY g.created_at DESC"
-		rows, err = s.db.Query(q, targetAlbum.Int32)
-	} else if teachingStaffID.Valid {
-		// Teaching staff can see marks for students assigned to their classes
-		q := base + `
-            JOIN course_instructors ci ON ci.class_id = g.class_id
-            WHERE g.album_nr = $1 AND ci.teaching_staff_id = $2
-            ORDER BY g.created_at DESC`
-		rows, err = s.db.Query(q, targetAlbum.Int32, teachingStaffID.Int32)
-	} else {
-		// Not authorized
-		return &pb.GetMarksResponse{Marks: nil, Message: "Forbidden"}, nil
-	}
-
-	if err != nil {
-		courseLog.LogError("Failed to fetch marks", err)
-		return nil, fmt.Errorf("failed to fetch marks: %w", err)
-	}
-	defer rows.Close()
-
-	var marks []*pb.MarkItem
-	for rows.Next() {
-		var item pb.MarkItem
-		err := rows.Scan(
-			&item.GradeId,
-			&item.AlbumNr,
-			&item.SubjectId,
-			&item.ClassId,
-			&item.SubjectName,
-			&item.ClassType,
-			&item.Value,
-			&item.Weight,
-			&item.Attempt,
-			&item.AddedBy,
-			&item.Comment,
-			&item.CreatedAt,
-		)
-		if err != nil {
-			courseLog.LogError("Failed to scan mark row", err)
-			continue
-		}
-		marks = append(marks, &item)
-	}
-
-	return &pb.GetMarksResponse{Marks: marks, Message: "Marks retrieved successfully"}, nil
 }
 
 func (s *CourseServer) GetStudentCourseInfo(ctx context.Context, req *pb.GetStudentCourseInfoRequest) (*pb.GetStudentCourseInfoResponse, error) {
