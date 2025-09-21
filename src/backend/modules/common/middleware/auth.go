@@ -23,7 +23,9 @@ func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 
 		if info.FullMethod == "/modules.common.api.AuthService/Login" ||
 			info.FullMethod == "/modules.common.api.AuthService/Register" ||
-			info.FullMethod == "/modules.common.api.AuthService/Logout" {
+			info.FullMethod == "/modules.common.api.AuthService/Logout" ||
+			info.FullMethod == "/modules.common.api.AuthService/ForgotPassword" ||
+			info.FullMethod == "/modules.common.api.AuthService/ResetPassword" {
 
 			log.LogDebug(fmt.Sprintf("Skipping auth for public endpoint: %s", info.FullMethod))
 			return handler(ctx, req)

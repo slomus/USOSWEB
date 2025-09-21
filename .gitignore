@@ -1,0 +1,4 @@
+# Ignore logs directory and its contents
+logs/
+
+

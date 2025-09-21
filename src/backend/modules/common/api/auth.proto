@@ -31,6 +31,7 @@ message LogoutResponse {
 message RegisterRequest {
   string email = 11;
   string password = 12;
+  string name = 13;
 }
 
 message RegisterResponse {
@@ -39,55 +40,98 @@ message RegisterResponse {
   int64 user_id = 12;
 }
 
-message RefreshTokenRequest {
-  string refresh_token = 10;
-}
+message RefreshTokenRequest { string refresh_token = 10; }
 
 message RefreshTokenResponse {
   string message = 10;
   int64 expires_in = 11;
 }
 
+message ForgotPasswordRequest { string email = 10; }
+
+message ForgotPasswordResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+message ResetPasswordRequest {
+  string token = 10;
+  string new_password = 11;
+}
+
+message ResetPasswordResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+message GetUserNameRequest {}
+
+message GetUserNameResponse {
+  string username = 10;
+  string message = 11;
+  bool success = 12;
+}
+
 message HelloRequest {}
 
-message HelloResponse {
-  string message = 10;
-}
+message HelloResponse { string message = 10; }
 
 // Serwis
 
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse) {
     option (google.api.http) = {
-      post: "/api/auth/login"
-      body: "*"
+      post : "/api/auth/login"
+      body : "*"
     };
   }
 
   rpc Logout(LogoutRequest) returns (LogoutResponse) {
     option (google.api.http) = {
-      post: "/api/auth/logout"
-      body: "*"
+      post : "/api/auth/logout"
+      body : "*"
     };
   }
 
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = {
-      post: "/api/auth/register"
-      body: "*"
+      post : "/api/auth/register"
+      body : "*"
     };
   }
 
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
     option (google.api.http) = {
-      post: "/api/auth/refresh"
-      body: "*"
+      post : "/api/auth/refresh"
+      body : "*"
+    };
+  }
+
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse) {
+    option (google.api.http) = {
+      post : "/api/auth/forgot-password"
+      body : "*"
+    };
+  }
+
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post : "/api/auth/reset-password"
+      body : "*"
+    };
+  }
+
+  rpc GetUserName(GetUserNameRequest) returns (GetUserNameResponse) {
+    option (google.api.http) = {
+      get : "/api/auth/username"
     };
   }
 }
 
 service AuthHello {
   rpc SayHello(HelloRequest) returns (HelloResponse) {
-    option (google.api.http) = {get: "/api/hello"};
+    option (google.api.http) = {
+      get : "/api/hello"
+    };
   }
 }

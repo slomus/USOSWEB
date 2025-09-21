@@ -1,8 +1,41 @@
 "use client";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "../wrappers/fetchWithAuth";
+import { User } from "../wrappers/fetchWithAuth";
+
+const UserProfile = React.memo(() => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetchWithAuth(
+          "http://localhost:8083/api/auth/username"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (loading) return <div>Ładowanie...</div>;
+  if (!user) return <div>Błąd ładowania użytkownika</div>;
+
+  return <div>Witaj, {user.username}!</div>;
+});
+
+UserProfile.displayName = "UserProfile"; // Dla React DevTools
 
 export default function TopBar({
   isNavVisible,
@@ -14,57 +47,28 @@ export default function TopBar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Otwieranie searcha z focus
-  const openSearch = (withFocus = true) => {
-    setSearchOpen(true);
-    if (withFocus) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  };
-
-  // Zamykanie searcha z animacją
-  const handleClose = () => {
-    setSearchOpen(false);
-    setInputValue("");
-  };
-
-  // Obsługa wpisywania z klawiatury poza inpucie
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignoruj, jeśli input lub textarea już jest aktywny
-      const tag = (document.activeElement?.tagName || "").toLowerCase();
-      if (
-        searchOpen ||
-        tag === "input" ||
-        tag === "textarea" ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.altKey
-      )
-        return;
-
-      // Tylko znaki drukowane (literowe, cyfrowe, spacja)
-      if (e.key.length === 1 && !e.repeat) {
-        openSearch(false);
-        setTimeout(() => {
-          setInputValue(e.key);
-          inputRef.current?.focus();
-        }, 120);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen]);
-
-  // Wpisywanie w inpucie
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
   const router = useRouter();
 
-  const handleLogout = async () => {
+  const openSearch = useCallback((withFocus = true) => {
+    setSearchOpen(true);
+    if (withFocus) {
+      setTimeout(() => inputRef.current?.focus(), 101);
+    }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setSearchOpen(false);
+    setInputValue("");
+  }, []);
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+    },
+    []
+  );
+
+  const handleLogout = useCallback(async () => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
     try {
@@ -86,7 +90,33 @@ export default function TopBar({
     } catch (error) {
       console.error("Error during logout:", error);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || "").toLowerCase();
+      if (
+        searchOpen ||
+        tag === "input" ||
+        tag === "textarea" ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      )
+        return;
+
+      if (e.key.length === 1 && !e.repeat) {
+        openSearch(false);
+        setTimeout(() => {
+          setInputValue(e.key);
+          inputRef.current?.focus();
+        }, 121);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [searchOpen, openSearch]);
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
@@ -114,9 +144,9 @@ export default function TopBar({
           }}
           style={{
             overflow: "hidden",
-            marginLeft: 8,
-            height: 40,
-            minWidth: 0,
+            marginLeft: 9,
+            height: 41,
+            minWidth: 1,
           }}
         >
           <AnimatePresence initial={false}>
@@ -141,7 +171,7 @@ export default function TopBar({
           <motion.button
             type="button"
             aria-label="Szukaj"
-            tabIndex={0}
+            tabIndex={1}
             onClick={() =>
               searchOpen ? inputRef.current?.focus() : openSearch()
             }
@@ -152,12 +182,12 @@ export default function TopBar({
                 : "[var(--color-bg)]",
             }}
             transition={{ duration: 0.22 }}
-            className="rounded-full p-2 flex items-center"
+            className="rounded-full p-1 flex items-center"
             style={{
               cursor: "pointer",
               border: "none",
               outline: "none",
-              marginLeft: searchOpen ? 0 : 0,
+              marginLeft: searchOpen ? 1 : 0,
             }}
           >
             <svg
@@ -178,7 +208,6 @@ export default function TopBar({
             </svg>
           </motion.button>
         </motion.div>
-        {/* End Search box */}
       </div>
 
       <div className="flex items-center gap-4">
