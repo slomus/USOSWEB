@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
@@ -207,17 +208,6 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
-	// Messaging Service
-	appLog.LogInfo("Registering MessagingService endpoints")
-	messagingEndpoint := configs.Envs.GetMessagingEndpoint()
-	appLog.LogDebug(fmt.Sprintf("Connecting to MessagingService at: %s", messagingEndpoint))
-	err = messagingPb.RegisterMessagingServiceHandlerFromEndpoint(ctx, mux, messagingEndpoint, opts)
-	if err != nil {
-		appLog.LogError("Failed to register MessagingService gateway", err)
-		panic(err)
-	}
-	appLog.LogInfo("MessagingService endpoints registered successfully")
-
 	handler := loggingMiddleware(allowCORS(mux))
 
 	appLog.LogInfo("API Gateway configured with endpoints:")
@@ -237,8 +227,6 @@ func main() {
 		"GET  /api/courses/stats",
 		"GET  /api/faculties",
 		"GET  /api/student/course-info/{album_nr}",
-		"POST /api/messaging/send-email",
-		"GET  /api/messaging/suggest-email",
 	}
 
 	for _, endpoint := range endpoints {
