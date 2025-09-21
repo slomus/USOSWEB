@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
+	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
