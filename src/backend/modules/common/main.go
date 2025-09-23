@@ -7,9 +7,10 @@ import (
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
-	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
+	// USUNIĘTE: "github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
+	"github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
-	"github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
+	courses "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
@@ -66,8 +67,8 @@ func main() {
 
 	// Tworzenie instancji serwisów
 	authServer := auth.NewAuthServerWithCache(db, redisCache)
-	courseServer := course.NewCourseServerWithCache(db, redisCache)
-	applicationsServer := applicationsSvc.NewApplicationsServer(db)
+	courseServer := courses.NewCourseServerWithCache(db, redisCache)
+	applicationsServer := applications.NewApplicationsServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)

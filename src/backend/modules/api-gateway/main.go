@@ -9,10 +9,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
-	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
+	//applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
-	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
+	//messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
