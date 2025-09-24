@@ -200,6 +200,7 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
+
 	// Calendar Service
 	appLog.LogInfo("Registering CalendarService endpoints")
 	calendarServiceEndpoint := "calendar:3001"
@@ -261,6 +262,7 @@ func main() {
 		"GET  /api/messaging/suggest-email",
 		"GET  /api/applications",
 		"POST /api/applications",
+
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))

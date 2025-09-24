@@ -6,8 +6,8 @@ export default function StudentMainPage() {
       {/* Główna siatka */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Lewa kolumna – plan zajęć */}
-        <div className="bg-[#1E1E1E] p-6 rounded-xl shadow-md h-full flex items-center justify-center">
-          <div className="text-[#9C9793] text-center">
+        <div className="bg-[var(--color-bg)] p-6 rounded-xl shadow-md h-full flex items-center justify-center">
+          <div className="text-[var(--color-text)] text-center">
             <p className="text-lg">
               [Tu będzie widok kalendarza / planu zajęć]
             </p>
@@ -15,15 +15,15 @@ export default function StudentMainPage() {
         </div>
 
         {/* Prawa kolumna – informacje */}
-        <div className="bg-[#1E1E1E] p-6 rounded-xl shadow-md flex flex-col justify-between gap-6">
+        <div className="bg-[var(--color-bg)] p-6 rounded-xl shadow-md flex flex-col justify-between gap-6">
           {/* Oceny */}
           <div>
             <p className="mb-2 text-sm">Dodano nowe oceny:</p>
             <div className="flex gap-4">
-              <div className="bg-teal-700 text-white px-4 py-1 rounded font-bold">
+              <div className="bg-teal-700 text-[var(--color-text)] px-4 py-1 rounded font-bold">
                 5
               </div>
-              <div className="bg-red-700 text-white px-4 py-1 rounded font-bold">
+              <div className="bg-red-700 text-[var(--color-text)] px-4 py-1 rounded font-bold">
                 2
               </div>
             </div>
@@ -59,7 +59,7 @@ export default function StudentMainPage() {
         <h3 className="text-lg font-bold text-center mb-2">
           SABOTAŻ W BIAŁY DZIEŃ! – OPEL ASTRA NIE PRZYJĘTY NA ZŁOMIE!!!
         </h3>
-        <p className="text-sm text-center max-w-3xl mx-auto text-[#9C9793]">
+        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
           W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
           się, że nikt nie kupuje do nich części, bo i tak już są popsute –
           ujawnił redaktor. Nikt tego nie chce nawet na złomie – oświadczył
@@ -69,7 +69,7 @@ export default function StudentMainPage() {
         <h3 className="text-lg font-bold text-center mb-2">
           JENDAK GO PRZYJĘLI!!! 0,50 zł za kilogram - nie ma tragedii
         </h3>
-        <p className="text-sm text-center max-w-3xl mx-auto text-[#9C9793]">
+        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
           W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
           się, że mimo wszystko cieszy się z oddania auta na szrot &quot;Panie i
           tak by tego nikt nie kupił&quot; odpowiedział na pytanie dlaczego
