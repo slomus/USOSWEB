@@ -6,7 +6,7 @@ import { Transition } from "framer-motion";
 
 export default function Navigation({ transition }: { transition: Transition }) {
   const menuItems = [
-    { label: "Strona główna", href: "#" },
+    { label: "Strona główna", href: "/StudentMainPage" },
     { label: "Plan zajęć", href: "#" },
     { label: "Wiadomości", href: "/messages" },
     { label: "Kalendarz", href: "#" },
@@ -17,7 +17,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Egzaminy i zaliczenia", href: "#" },
     { label: "Zarządzanie kontem", href: "#" },
     { label: "Kontakt", href: "#" },
-    { label: "O nas", href: "#" },
+    { label: "O nas", href: "/aboutUs" },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -300, opacity: 0 }}
       transition={transition}
-      className="fixed top-[72px] left-0 w-64 bg-[#403E3C] text-[#DFD4CA] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40"
+      className="fixed top-[72px] left-0 w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40"
     >
       <ul className="space-y-3">
         <ThemeToggleButton />
@@ -36,7 +36,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
               <a
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block px-3 py-2 rounded hover:bg-[#6B6160] transition-all text-sm"
+                className="block px-3 py-2 rounded hover:bg-[var(--color-bg)] transition-all text-sm"
               >
                 {item.label}
               </a>

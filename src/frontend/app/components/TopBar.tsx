@@ -119,10 +119,10 @@ export default function TopBar({
   }, [searchOpen, openSearch]);
 
   return (
-    <header className="fixed top-0 left-0 w-screen bg-[#202120] text-white px-6 py-3 flex items-center justify-between shadow-md z-50">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <Image src="/logouniwersytet.png" alt="Logo" width={51} height={50} />
+    <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
           <span className="font-bold tracking-wide text-sm">UNIVERSITY</span>
         </div>
 
@@ -131,14 +131,14 @@ export default function TopBar({
           className="flex items-center"
           initial={false}
           animate={{
-            width: searchOpen ? 221 : 40,
-            backgroundColor: searchOpen ? "#293A2A" : "transparent",
-            borderRadius: searchOpen ? 25 : 999,
+            width: searchOpen ? 220 : 40,
+            backgroundColor: searchOpen ? "[var(--color-text)]" : "transparent",
+            borderRadius: searchOpen ? 24 : 999,
             boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
           }}
           transition={{
             type: "spring",
-            stiffness: 401,
+            stiffness: 400,
             damping: 32,
             duration: 0.38,
           }}
@@ -157,8 +157,8 @@ export default function TopBar({
                 value={inputValue}
                 onChange={handleInputChange}
                 placeholder="Szukaj..."
-                className="bg-transparent outline-none text-white px-2 py-1 text-sm w-full"
-                style={{ minWidth: 1 }}
+                className="bg-transparent outline-none text-[var(--color-text)] px-3 py-1 text-sm w-full"
+                style={{ minWidth: 0 }}
                 key="search-input"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -177,7 +177,9 @@ export default function TopBar({
             }
             initial={false}
             animate={{
-              backgroundColor: searchOpen ? "#4A6A68" : "#292A2A",
+              backgroundColor: searchOpen
+                ? "[var(--color-accent)]"
+                : "[var(--color-bg)]",
             }}
             transition={{ duration: 0.22 }}
             className="rounded-full p-1 flex items-center"
@@ -192,9 +194,11 @@ export default function TopBar({
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke={searchOpen ? "#DFD5CA" : "#9C9793"}
-              className="w-4 h-5"
+              strokeWidth={1.5}
+              stroke={
+                searchOpen ? "[var(--color-bg)]" : "[var(--color-bg-secondary)]"
+              }
+              className="w-5 h-5"
             >
               <path
                 strokeLinecap="round"
@@ -206,18 +210,18 @@ export default function TopBar({
         </motion.div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-[#DFD5CA]">
-          <UserProfile />
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-[var(--color-text)]">
+          Witaj Studencie!
         </span>
         <button
           onClick={() => setIsNavVisible(!isNavVisible)}
-          className="bg-[#3A6A68] hover:bg-[#2f5553] text-white text-xs px-3 py-1 rounded"
+          className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] text-xs px-3 py-1 rounded"
         >
           {isNavVisible ? "Ukryj nawigację" : "Pokaż nawigację"}
         </button>
         <button
-          className="bg-[#8B2E2F] hover:bg-red-800 text-white text-xs px-3 py-1 rounded"
+          className="bg-[var(--color-accent2)] hover:bg-red-800 text-[var(--color-text)] text-xs px-3 py-1 rounded"
           onClick={handleLogout}
         >
           Logout
