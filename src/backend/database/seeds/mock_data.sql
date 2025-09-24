@@ -34,7 +34,7 @@ INSERT INTO users (name, surname, password, email, PESEL, phone_nr, postal_addre
 ('Weronika', 'Mazurek', '$2a$10$hashedpassword5', 'weronika.mazurek@edu.pl', '70050556789', '+48567890123', 'ul. Naukowa 15, Kraków', 'ul. Naukowa 15, Kraków', '56789012345678901234567890', true, '2024-08-15 10:00:00'),
 ('Kacper', 'Pawlak', '$2a$10$hashedpassword6', 'kacper.pawlak@edu.pl', '68060667890', '+48678901234', 'ul. Uniwersytecka 20, Gdańsk', 'ul. Uniwersytecka 20, Gdańsk', '67890123456789012345678901', true, '2024-08-15 11:00:00'),
 ('Agnieszka', 'Kowalik', '$2a$10$hashedpassword7', 'agnieszka.kowalik@edu.pl', '80070778901', '+48789012345', 'ul. Biurowa 5, Warszawa', 'ul. Biurowa 5, Warszawa', '78901234567890123456789012', true, '2024-08-01 08:00:00'),
-('Karol', 'Kudłacz', '$2a$10$hashedpassword8', 'karol.kudlacz@edu.pl', '82080889012', '+48890123456', 'ul. Administracyjna 7, Kraków', 'ul. Administracyjna 7, Kraków', '89012345678901234567890123', true, '2024-08-01 09:00:00');
+('Karol', 'Kudłacz', '$2a$10$los4KGgs7C7id1QCy6QtnO7lGyqZVYQGLp9bxhHtlkWHWk80scYvq', 'karol.kudlacz@edu.pl', '82080889012', '+48890123456', 'ul. Administracyjna 7, Kraków', 'ul. Administracyjna 7, Kraków', '89012345678901234567890123', true, '2024-08-01 09:00:00');
 
 INSERT INTO faculties (name) VALUES
 ('Wydział Informatyki'),
@@ -124,9 +124,17 @@ INSERT INTO attachments (message_id, filename, original_filename, file_size, mim
 (1, '20241001_srodowisko_prog.zip', 'Instrukcja instalacji środowiska.zip', 1048576, 'application/zip', '/uploads/2024/10/01/20241001_srodowisko_prog.zip'),
 (4, '20241004_instrukcja_lab.docx', 'Instrukcja laboratorium fizyka.docx', 524288, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '/uploads/2024/10/04/20241004_instrukcja_lab.docx');
 
-INSERT INTO applications (category, registration_round_start, registration_round_end, application_link, album_nr) VALUES
-('Stypendium socjalne', '2024-09-01 00:00:00', '2024-09-30 23:59:59', '/forms/social-scholarship', 1), -- album_nr = 1 (Michał)
-('Urlop dziekański', '2024-09-15 00:00:00', '2024-10-31 23:59:59', '/forms/dean-leave', 2); -- album_nr = 2 (Jan)
+
+
+INSERT INTO application_categories (name, description, application_start_date, application_end_date, active) VALUES
+  ('Stypendium socjalne', 'Wniosek o stypendium socjalne' , '2024-09-01 00:00:00', '2024-09-30 23:59:59', true),
+  ('Urlop dziekański', 'Wniosek o urlop dziekański', '2024-09-15 00:00:00', '2024-10-31 23:59:59', true),
+  ('Zapomoga', 'Wniosek o jednorazową zapomogę', '2024-09-15 00:00:00', '2024-10-31 23:59:59', true)
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO applications (category_id, album_nr, title, content, status) VALUES
+(1, 1, 'Wniosek o stypendium socjalne', 'Proszę o przyznanie stypendium socjalnego na semestr zimowy.', 'submitted'),
+(2, 2, 'Wniosek o urlop dziekański', 'Proszę o udzielenie urlopu dziekańskiego z powodów zdrowotnych.', 'submitted');
 
 INSERT INTO surveys (class_id, question, mark) VALUES
 (1, 'Jak oceniasz przydatność wykładu?', 4),

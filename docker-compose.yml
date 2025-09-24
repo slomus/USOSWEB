@@ -134,6 +134,12 @@ services:
       - "3002:3002"
     environment:
       - ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=mydb
+      - DB_SSLMODE=disable
       - LOG_LEVEL=info
       - LOG_FILE=/app/logs/messaging-service.log
     volumes:
