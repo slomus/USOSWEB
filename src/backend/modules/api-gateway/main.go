@@ -9,6 +9,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
+	calendarPb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
@@ -150,11 +152,9 @@ func customMetadataAnnotator(ctx context.Context, req *http.Request) metadata.MD
 
 func main() {
 	appLog.LogInfo("Starting API Gateway*")
-
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	appLog.LogDebug("Configuring gRPC-Gateway multiplexer")
 	mux := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
@@ -175,16 +175,10 @@ func main() {
 			return TokenCookieInterceptor(ctx, w, resp)
 		}),
 	)
-
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	// Register services using service discovery
 	appLog.LogInfo("Registering microservices via service discovery")
-
-	// Common/Auth Service
 	appLog.LogInfo("Registering AuthService endpoints")
 	commonServiceEndpoint := configs.Envs.GetCommonEndpoint()
-
 	appLog.LogDebug(fmt.Sprintf("Connecting to AuthService at: %s", commonServiceEndpoint))
 	err := authPb.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
 	if err != nil {
@@ -199,13 +193,24 @@ func main() {
 		panic(err)
 	}
 	appLog.LogInfo("AuthHello endpoints registered successfully")
-
 	err = coursePb.RegisterCourseServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
 	if err != nil {
 		appLog.LogError("Failed to register CourseService gateway", err)
 		panic(err)
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
+
+
+	// Calendar Service
+	appLog.LogInfo("Registering CalendarService endpoints")
+	calendarServiceEndpoint := "calendar:3001"
+	appLog.LogDebug(fmt.Sprintf("Connecting to CalendarService at: %s", calendarServiceEndpoint))
+	err = calendarPb.RegisterCalendarServiceHandlerFromEndpoint(ctx, mux, calendarServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register CalendarService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("CalendarService endpoints registered successfully")
 
 	// Messaging Service
 	appLog.LogInfo("Registering MessagingService endpoints")
@@ -218,8 +223,17 @@ func main() {
 	}
 	appLog.LogInfo("MessagingService endpoints registered successfully")
 
-	handler := loggingMiddleware(allowCORS(mux))
+	// Applications Service
+	appLog.LogInfo("Registering ApplicationsService endpoints")
+	commonEndpoint := configs.Envs.GetCommonEndpoint()
+	err = applicationsPb.RegisterApplicationsServiceHandlerFromEndpoint(ctx, mux, commonEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register ApplicationsService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("ApplicationsService endpoints registered successfully")
 
+	handler := loggingMiddleware(allowCORS(mux))
 	appLog.LogInfo("API Gateway configured with endpoints:")
 	endpoints := []string{
 		"GET  /health",
@@ -237,18 +251,25 @@ func main() {
 		"GET  /api/courses/stats",
 		"GET  /api/faculties",
 		"GET  /api/student/course-info/{album_nr}",
+		"GET  /api/calendar/academic",
+		"GET  /api/calendar/semester/current",
+		"GET  /api/calendar/holidays",
+		"POST /api/calendar/academic",
+		"GET  /api/calendar/user/{user_id}/events",
+		"POST /api/calendar/events",
+		"GET  /api/calendar/class/{class_id}/schedule",
 		"POST /api/messaging/send-email",
 		"GET  /api/messaging/suggest-email",
-	}
+		"GET  /api/applications",
+		"POST /api/applications",
 
+	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))
 	}
-
 	port := ":8083"
 	appLog.LogInfo(fmt.Sprintf("Starting HTTP server on port %s", port))
 	appLog.LogInfo("Gateway ready to handle requests")
-
 	if err := http.ListenAndServe(port, handler); err != nil {
 		appLog.LogError("Failed to start HTTP server", err)
 		panic(err)

@@ -1,4 +1,5 @@
 # Ignore logs directory and its contents
 logs/
-
-
+cookies.txt
+admin_cookies.txt
+logstash/

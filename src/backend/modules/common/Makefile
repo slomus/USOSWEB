@@ -4,6 +4,7 @@ GOOGLEAPIS_DIR=../../tools/third_party/googleapis
 
 AUTH_PROTO=$(PROTO_DIR)/auth.proto
 COURSE_PROTO=$(PROTO_DIR)/course.proto
+APPLICATIONS_PROTO=$(PROTO_DIR)/applications.proto
 
 .PHONY: help generate-proto generate-auth generate-course clean run test build
 
@@ -24,6 +25,15 @@ generate-course:
 		--go-grpc_out=$(OUT_DIR)/course --go-grpc_opt=paths=source_relative \
 		--grpc-gateway_out=$(OUT_DIR)/course --grpc-gateway_opt=paths=source_relative \
 		$(COURSE_PROTO)
+
+generate-applications:
+	mkdir -p $(OUT_DIR)/applications
+	protoc -I $(PROTO_DIR) \
+		-I $(GOOGLEAPIS_DIR) \
+		--go_out=$(OUT_DIR)/applications --go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR)/applications --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=$(OUT_DIR)/applications --grpc-gateway_opt=paths=source_relative \
+		$(APPLICATIONS_PROTO)
 
 run: generate-proto
 	go run main.go

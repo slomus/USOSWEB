@@ -48,6 +48,13 @@ service CourseService {
       get : "/api/student/course-info/{album_nr}"
     };
   }
+
+  // Pobiera oceny studenta
+  rpc GetMarks(GetMarksRequest) returns (GetMarksResponse) {
+    option (google.api.http) = {
+      get : "/api/marks"
+    };
+  }
 }
 
 // Podstawowe informacje o kierunku
@@ -173,5 +180,31 @@ message GetStudentCourseInfoRequest { int32 album_nr = 10; }
 
 message GetStudentCourseInfoResponse {
   StudentCourseInfo course_info = 10;
+  string message = 11;
+}
+
+message MarkItem {
+  int32 grade_id = 10;
+  int32 album_nr = 11;
+  int32 subject_id = 12;
+  int32 class_id = 13;
+  string subject_name = 14;
+  string class_type = 15;
+  string value = 16;
+  int32 weight = 17;
+  int32 attempt = 18;
+  string added_by = 19;
+  string comment = 20;
+  string created_at = 21;
+}
+
+message GetMarksRequest {
+  // Jeżeli album_nr jest podany i użytkownik ma uprawnienia, pobierze oceny tego studenta.
+  // Jeśli brak, pobierze oceny zalogowanego studenta.
+  optional int32 album_nr = 10;
+}
+
+message GetMarksResponse {
+  repeated MarkItem marks = 10;
   string message = 11;
 }

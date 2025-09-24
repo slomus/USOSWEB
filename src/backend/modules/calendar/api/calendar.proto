@@ -60,24 +60,133 @@ message GetClassScheduleResponse {
   repeated CalendarEvent events = 3;
 }
 
+message AcademicCalendarEvent {
+  int64 event_id = 10;
+  string event_type = 11;
+  string title = 12;
+  string description = 13;
+  string start_date = 14;
+  string end_date = 15;
+  string academic_year = 16;
+  string applies_to = 17;
+}
+
+message GetAcademicCalendarRequest {
+  optional string start_date = 10;
+  optional string end_date = 11;
+  optional string academic_year = 12;
+  optional string event_type = 13;
+}
+
+message GetAcademicCalendarResponse {
+  bool success = 10;
+  string message = 11;
+  repeated AcademicCalendarEvent events = 12;
+  AcademicYearInfo current_academic_year = 13;
+}
+
+message AcademicYearInfo {
+  string year = 10;
+  string current_semester = 11;
+  int32 current_week = 12;
+  string semester_start = 13;
+  string semester_end = 14;
+  string exam_session_start = 15;
+  string exam_session_end = 16;
+  repeated string holidays = 17;
+}
+
+message GetCurrentSemesterInfoRequest {}
+
+message GetCurrentSemesterInfoResponse {
+  bool success = 10;
+  string message = 11;
+  AcademicYearInfo semester_info = 12;
+}
+
+message CreateAcademicEventRequest {
+  string event_type = 10;
+  string title = 11;
+  string description = 12;
+  string start_date = 13;
+  string end_date = 14;
+  string academic_year = 15;
+  string applies_to = 16;
+}
+
+message CreateAcademicEventResponse {
+  bool success = 10;
+  string message = 11;
+  AcademicCalendarEvent event = 12;
+}
+
+message GetHolidaysRequest {
+  optional string start_date = 10;
+  optional string end_date = 11;
+  bool include_weekends = 12;
+}
+
+message GetHolidaysResponse {
+  bool success = 10;
+  string message = 11;
+  repeated Holiday holidays = 12;
+  int32 total_days_off = 13;
+}
+
+message Holiday {
+  string date = 10;
+  string name = 11;
+  string type = 12;
+  bool is_free_day = 13;
+}
+
 // Calendar Service
 service CalendarService {
   rpc GetUserEvents(GetUserEventsRequest) returns (GetUserEventsResponse) {
     option (google.api.http) = {
-      get: "/api/calendar/user/{user_id}/events"
+      get : "/api/calendar/user/{user_id}/events"
     };
   }
 
   rpc CreateEvent(CreateEventRequest) returns (CreateEventResponse) {
     option (google.api.http) = {
-      post: "/api/calendar/events"
-      body: "*"
+      post : "/api/calendar/events"
+      body : "*"
     };
   }
 
-  rpc GetClassSchedule(GetClassScheduleRequest) returns (GetClassScheduleResponse) {
+  rpc GetClassSchedule(GetClassScheduleRequest)
+      returns (GetClassScheduleResponse) {
     option (google.api.http) = {
-      get: "/api/calendar/class/{class_id}/schedule"
+      get : "/api/calendar/class/{class_id}/schedule"
     };
   }
-} 
+
+  rpc GetAcademicCalendar(GetAcademicCalendarRequest)
+      returns (GetAcademicCalendarResponse) {
+    option (google.api.http) = {
+      get : "/api/calendar/academic"
+    };
+  }
+
+  rpc GetCurrentSemesterInfo(GetCurrentSemesterInfoRequest)
+      returns (GetCurrentSemesterInfoResponse) {
+    option (google.api.http) = {
+      get : "/api/calendar/semester/current"
+    };
+  }
+
+  rpc CreateAcademicEvent(CreateAcademicEventRequest)
+      returns (CreateAcademicEventResponse) {
+    option (google.api.http) = {
+      post : "/api/calendar/academic"
+      body : "*"
+    };
+  }
+
+  rpc GetHolidays(GetHolidaysRequest) returns (GetHolidaysResponse) {
+    option (google.api.http) = {
+      get : "/api/calendar/holidays"
+    };
+  }
+}

@@ -1,0 +1,112 @@
+syntax = "proto3";
+package modules.common.api;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications;applications";
+
+message ApplicationItem {
+  int32 application_id = 10;
+  int32 category_id = 11;
+  int32 album_nr = 12;
+  string title = 13;
+  string content = 14;
+  string status = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+message GetApplicationsRequest {
+  optional int32 application_id = 10;
+  optional int32 album_nr = 11;
+  optional int32 category_id = 12;
+  optional string status = 13;
+  optional int32 page = 14;
+  optional int32 page_size = 15;
+}
+
+message GetApplicationsResponse {
+  repeated ApplicationItem items = 10;
+  int32 total = 11;
+  int32 page = 12;
+  int32 page_size = 13;
+}
+
+message CreateOrUpdateApplicationRequest {
+  optional int32 application_id = 10;
+  optional int32 album_nr = 11; // ignored for students
+  int32 category_id = 12;
+  string title = 13;
+  string content = 14;
+  optional string status = 15; // allowed for staff/admin
+}
+
+message CreateOrUpdateApplicationResponse {
+  int32 application_id = 10;
+  string message = 11;
+}
+
+// Categories
+message CategoryItem {
+  int32 category_id = 10;
+  string name = 11;
+  string application_start_date = 12;
+  string application_end_date = 13;
+  optional string description = 14;
+  bool active = 15;
+}
+
+message GetApplicationCategorsRequest {
+  optional int32 category_id = 10;
+  optional string name = 11;
+  optional string application_start_date = 12;
+  optional string application_end_date = 13;
+  optional string description = 14;
+  optional bool active = 15;
+}
+
+message GetApplicationCategoriesResponse {
+  repeated CategoryItem items = 10;
+}
+
+message CreateOrUpdateCategoryRequest {
+  optional int32 category_id = 10; // if provided -> update
+  string name = 11;
+  optional string application_start_date = 12;
+  optional string application_end_date = 13;
+  optional string description = 14;
+  optional bool active = 15;
+}
+
+message CreateOrUpdateCategoryResponse {
+  int32 category_id = 10;
+  string message = 11;
+}
+
+service ApplicationsService {
+  rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse) {
+    option (google.api.http) = {
+      get : "/api/applications"
+    };
+  }
+
+  rpc CreateOrUpdateApplication(CreateOrUpdateApplicationRequest) returns (CreateOrUpdateApplicationResponse) {
+    option (google.api.http) = {
+      post : "/api/applications"
+      body : "*"
+    };
+  }
+
+  rpc GetApplicationCategories(GetApplicationCategorsRequest) returns (GetApplicationCategoriesResponse) {
+    option (google.api.http) = { get: "/api/application-categories" };
+  }
+
+  rpc CreateOrUpdateCategory(CreateOrUpdateCategoryRequest) returns (CreateOrUpdateCategoryResponse) {
+    option (google.api.http) = {
+      post : "/api/application-categories"
+      body : "*"
+    };
+  }
+}
+
+
