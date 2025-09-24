@@ -6,9 +6,11 @@ import (
 	"net"
 
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
+	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
 	course "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
@@ -69,6 +71,7 @@ func main() {
 	// Tworzenie instancji serwisów
 	authServer := auth.NewAuthServerWithCache(db, redisCache)
 	courseServer := course.NewCourseServerWithCache(db, redisCache)
+	applicationsServer := applicationsSvc.NewApplicationsServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)
@@ -77,6 +80,9 @@ func main() {
 	// Rejestracja serwisu Course
 	coursePb.RegisterCourseServiceServer(grpcServer, courseServer)
 	appLog.LogInfo("CourseService registered")
+
+	applicationsPb.RegisterApplicationsServiceServer(grpcServer, applicationsServer)
+	appLog.LogInfo("ApplicationsService registered")
 
 	appLog.LogInfo("Common Service registered and listening on :3003")
 	appLog.LogInfo("Available services:")
@@ -96,6 +102,9 @@ func main() {
 	appLog.LogInfo("    - GET  /api/courses/stats")
 	appLog.LogInfo("    - GET  /api/faculties")
 	appLog.LogInfo("    - GET  /api/student/course-info/{album_nr}")
+	appLog.LogInfo("   ApplicationsService:")
+	appLog.LogInfo("    - GET  /api/applications")
+	appLog.LogInfo("    - POST /api/applications")
 
 	if err := grpcServer.Serve(lis); err != nil {
 		appLog.LogError("Failed to serve gRPC server", err)
