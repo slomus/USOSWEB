@@ -17,6 +17,20 @@ services:
       retries: 5
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    container_name: usosweb-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
   migrate:
     build:
       context: ./src/backend
@@ -39,6 +53,7 @@ services:
         condition: service_healthy
     command: up
     entrypoint: ["/app/migrate"]
+
 
   seeder:
     image: postgres:latest
@@ -128,7 +143,7 @@ services:
       context: ./src/backend
       dockerfile: modules/common/Dockerfile
     ports:
-      - "3004:3003"
+      - "3003:3003"
     environment:
       - ENV=development
       - DB_HOST=postgres
@@ -139,6 +154,12 @@ services:
       - DB_SSLMODE=disable
       - LOG_LEVEL=info
       - LOG_FILE=/app/logs/auth-service.log
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - CACHE_ENABLED=true
+      - CACHE_DEFAULT_TTL=1h
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -146,6 +167,37 @@ services:
         condition: service_healthy
       api-gateway:
         condition: service_started
+      redis:
+        condition: service_healthy
+
+  logstash:
+      image: docker.elastic.co/logstash/logstash:8.11.0
+      container_name: usosweb-logstash
+      volumes:
+        - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+        - ./logs:/app/logs:ro
+        - ./logstash-output:/app/processed-logs
+      ports:
+        - "8080:8080"
+        - "9600:9600"
+      environment:
+        - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
+        - "LOG_LEVEL=info"
+        - "PIPELINE_WORKERS=1"
+        - "PIPELINE_BATCH_SIZE=50"
+        - "HTTP_HOST=0.0.0.0"
+        - "HTTP_PORT=9600"
+        - "xpack.monitoring.enabled=false"
+        - "xpack.management.enabled=false"
+      depends_on:
+        - redis
+      healthcheck:
+        test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+      restart: unless-stopped
 
 volumes:
   postgres_data:
+  redis_data:
