@@ -12,6 +12,7 @@ import (
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
+	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -207,6 +208,17 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
+	// Messaging Service
+	appLog.LogInfo("Registering MessagingService endpoints")
+	messagingEndpoint := configs.Envs.GetMessagingEndpoint()
+	appLog.LogDebug(fmt.Sprintf("Connecting to MessagingService at: %s", messagingEndpoint))
+	err = messagingPb.RegisterMessagingServiceHandlerFromEndpoint(ctx, mux, messagingEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register MessagingService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("MessagingService endpoints registered successfully")
+
 	// Applications Service
 	appLog.LogInfo("Registering ApplicationsService endpoints")
 	commonEndpoint := configs.Envs.GetCommonEndpoint()
@@ -236,6 +248,8 @@ func main() {
 		"GET  /api/courses/stats",
 		"GET  /api/faculties",
 		"GET  /api/student/course-info/{album_nr}",
+		"POST /api/messaging/send-email",
+		"GET  /api/messaging/suggest-email",
 		"GET  /api/applications",
 		"POST /api/applications",
 	}
