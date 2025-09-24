@@ -106,19 +106,25 @@ services:
     build:
       context: ./src/backend
       dockerfile: modules/calendar/Dockerfile
+    container_name: calendar
     ports:
       - "3001:3001"
     environment:
       - ENV=development
       - LOG_LEVEL=info
       - LOG_FILE=/app/logs/calendar-service.log
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=mydb
     volumes:
       - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
-      api-gateway:
-        condition: service_started
+    networks:
+      - default
 
   messaging:
     build:
