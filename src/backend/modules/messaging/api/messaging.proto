@@ -25,4 +25,28 @@ service MessagingService {
       body : "*"
     };
   }
+
+  // Podpowiadanie adresów e-mail po prefiksie
+  rpc SuggestEmail(SuggestEmailRequest) returns (SuggestEmailResponse) {
+    option (google.api.http) = {
+      get : "/api/messaging/suggest-email"
+    };
+  }
+}
+
+message SuggestEmailRequest {
+  string q = 10;          // prefiks (min 2 znaki)
+  int32 limit = 11;       // domyślnie 10, max 50
+  string scope = 12;      // 'all' | 'students' | 'staff'
+}
+
+message SuggestItem {
+  int64 user_id = 10;
+  string email = 11;
+  string display_name = 12;
+}
+
+message SuggestEmailResponse {
+  repeated SuggestItem items = 10;
+  string message = 11;
 }
