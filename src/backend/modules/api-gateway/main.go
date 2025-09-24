@@ -208,6 +208,27 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
+	// Messaging Service
+	appLog.LogInfo("Registering MessagingService endpoints")
+	messagingEndpoint := configs.Envs.GetMessagingEndpoint()
+	appLog.LogDebug(fmt.Sprintf("Connecting to MessagingService at: %s", messagingEndpoint))
+	err = messagingPb.RegisterMessagingServiceHandlerFromEndpoint(ctx, mux, messagingEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register MessagingService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("MessagingService endpoints registered successfully")
+
+	// Applications Service
+	appLog.LogInfo("Registering ApplicationsService endpoints")
+	commonEndpoint := configs.Envs.GetCommonEndpoint()
+	err = applicationsPb.RegisterApplicationsServiceHandlerFromEndpoint(ctx, mux, commonEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register ApplicationsService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("ApplicationsService endpoints registered successfully")
+
 	handler := loggingMiddleware(allowCORS(mux))
 
 	appLog.LogInfo("API Gateway configured with endpoints:")
@@ -227,6 +248,10 @@ func main() {
 		"GET  /api/courses/stats",
 		"GET  /api/faculties",
 		"GET  /api/student/course-info/{album_nr}",
+		"POST /api/messaging/send-email",
+		"GET  /api/messaging/suggest-email",
+		"GET  /api/applications",
+		"POST /api/applications",
 	}
 
 	for _, endpoint := range endpoints {

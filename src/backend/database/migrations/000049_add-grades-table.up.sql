@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 CREATE TYPE grade_value AS ENUM (
   '2.0', '3.0', '3.5', '4.0', '4.5', '5.0',
   'NZAL', 'ZAL'
@@ -21,9 +20,4 @@ CREATE TABLE IF NOT EXISTS grades(
 CREATE INDEX IF NOT EXISTS idx_grades_album_nr ON grades(album_nr);
 CREATE INDEX IF NOT EXISTS idx_grades_class_id ON grades(class_id);
 CREATE INDEX IF NOT EXISTS idx_grades_subject_id ON grades(subject_id);
-=======
--- Placeholder up migration for version 49 (already applied previously)
--- No-op to satisfy migration tool expectations
-SELECT 1;
->>>>>>> origin/application
 
