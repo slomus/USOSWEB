@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
-
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
@@ -12,10 +10,11 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
-	course "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
+	courses "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
+	"net"
 )
 
 var appLog = logger.NewLogger("common-service")
@@ -64,14 +63,12 @@ func main() {
 		panic(err)
 	}
 
-	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(middleware.AuthInterceptorWithDB(db)),
-	)
+	grpcServer := grpc.NewServer()
 
 	// Tworzenie instancji serwisów
 	authServer := auth.NewAuthServerWithCache(db, redisCache)
-	courseServer := course.NewCourseServerWithCache(db, redisCache)
-	applicationsServer := applicationsSvc.NewApplicationsServer(db)
+	courseServer := courses.NewCourseServerWithCache(db, redisCache)
+	applicationsServer := applications.NewApplicationsServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)
