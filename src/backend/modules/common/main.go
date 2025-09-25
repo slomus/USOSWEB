@@ -7,7 +7,6 @@ import (
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
-	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
 	courses "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
@@ -68,7 +67,7 @@ func main() {
 	// Tworzenie instancji serwisów
 	authServer := auth.NewAuthServerWithCache(db, redisCache)
 	courseServer := courses.NewCourseServerWithCache(db, redisCache)
-	applicationsServer := applications.NewApplicationsServer(db)
+applicationsServer := applicationsSvc.NewApplicationsServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)

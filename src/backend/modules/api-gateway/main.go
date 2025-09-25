@@ -13,7 +13,7 @@ import (
 	calendarPb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
-	//messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
+	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -232,6 +232,9 @@ func main() {
 		panic(err)
 	}
 	appLog.LogInfo("ApplicationsService endpoints registered successfully")
+
+	//Course Service
+	appLog.LogInfo("Registering cou endpoints")
 
 	handler := loggingMiddleware(allowCORS(mux))
 	appLog.LogInfo("API Gateway configured with endpoints:")
