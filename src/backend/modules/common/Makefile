@@ -5,8 +5,9 @@ GOOGLEAPIS_DIR=../../tools/third_party/googleapis
 AUTH_PROTO=$(PROTO_DIR)/auth.proto
 COURSE_PROTO=$(PROTO_DIR)/course.proto
 APPLICATIONS_PROTO=$(PROTO_DIR)/applications.proto
+GRADES_PROTO=$(PROTO_DIR)/grades.proto
 
-.PHONY: help generate-proto generate-auth generate-course clean run test build
+.PHONY: help generate-proto generate-auth generate-course generate-grades clean run test build
 
 generate-auth:
 	mkdir -p $(OUT_DIR)/auth
@@ -25,6 +26,15 @@ generate-course:
 		--go-grpc_out=$(OUT_DIR)/course --go-grpc_opt=paths=source_relative \
 		--grpc-gateway_out=$(OUT_DIR)/course --grpc-gateway_opt=paths=source_relative \
 		$(COURSE_PROTO)
+
+generate-grades:
+	mkdir -p $(OUT_DIR)/grades
+	protoc -I $(PROTO_DIR) \
+		-I $(GOOGLEAPIS_DIR) \
+		--go_out=$(OUT_DIR)/grades --go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR)/grades --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=$(OUT_DIR)/grades --grpc-gateway_opt=paths=source_relative \
+		$(GRADES_PROTO)
 
 generate-applications:
 	mkdir -p $(OUT_DIR)/applications

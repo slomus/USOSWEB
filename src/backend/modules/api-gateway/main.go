@@ -13,6 +13,7 @@ import (
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
+	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
@@ -200,6 +201,17 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
+	// Grades Service
+	appLog.LogInfo("Registering GradesService endpoints")
+	gradesServiceEndpoint := configs.Envs.GetCommonEndpoint()
+	appLog.LogDebug(fmt.Sprintf("Connecting to GradesService at: %s", gradesServiceEndpoint))
+	err = gradesPb.RegisterGradesServiceHandlerFromEndpoint(ctx, mux, gradesServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register GradesService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("GradesService endpoints registered successfully")
+
 	// Calendar Service
 	appLog.LogInfo("Registering CalendarService endpoints")
 	calendarServiceEndpoint := "calendar:3001"
@@ -269,6 +281,8 @@ func main() {
 		"GET  /api/messaging/suggest-email",
 		"GET  /api/applications",
 		"POST /api/applications",
+		"GET  /api/grades",
+		"POST /api/grades",
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))

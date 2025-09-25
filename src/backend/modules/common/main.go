@@ -3,17 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
+	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
+	middleware "github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
 	courses "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
+	gradesSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/grades"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
-	"net"
 )
 
 var appLog = logger.NewLogger("common-service")
@@ -62,12 +66,15 @@ func main() {
 		panic(err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(middleware.AuthInterceptorWithDB(db)),
+	)
 
 	// Tworzenie instancji serwisów
 	authServer := auth.NewAuthServerWithCache(db, redisCache)
 	courseServer := courses.NewCourseServerWithCache(db, redisCache)
-applicationsServer := applicationsSvc.NewApplicationsServer(db)
+	gradesServer := gradesSvc.NewGradesServerWithCache(db, redisCache)
+	applicationsServer := applicationsSvc.NewApplicationsServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)
@@ -76,6 +83,10 @@ applicationsServer := applicationsSvc.NewApplicationsServer(db)
 	// Rejestracja serwisu Course
 	coursePb.RegisterCourseServiceServer(grpcServer, courseServer)
 	appLog.LogInfo("CourseService registered")
+
+	// Rejestracja serwisu Grades
+	gradesPb.RegisterGradesServiceServer(grpcServer, gradesServer)
+	appLog.LogInfo("GradesService registered")
 
 	applicationsPb.RegisterApplicationsServiceServer(grpcServer, applicationsServer)
 	appLog.LogInfo("ApplicationsService registered")
@@ -98,6 +109,9 @@ applicationsServer := applicationsSvc.NewApplicationsServer(db)
 	appLog.LogInfo("    - GET  /api/courses/stats")
 	appLog.LogInfo("    - GET  /api/faculties")
 	appLog.LogInfo("    - GET  /api/student/course-info/{album_nr}")
+	appLog.LogInfo("   GradesService:")
+	appLog.LogInfo("    - GET  /api/grades")
+	appLog.LogInfo("    - POST /api/grades")
 	appLog.LogInfo("   ApplicationsService:")
 	appLog.LogInfo("    - GET  /api/applications")
 	appLog.LogInfo("    - POST /api/applications")
