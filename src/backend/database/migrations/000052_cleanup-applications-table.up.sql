@@ -19,7 +19,3 @@ ALTER TABLE applications
 ALTER TABLE applications
   ADD CONSTRAINT applications_status_chk
   CHECK (status IN ('submitted','under_review','approved','rejected'));
-
-curl -i -c /tmp/usos_cookies.txt -H 'Content-Type: application/json' \
-  -d '{"email":"karol.kudlacz@edu.pl","password":"Password123!"}' \
-  http://localhost:8083/api/auth/login
