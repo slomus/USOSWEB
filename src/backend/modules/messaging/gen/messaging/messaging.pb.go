@@ -22,6 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// SMTP send
 type SendEmailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	To            string                 `protobuf:"bytes,10,opt,name=to,proto3" json:"to,omitempty"`
@@ -142,10 +143,660 @@ func (x *SendEmailResponse) GetMessage() string {
 	return ""
 }
 
+// IMAP single email fetch
+type GetEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmailUid      string                 `protobuf:"bytes,10,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEmailRequest) Reset() {
+	*x = GetEmailRequest{}
+	mi := &file_messaging_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEmailRequest) ProtoMessage() {}
+
+func (x *GetEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEmailRequest.ProtoReflect.Descriptor instead.
+func (*GetEmailRequest) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetEmailRequest) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+type GetEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	EmailUid      string                 `protobuf:"bytes,12,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	SenderEmail   string                 `protobuf:"bytes,13,opt,name=sender_email,json=senderEmail,proto3" json:"sender_email,omitempty"`
+	SenderName    string                 `protobuf:"bytes,14,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	Title         string                 `protobuf:"bytes,15,opt,name=title,proto3" json:"title,omitempty"`
+	Content       string                 `protobuf:"bytes,16,opt,name=content,proto3" json:"content,omitempty"`
+	SendDate      string                 `protobuf:"bytes,17,opt,name=send_date,json=sendDate,proto3" json:"send_date,omitempty"`
+	IsRead        bool                   `protobuf:"varint,18,opt,name=is_read,json=isRead,proto3" json:"is_read,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEmailResponse) Reset() {
+	*x = GetEmailResponse{}
+	mi := &file_messaging_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEmailResponse) ProtoMessage() {}
+
+func (x *GetEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEmailResponse.ProtoReflect.Descriptor instead.
+func (*GetEmailResponse) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetEmailResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetSenderEmail() string {
+	if x != nil {
+		return x.SenderEmail
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetSendDate() string {
+	if x != nil {
+		return x.SendDate
+	}
+	return ""
+}
+
+func (x *GetEmailResponse) GetIsRead() bool {
+	if x != nil {
+		return x.IsRead
+	}
+	return false
+}
+
+// IMAP list emails
+type GetAllEmailsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,10,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,11,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllEmailsRequest) Reset() {
+	*x = GetAllEmailsRequest{}
+	mi := &file_messaging_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllEmailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllEmailsRequest) ProtoMessage() {}
+
+func (x *GetAllEmailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllEmailsRequest.ProtoReflect.Descriptor instead.
+func (*GetAllEmailsRequest) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetAllEmailsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetAllEmailsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type EmailSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmailUid      string                 `protobuf:"bytes,10,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	SenderEmail   string                 `protobuf:"bytes,11,opt,name=sender_email,json=senderEmail,proto3" json:"sender_email,omitempty"`
+	SenderName    string                 `protobuf:"bytes,12,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	Title         string                 `protobuf:"bytes,13,opt,name=title,proto3" json:"title,omitempty"`
+	SendDate      string                 `protobuf:"bytes,14,opt,name=send_date,json=sendDate,proto3" json:"send_date,omitempty"`
+	IsRead        bool                   `protobuf:"varint,15,opt,name=is_read,json=isRead,proto3" json:"is_read,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmailSummary) Reset() {
+	*x = EmailSummary{}
+	mi := &file_messaging_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmailSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmailSummary) ProtoMessage() {}
+
+func (x *EmailSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmailSummary.ProtoReflect.Descriptor instead.
+func (*EmailSummary) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *EmailSummary) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+func (x *EmailSummary) GetSenderEmail() string {
+	if x != nil {
+		return x.SenderEmail
+	}
+	return ""
+}
+
+func (x *EmailSummary) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *EmailSummary) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *EmailSummary) GetSendDate() string {
+	if x != nil {
+		return x.SendDate
+	}
+	return ""
+}
+
+func (x *EmailSummary) GetIsRead() bool {
+	if x != nil {
+		return x.IsRead
+	}
+	return false
+}
+
+type GetAllEmailsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	Emails        []*EmailSummary        `protobuf:"bytes,12,rep,name=emails,proto3" json:"emails,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,13,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllEmailsResponse) Reset() {
+	*x = GetAllEmailsResponse{}
+	mi := &file_messaging_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllEmailsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllEmailsResponse) ProtoMessage() {}
+
+func (x *GetAllEmailsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllEmailsResponse.ProtoReflect.Descriptor instead.
+func (*GetAllEmailsResponse) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetAllEmailsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetAllEmailsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetAllEmailsResponse) GetEmails() []*EmailSummary {
+	if x != nil {
+		return x.Emails
+	}
+	return nil
+}
+
+func (x *GetAllEmailsResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+// IMAP delete
+type DeleteEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmailUid      string                 `protobuf:"bytes,10,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteEmailRequest) Reset() {
+	*x = DeleteEmailRequest{}
+	mi := &file_messaging_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteEmailRequest) ProtoMessage() {}
+
+func (x *DeleteEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteEmailRequest.ProtoReflect.Descriptor instead.
+func (*DeleteEmailRequest) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeleteEmailRequest) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+type DeleteEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteEmailResponse) Reset() {
+	*x = DeleteEmailResponse{}
+	mi := &file_messaging_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteEmailResponse) ProtoMessage() {}
+
+func (x *DeleteEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteEmailResponse.ProtoReflect.Descriptor instead.
+func (*DeleteEmailResponse) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DeleteEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteEmailResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// IMAP mark read
+type SetEmailReadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmailUid      string                 `protobuf:"bytes,10,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEmailReadRequest) Reset() {
+	*x = SetEmailReadRequest{}
+	mi := &file_messaging_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEmailReadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEmailReadRequest) ProtoMessage() {}
+
+func (x *SetEmailReadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEmailReadRequest.ProtoReflect.Descriptor instead.
+func (*SetEmailReadRequest) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SetEmailReadRequest) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+type SetEmailReadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEmailReadResponse) Reset() {
+	*x = SetEmailReadResponse{}
+	mi := &file_messaging_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEmailReadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEmailReadResponse) ProtoMessage() {}
+
+func (x *SetEmailReadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEmailReadResponse.ProtoReflect.Descriptor instead.
+func (*SetEmailReadResponse) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SetEmailReadResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SetEmailReadResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// IMAP mark unread
+type SetEmailUnReadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmailUid      string                 `protobuf:"bytes,10,opt,name=email_uid,json=emailUid,proto3" json:"email_uid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEmailUnReadRequest) Reset() {
+	*x = SetEmailUnReadRequest{}
+	mi := &file_messaging_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEmailUnReadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEmailUnReadRequest) ProtoMessage() {}
+
+func (x *SetEmailUnReadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEmailUnReadRequest.ProtoReflect.Descriptor instead.
+func (*SetEmailUnReadRequest) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SetEmailUnReadRequest) GetEmailUid() string {
+	if x != nil {
+		return x.EmailUid
+	}
+	return ""
+}
+
+type SetEmailUnReadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetEmailUnReadResponse) Reset() {
+	*x = SetEmailUnReadResponse{}
+	mi := &file_messaging_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEmailUnReadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEmailUnReadResponse) ProtoMessage() {}
+
+func (x *SetEmailUnReadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_messaging_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEmailUnReadResponse.ProtoReflect.Descriptor instead.
+func (*SetEmailUnReadResponse) Descriptor() ([]byte, []int) {
+	return file_messaging_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SetEmailUnReadResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SetEmailUnReadResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// Email suggestions from DB
 type SuggestEmailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Q             string                 `protobuf:"bytes,10,opt,name=q,proto3" json:"q,omitempty"`          // prefiks (min 2 znaki)
-	Limit         int32                  `protobuf:"varint,11,opt,name=limit,proto3" json:"limit,omitempty"` // domyślnie 10, max 50
+	Q             string                 `protobuf:"bytes,10,opt,name=q,proto3" json:"q,omitempty"`          // min 2 chars
+	Limit         int32                  `protobuf:"varint,11,opt,name=limit,proto3" json:"limit,omitempty"` // default 10, max 50
 	Scope         string                 `protobuf:"bytes,12,opt,name=scope,proto3" json:"scope,omitempty"`  // 'all' | 'students' | 'staff'
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -153,7 +804,7 @@ type SuggestEmailRequest struct {
 
 func (x *SuggestEmailRequest) Reset() {
 	*x = SuggestEmailRequest{}
-	mi := &file_messaging_proto_msgTypes[2]
+	mi := &file_messaging_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -165,7 +816,7 @@ func (x *SuggestEmailRequest) String() string {
 func (*SuggestEmailRequest) ProtoMessage() {}
 
 func (x *SuggestEmailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_messaging_proto_msgTypes[2]
+	mi := &file_messaging_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +829,7 @@ func (x *SuggestEmailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestEmailRequest.ProtoReflect.Descriptor instead.
 func (*SuggestEmailRequest) Descriptor() ([]byte, []int) {
-	return file_messaging_proto_rawDescGZIP(), []int{2}
+	return file_messaging_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SuggestEmailRequest) GetQ() string {
@@ -213,7 +864,7 @@ type SuggestItem struct {
 
 func (x *SuggestItem) Reset() {
 	*x = SuggestItem{}
-	mi := &file_messaging_proto_msgTypes[3]
+	mi := &file_messaging_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -225,7 +876,7 @@ func (x *SuggestItem) String() string {
 func (*SuggestItem) ProtoMessage() {}
 
 func (x *SuggestItem) ProtoReflect() protoreflect.Message {
-	mi := &file_messaging_proto_msgTypes[3]
+	mi := &file_messaging_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -238,7 +889,7 @@ func (x *SuggestItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestItem.ProtoReflect.Descriptor instead.
 func (*SuggestItem) Descriptor() ([]byte, []int) {
-	return file_messaging_proto_rawDescGZIP(), []int{3}
+	return file_messaging_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SuggestItem) GetUserId() int64 {
@@ -272,7 +923,7 @@ type SuggestEmailResponse struct {
 
 func (x *SuggestEmailResponse) Reset() {
 	*x = SuggestEmailResponse{}
-	mi := &file_messaging_proto_msgTypes[4]
+	mi := &file_messaging_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +935,7 @@ func (x *SuggestEmailResponse) String() string {
 func (*SuggestEmailResponse) ProtoMessage() {}
 
 func (x *SuggestEmailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_messaging_proto_msgTypes[4]
+	mi := &file_messaging_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +948,7 @@ func (x *SuggestEmailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestEmailResponse.ProtoReflect.Descriptor instead.
 func (*SuggestEmailResponse) Descriptor() ([]byte, []int) {
-	return file_messaging_proto_rawDescGZIP(), []int{4}
+	return file_messaging_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SuggestEmailResponse) GetItems() []*SuggestItem {
@@ -328,6 +979,62 @@ const file_messaging_proto_rawDesc = "" +
 	"\x11SendEmailResponse\x12\x18\n" +
 	"\asuccess\x18\n" +
 	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\".\n" +
+	"\x0fGetEmailRequest\x12\x1b\n" +
+	"\temail_uid\x18\n" +
+	" \x01(\tR\bemailUid\"\x8d\x02\n" +
+	"\x10GetEmailResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x12\x1b\n" +
+	"\temail_uid\x18\f \x01(\tR\bemailUid\x12!\n" +
+	"\fsender_email\x18\r \x01(\tR\vsenderEmail\x12\x1f\n" +
+	"\vsender_name\x18\x0e \x01(\tR\n" +
+	"senderName\x12\x14\n" +
+	"\x05title\x18\x0f \x01(\tR\x05title\x12\x18\n" +
+	"\acontent\x18\x10 \x01(\tR\acontent\x12\x1b\n" +
+	"\tsend_date\x18\x11 \x01(\tR\bsendDate\x12\x17\n" +
+	"\ais_read\x18\x12 \x01(\bR\x06isRead\"C\n" +
+	"\x13GetAllEmailsRequest\x12\x14\n" +
+	"\x05limit\x18\n" +
+	" \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\v \x01(\x05R\x06offset\"\xbb\x01\n" +
+	"\fEmailSummary\x12\x1b\n" +
+	"\temail_uid\x18\n" +
+	" \x01(\tR\bemailUid\x12!\n" +
+	"\fsender_email\x18\v \x01(\tR\vsenderEmail\x12\x1f\n" +
+	"\vsender_name\x18\f \x01(\tR\n" +
+	"senderName\x12\x14\n" +
+	"\x05title\x18\r \x01(\tR\x05title\x12\x1b\n" +
+	"\tsend_date\x18\x0e \x01(\tR\bsendDate\x12\x17\n" +
+	"\ais_read\x18\x0f \x01(\bR\x06isRead\"\xa8\x01\n" +
+	"\x14GetAllEmailsResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x12;\n" +
+	"\x06emails\x18\f \x03(\v2#.modules.messaging.api.EmailSummaryR\x06emails\x12\x1f\n" +
+	"\vtotal_count\x18\r \x01(\x05R\n" +
+	"totalCount\"1\n" +
+	"\x12DeleteEmailRequest\x12\x1b\n" +
+	"\temail_uid\x18\n" +
+	" \x01(\tR\bemailUid\"I\n" +
+	"\x13DeleteEmailResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\"2\n" +
+	"\x13SetEmailReadRequest\x12\x1b\n" +
+	"\temail_uid\x18\n" +
+	" \x01(\tR\bemailUid\"J\n" +
+	"\x14SetEmailReadResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\"4\n" +
+	"\x15SetEmailUnReadRequest\x12\x1b\n" +
+	"\temail_uid\x18\n" +
+	" \x01(\tR\bemailUid\"L\n" +
+	"\x16SetEmailUnReadResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\v \x01(\tR\amessage\"O\n" +
 	"\x13SuggestEmailRequest\x12\f\n" +
 	"\x01q\x18\n" +
@@ -342,9 +1049,14 @@ const file_messaging_proto_rawDesc = "" +
 	"\x14SuggestEmailResponse\x128\n" +
 	"\x05items\x18\n" +
 	" \x03(\v2\".modules.messaging.api.SuggestItemR\x05items\x12\x18\n" +
-	"\amessage\x18\v \x01(\tR\amessage2\xa9\x02\n" +
+	"\amessage\x18\v \x01(\tR\amessage2\xff\a\n" +
 	"\x10MessagingService\x12\x84\x01\n" +
-	"\tSendEmail\x12'.modules.messaging.api.SendEmailRequest\x1a(.modules.messaging.api.SendEmailResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/messaging/send-email\x12\x8d\x01\n" +
+	"\tSendEmail\x12'.modules.messaging.api.SendEmailRequest\x1a(.modules.messaging.api.SendEmailResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/messaging/send-email\x12\x80\x01\n" +
+	"\bGetEmail\x12&.modules.messaging.api.GetEmailRequest\x1a'.modules.messaging.api.GetEmailResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/messaging/get_email\x12\x91\x01\n" +
+	"\fGetAllEmails\x12*.modules.messaging.api.GetAllEmailsRequest\x1a+.modules.messaging.api.GetAllEmailsResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/messaging/get_all_emails\x12\x8c\x01\n" +
+	"\vDeleteEmail\x12).modules.messaging.api.DeleteEmailRequest\x1a*.modules.messaging.api.DeleteEmailResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/messaging/delete_email\x12\x91\x01\n" +
+	"\fSetEmailRead\x12*.modules.messaging.api.SetEmailReadRequest\x1a+.modules.messaging.api.SetEmailReadResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/messaging/set_email_read\x12\x99\x01\n" +
+	"\x0eSetEmailUnread\x12,.modules.messaging.api.SetEmailUnReadRequest\x1a-.modules.messaging.api.SetEmailUnReadResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/messaging/set_email_unread\x12\x8d\x01\n" +
 	"\fSuggestEmail\x12*.modules.messaging.api.SuggestEmailRequest\x1a+.modules.messaging.api.SuggestEmailResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/messaging/suggest-emailBQZOgithub.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging;messagingb\x06proto3"
 
 var (
@@ -359,25 +1071,47 @@ func file_messaging_proto_rawDescGZIP() []byte {
 	return file_messaging_proto_rawDescData
 }
 
-var file_messaging_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_messaging_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_messaging_proto_goTypes = []any{
-	(*SendEmailRequest)(nil),     // 0: modules.messaging.api.SendEmailRequest
-	(*SendEmailResponse)(nil),    // 1: modules.messaging.api.SendEmailResponse
-	(*SuggestEmailRequest)(nil),  // 2: modules.messaging.api.SuggestEmailRequest
-	(*SuggestItem)(nil),          // 3: modules.messaging.api.SuggestItem
-	(*SuggestEmailResponse)(nil), // 4: modules.messaging.api.SuggestEmailResponse
+	(*SendEmailRequest)(nil),       // 0: modules.messaging.api.SendEmailRequest
+	(*SendEmailResponse)(nil),      // 1: modules.messaging.api.SendEmailResponse
+	(*GetEmailRequest)(nil),        // 2: modules.messaging.api.GetEmailRequest
+	(*GetEmailResponse)(nil),       // 3: modules.messaging.api.GetEmailResponse
+	(*GetAllEmailsRequest)(nil),    // 4: modules.messaging.api.GetAllEmailsRequest
+	(*EmailSummary)(nil),           // 5: modules.messaging.api.EmailSummary
+	(*GetAllEmailsResponse)(nil),   // 6: modules.messaging.api.GetAllEmailsResponse
+	(*DeleteEmailRequest)(nil),     // 7: modules.messaging.api.DeleteEmailRequest
+	(*DeleteEmailResponse)(nil),    // 8: modules.messaging.api.DeleteEmailResponse
+	(*SetEmailReadRequest)(nil),    // 9: modules.messaging.api.SetEmailReadRequest
+	(*SetEmailReadResponse)(nil),   // 10: modules.messaging.api.SetEmailReadResponse
+	(*SetEmailUnReadRequest)(nil),  // 11: modules.messaging.api.SetEmailUnReadRequest
+	(*SetEmailUnReadResponse)(nil), // 12: modules.messaging.api.SetEmailUnReadResponse
+	(*SuggestEmailRequest)(nil),    // 13: modules.messaging.api.SuggestEmailRequest
+	(*SuggestItem)(nil),            // 14: modules.messaging.api.SuggestItem
+	(*SuggestEmailResponse)(nil),   // 15: modules.messaging.api.SuggestEmailResponse
 }
 var file_messaging_proto_depIdxs = []int32{
-	3, // 0: modules.messaging.api.SuggestEmailResponse.items:type_name -> modules.messaging.api.SuggestItem
-	0, // 1: modules.messaging.api.MessagingService.SendEmail:input_type -> modules.messaging.api.SendEmailRequest
-	2, // 2: modules.messaging.api.MessagingService.SuggestEmail:input_type -> modules.messaging.api.SuggestEmailRequest
-	1, // 3: modules.messaging.api.MessagingService.SendEmail:output_type -> modules.messaging.api.SendEmailResponse
-	4, // 4: modules.messaging.api.MessagingService.SuggestEmail:output_type -> modules.messaging.api.SuggestEmailResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	5,  // 0: modules.messaging.api.GetAllEmailsResponse.emails:type_name -> modules.messaging.api.EmailSummary
+	14, // 1: modules.messaging.api.SuggestEmailResponse.items:type_name -> modules.messaging.api.SuggestItem
+	0,  // 2: modules.messaging.api.MessagingService.SendEmail:input_type -> modules.messaging.api.SendEmailRequest
+	2,  // 3: modules.messaging.api.MessagingService.GetEmail:input_type -> modules.messaging.api.GetEmailRequest
+	4,  // 4: modules.messaging.api.MessagingService.GetAllEmails:input_type -> modules.messaging.api.GetAllEmailsRequest
+	7,  // 5: modules.messaging.api.MessagingService.DeleteEmail:input_type -> modules.messaging.api.DeleteEmailRequest
+	9,  // 6: modules.messaging.api.MessagingService.SetEmailRead:input_type -> modules.messaging.api.SetEmailReadRequest
+	11, // 7: modules.messaging.api.MessagingService.SetEmailUnread:input_type -> modules.messaging.api.SetEmailUnReadRequest
+	13, // 8: modules.messaging.api.MessagingService.SuggestEmail:input_type -> modules.messaging.api.SuggestEmailRequest
+	1,  // 9: modules.messaging.api.MessagingService.SendEmail:output_type -> modules.messaging.api.SendEmailResponse
+	3,  // 10: modules.messaging.api.MessagingService.GetEmail:output_type -> modules.messaging.api.GetEmailResponse
+	6,  // 11: modules.messaging.api.MessagingService.GetAllEmails:output_type -> modules.messaging.api.GetAllEmailsResponse
+	8,  // 12: modules.messaging.api.MessagingService.DeleteEmail:output_type -> modules.messaging.api.DeleteEmailResponse
+	10, // 13: modules.messaging.api.MessagingService.SetEmailRead:output_type -> modules.messaging.api.SetEmailReadResponse
+	12, // 14: modules.messaging.api.MessagingService.SetEmailUnread:output_type -> modules.messaging.api.SetEmailUnReadResponse
+	15, // 15: modules.messaging.api.MessagingService.SuggestEmail:output_type -> modules.messaging.api.SuggestEmailResponse
+	9,  // [9:16] is the sub-list for method output_type
+	2,  // [2:9] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_messaging_proto_init() }
@@ -391,7 +1125,7 @@ func file_messaging_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_messaging_proto_rawDesc), len(file_messaging_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

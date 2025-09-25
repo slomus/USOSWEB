@@ -19,8 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessagingService_SendEmail_FullMethodName    = "/modules.messaging.api.MessagingService/SendEmail"
-	MessagingService_SuggestEmail_FullMethodName = "/modules.messaging.api.MessagingService/SuggestEmail"
+	MessagingService_SendEmail_FullMethodName      = "/modules.messaging.api.MessagingService/SendEmail"
+	MessagingService_GetEmail_FullMethodName       = "/modules.messaging.api.MessagingService/GetEmail"
+	MessagingService_GetAllEmails_FullMethodName   = "/modules.messaging.api.MessagingService/GetAllEmails"
+	MessagingService_DeleteEmail_FullMethodName    = "/modules.messaging.api.MessagingService/DeleteEmail"
+	MessagingService_SetEmailRead_FullMethodName   = "/modules.messaging.api.MessagingService/SetEmailRead"
+	MessagingService_SetEmailUnread_FullMethodName = "/modules.messaging.api.MessagingService/SetEmailUnread"
+	MessagingService_SuggestEmail_FullMethodName   = "/modules.messaging.api.MessagingService/SuggestEmail"
 )
 
 // MessagingServiceClient is the client API for MessagingService service.
@@ -28,7 +33,17 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MessagingServiceClient interface {
 	SendEmail(ctx context.Context, in *SendEmailRequest, opts ...grpc.CallOption) (*SendEmailResponse, error)
-	// Podpowiadanie adresów e-mail po prefiksie
+	// Fetch single email by UID
+	GetEmail(ctx context.Context, in *GetEmailRequest, opts ...grpc.CallOption) (*GetEmailResponse, error)
+	// Fetch all emails (paginated)
+	GetAllEmails(ctx context.Context, in *GetAllEmailsRequest, opts ...grpc.CallOption) (*GetAllEmailsResponse, error)
+	// Delete email by UID
+	DeleteEmail(ctx context.Context, in *DeleteEmailRequest, opts ...grpc.CallOption) (*DeleteEmailResponse, error)
+	// Mark email as read
+	SetEmailRead(ctx context.Context, in *SetEmailReadRequest, opts ...grpc.CallOption) (*SetEmailReadResponse, error)
+	// Mark email as unread
+	SetEmailUnread(ctx context.Context, in *SetEmailUnReadRequest, opts ...grpc.CallOption) (*SetEmailUnReadResponse, error)
+	// Suggestions
 	SuggestEmail(ctx context.Context, in *SuggestEmailRequest, opts ...grpc.CallOption) (*SuggestEmailResponse, error)
 }
 
@@ -50,6 +65,56 @@ func (c *messagingServiceClient) SendEmail(ctx context.Context, in *SendEmailReq
 	return out, nil
 }
 
+func (c *messagingServiceClient) GetEmail(ctx context.Context, in *GetEmailRequest, opts ...grpc.CallOption) (*GetEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEmailResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) GetAllEmails(ctx context.Context, in *GetAllEmailsRequest, opts ...grpc.CallOption) (*GetAllEmailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAllEmailsResponse)
+	err := c.cc.Invoke(ctx, MessagingService_GetAllEmails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) DeleteEmail(ctx context.Context, in *DeleteEmailRequest, opts ...grpc.CallOption) (*DeleteEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteEmailResponse)
+	err := c.cc.Invoke(ctx, MessagingService_DeleteEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) SetEmailRead(ctx context.Context, in *SetEmailReadRequest, opts ...grpc.CallOption) (*SetEmailReadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetEmailReadResponse)
+	err := c.cc.Invoke(ctx, MessagingService_SetEmailRead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagingServiceClient) SetEmailUnread(ctx context.Context, in *SetEmailUnReadRequest, opts ...grpc.CallOption) (*SetEmailUnReadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetEmailUnReadResponse)
+	err := c.cc.Invoke(ctx, MessagingService_SetEmailUnread_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *messagingServiceClient) SuggestEmail(ctx context.Context, in *SuggestEmailRequest, opts ...grpc.CallOption) (*SuggestEmailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SuggestEmailResponse)
@@ -65,7 +130,17 @@ func (c *messagingServiceClient) SuggestEmail(ctx context.Context, in *SuggestEm
 // for forward compatibility.
 type MessagingServiceServer interface {
 	SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error)
-	// Podpowiadanie adresów e-mail po prefiksie
+	// Fetch single email by UID
+	GetEmail(context.Context, *GetEmailRequest) (*GetEmailResponse, error)
+	// Fetch all emails (paginated)
+	GetAllEmails(context.Context, *GetAllEmailsRequest) (*GetAllEmailsResponse, error)
+	// Delete email by UID
+	DeleteEmail(context.Context, *DeleteEmailRequest) (*DeleteEmailResponse, error)
+	// Mark email as read
+	SetEmailRead(context.Context, *SetEmailReadRequest) (*SetEmailReadResponse, error)
+	// Mark email as unread
+	SetEmailUnread(context.Context, *SetEmailUnReadRequest) (*SetEmailUnReadResponse, error)
+	// Suggestions
 	SuggestEmail(context.Context, *SuggestEmailRequest) (*SuggestEmailResponse, error)
 	mustEmbedUnimplementedMessagingServiceServer()
 }
@@ -79,6 +154,21 @@ type UnimplementedMessagingServiceServer struct{}
 
 func (UnimplementedMessagingServiceServer) SendEmail(context.Context, *SendEmailRequest) (*SendEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendEmail not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetEmail(context.Context, *GetEmailRequest) (*GetEmailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEmail not implemented")
+}
+func (UnimplementedMessagingServiceServer) GetAllEmails(context.Context, *GetAllEmailsRequest) (*GetAllEmailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllEmails not implemented")
+}
+func (UnimplementedMessagingServiceServer) DeleteEmail(context.Context, *DeleteEmailRequest) (*DeleteEmailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteEmail not implemented")
+}
+func (UnimplementedMessagingServiceServer) SetEmailRead(context.Context, *SetEmailReadRequest) (*SetEmailReadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEmailRead not implemented")
+}
+func (UnimplementedMessagingServiceServer) SetEmailUnread(context.Context, *SetEmailUnReadRequest) (*SetEmailUnReadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEmailUnread not implemented")
 }
 func (UnimplementedMessagingServiceServer) SuggestEmail(context.Context, *SuggestEmailRequest) (*SuggestEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SuggestEmail not implemented")
@@ -122,6 +212,96 @@ func _MessagingService_SendEmail_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessagingService_GetEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetEmail(ctx, req.(*GetEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_GetAllEmails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllEmailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).GetAllEmails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_GetAllEmails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).GetAllEmails(ctx, req.(*GetAllEmailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_DeleteEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).DeleteEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_DeleteEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).DeleteEmail(ctx, req.(*DeleteEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_SetEmailRead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetEmailReadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).SetEmailRead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_SetEmailRead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).SetEmailRead(ctx, req.(*SetEmailReadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessagingService_SetEmailUnread_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetEmailUnReadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).SetEmailUnread(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_SetEmailUnread_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).SetEmailUnread(ctx, req.(*SetEmailUnReadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MessagingService_SuggestEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SuggestEmailRequest)
 	if err := dec(in); err != nil {
@@ -150,6 +330,26 @@ var MessagingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendEmail",
 			Handler:    _MessagingService_SendEmail_Handler,
+		},
+		{
+			MethodName: "GetEmail",
+			Handler:    _MessagingService_GetEmail_Handler,
+		},
+		{
+			MethodName: "GetAllEmails",
+			Handler:    _MessagingService_GetAllEmails_Handler,
+		},
+		{
+			MethodName: "DeleteEmail",
+			Handler:    _MessagingService_DeleteEmail_Handler,
+		},
+		{
+			MethodName: "SetEmailRead",
+			Handler:    _MessagingService_SetEmailRead_Handler,
+		},
+		{
+			MethodName: "SetEmailUnread",
+			Handler:    _MessagingService_SetEmailUnread_Handler,
 		},
 		{
 			MethodName: "SuggestEmail",

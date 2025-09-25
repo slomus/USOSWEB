@@ -9,8 +9,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
-	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	calendarPb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
+	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
@@ -200,7 +200,6 @@ func main() {
 	}
 	appLog.LogInfo("CourseService endpoints registered successfully")
 
-
 	// Calendar Service
 	appLog.LogInfo("Registering CalendarService endpoints")
 	calendarServiceEndpoint := "calendar:3001"
@@ -262,10 +261,14 @@ func main() {
 		"POST /api/calendar/events",
 		"GET  /api/calendar/class/{class_id}/schedule",
 		"POST /api/messaging/send-email",
+		"POST /api/messaging/get_email",
+		"POST /api/messaging/get_all_emails",
+		"POST /api/messaging/delete_email",
+		"POST /api/messaging/set_email_read",
+		"POST /api/messaging/set_email_unread",
 		"GET  /api/messaging/suggest-email",
 		"GET  /api/applications",
 		"POST /api/applications",
-
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))

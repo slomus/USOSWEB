@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging;messaging";
 
+// SMTP send
 message SendEmailRequest {
   string to = 10;
   string subject = 11;
@@ -18,25 +19,79 @@ message SendEmailResponse {
   string message = 11;
 }
 
-service MessagingService {
-  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {
-    option (google.api.http) = {
-      post : "/api/messaging/send-email"
-      body : "*"
-    };
-  }
-
-  // Podpowiadanie adresów e-mail po prefiksie
-  rpc SuggestEmail(SuggestEmailRequest) returns (SuggestEmailResponse) {
-    option (google.api.http) = {
-      get : "/api/messaging/suggest-email"
-    };
-  }
+// IMAP single email fetch
+message GetEmailRequest {
+  string email_uid = 10;
 }
 
+message GetEmailResponse {
+  bool success = 10;
+  string message = 11;
+  string email_uid = 12;
+  string sender_email = 13;
+  string sender_name = 14;
+  string title = 15;
+  string content = 16;
+  string send_date = 17;
+  bool is_read = 18;
+}
+
+// IMAP list emails
+message GetAllEmailsRequest {
+  int32 limit = 10;
+  int32 offset = 11;
+}
+
+message EmailSummary {
+  string email_uid = 10;
+  string sender_email = 11;
+  string sender_name = 12;
+  string title = 13;
+  string send_date = 14;
+  bool is_read = 15;
+}
+
+message GetAllEmailsResponse {
+  bool success = 10;
+  string message = 11;
+  repeated EmailSummary emails = 12;
+  int32 total_count = 13;
+}
+
+// IMAP delete
+message DeleteEmailRequest {
+  string email_uid = 10;
+}
+
+message DeleteEmailResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+// IMAP mark read
+message SetEmailReadRequest {
+  string email_uid = 10;
+}
+
+message SetEmailReadResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+//IMAP mark unread
+message SetEmailUnReadRequest {
+  string email_uid = 10;
+}
+
+message SetEmailUnReadResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+// Email suggestions from DB
 message SuggestEmailRequest {
-  string q = 10;          // prefiks (min 2 znaki)
-  int32 limit = 11;       // domyślnie 10, max 50
+  string q = 10;          // min 2 chars
+  int32 limit = 11;       // default 10, max 50
   string scope = 12;      // 'all' | 'students' | 'staff'
 }
 
@@ -49,4 +104,60 @@ message SuggestItem {
 message SuggestEmailResponse {
   repeated SuggestItem items = 10;
   string message = 11;
+}
+
+service MessagingService {
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/send-email"
+      body : "*"
+    };
+  }
+
+  // Fetch single email by UID
+  rpc GetEmail(GetEmailRequest) returns (GetEmailResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/get_email"
+      body : "*"
+    };
+  }
+
+  // Fetch all emails (paginated)
+  rpc GetAllEmails(GetAllEmailsRequest) returns (GetAllEmailsResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/get_all_emails"
+      body : "*"
+    };
+  }
+
+  // Delete email by UID
+  rpc DeleteEmail(DeleteEmailRequest) returns (DeleteEmailResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/delete_email"
+      body : "*"
+    };
+  }
+
+  // Mark email as read
+  rpc SetEmailRead(SetEmailReadRequest) returns (SetEmailReadResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/set_email_read"
+      body : "*"
+    };
+  }
+
+  // Mark email as unread
+  rpc SetEmailUnread(SetEmailUnReadRequest) returns (SetEmailUnReadResponse) {
+    option (google.api.http) = {
+      post : "/api/messaging/set_email_unread"
+      body : "*"
+    };
+  }
+
+  // Suggestions
+  rpc SuggestEmail(SuggestEmailRequest) returns (SuggestEmailResponse) {
+    option (google.api.http) = {
+      get : "/api/messaging/suggest-email"
+    };
+  }
 }
