@@ -20,6 +20,12 @@ TRUNCATE TABLE
     users
 RESTART IDENTITY CASCADE;
 
+INSERT INTO faculties (name) VALUES
+('Wydział Informatyki'),
+('Wydział Matematyki'),
+('Wydział Fizyki'),
+('Wydział Mechatroniki');
+
 INSERT INTO users (email, password, name, surname, active)
 VALUES ('admin@system.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System', 'Admin', true);
 
@@ -35,12 +41,6 @@ INSERT INTO users (name, surname, password, email, PESEL, phone_nr, postal_addre
 ('Kacper', 'Pawlak', '$2a$10$hashedpassword6', 'kacper.pawlak@edu.pl', '68060667890', '+48678901234', 'ul. Uniwersytecka 20, Gdańsk', 'ul. Uniwersytecka 20, Gdańsk', '67890123456789012345678901', true, '2024-08-15 11:00:00'),
 ('Agnieszka', 'Kowalik', '$2a$10$hashedpassword7', 'agnieszka.kowalik@edu.pl', '80070778901', '+48789012345', 'ul. Biurowa 5, Warszawa', 'ul. Biurowa 5, Warszawa', '78901234567890123456789012', true, '2024-08-01 08:00:00'),
 ('Karol', 'Kudłacz', '$2a$10$los4KGgs7C7id1QCy6QtnO7lGyqZVYQGLp9bxhHtlkWHWk80scYvq', 'karol.kudlacz@edu.pl', '82080889012', '+48890123456', 'ul. Administracyjna 7, Kraków', 'ul. Administracyjna 7, Kraków', '89012345678901234567890123', true, '2024-08-01 09:00:00');
-
-INSERT INTO faculties (name) VALUES
-('Wydział Informatyki'),
-('Wydział Matematyki'),
-('Wydział Fizyki'),
-('Wydział Mechatroniki');
 
 INSERT INTO buildings (name, address) VALUES
 ('Budynek Główny', 'ul. J.K.Chodkiewicza 30, Bydgoszcz'),
@@ -127,9 +127,9 @@ INSERT INTO attachments (message_id, filename, original_filename, file_size, mim
 
 
 INSERT INTO application_categories (name, description, application_start_date, application_end_date, active) VALUES
-  ('Stypendium socjalne', 'Wniosek o stypendium socjalne' , '2024-09-01 00:00:00', '2024-09-30 23:59:59', true),
-  ('Urlop dziekański', 'Wniosek o urlop dziekański', '2024-09-15 00:00:00', '2024-10-31 23:59:59', true),
-  ('Zapomoga', 'Wniosek o jednorazową zapomogę', '2024-09-15 00:00:00', '2024-10-31 23:59:59', true)
+  ('Stypendium socjalne', 'Wniosek o stypendium socjalne' , '2024-09-01 00:00:00', '2026-09-30 23:59:59', true),
+  ('Urlop dziekański', 'Wniosek o urlop dziekański', '2024-09-15 00:00:00', '2026-10-31 23:59:59', true),
+  ('Zapomoga', 'Wniosek o jednorazową zapomogę', '2024-09-15 00:00:00', '2026-10-31 23:59:59', true)
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO applications (category_id, album_nr, title, content, status) VALUES

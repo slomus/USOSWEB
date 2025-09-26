@@ -145,7 +145,7 @@ export default function MarksPage() {
         setLoading(true);
         setError("");
         
-        const res = await fetch("http://localhost:8083/api/marks", {
+        const res = await fetch("http://localhost:8083/api/grades", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -205,7 +205,7 @@ export default function MarksPage() {
     
     const fetchMarks = async () => {
       try {
-        const res = await fetch("http://localhost:8083/api/marks", {
+        const res = await fetch("http://localhost:8083/api/grades/", {
           method: "GET",
           credentials: "include",
           headers: {

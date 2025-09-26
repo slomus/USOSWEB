@@ -13,11 +13,25 @@ type ApplicationCategory = {
 
 type ApplicationStatus = "zakończona" | "aktywna" | "planowana";
 
+type ApplicationFormData = {
+  categoryId: number;
+  title: string;
+  content: string;
+};
+
 export default function ApplicationsPage() {
   const [categories, setCategories] = useState<ApplicationCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ApplicationCategory | null>(null);
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [formData, setFormData] = useState<ApplicationFormData>({
+    categoryId: 0,
+    title: "",
+    content: ""
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState<string>("");
 
   // Komponenty SVG dla ikon
   const InfoIcon = () => (
@@ -35,6 +49,18 @@ export default function ApplicationsPage() {
   const CalendarIcon = () => (
     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+
+  const CloseIcon = () => (
+    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+
+  const CheckIcon = () => (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
 
@@ -59,7 +85,7 @@ export default function ApplicationsPage() {
       categoryId: 3,
       name: "Wniosek o stypendium dla osób z niepełnosprawnościami",
       applicationStartDate: "2024-10-23 09:00",
-      applicationEndDate: "2024-10-28 23:59",
+      applicationEndDate: "2026-10-28 23:59",
       description: "Wniosek o stypendium dla studentów z niepełnosprawnościami",
       active: false
     },
@@ -67,7 +93,7 @@ export default function ApplicationsPage() {
       categoryId: 4,
       name: "Wniosek o stypendium rektora dla studentów",
       applicationStartDate: "2024-10-23 09:00",
-      applicationEndDate: "2024-10-28 23:59",
+      applicationEndDate: "2026-10-28 23:59",
       description: "Wniosek o stypendium rektora za wyniki w nauce",
       active: false
     },
@@ -75,7 +101,7 @@ export default function ApplicationsPage() {
       categoryId: 5,
       name: "Wniosek o stypendium socjalne",
       applicationStartDate: "2024-10-16 09:00",
-      applicationEndDate: "2024-10-23 23:59",
+      applicationEndDate: "2026-10-23 23:59",
       description: "Wniosek o stypendium socjalne na rok akademicki 2024/25",
       active: true
     },
@@ -83,7 +109,7 @@ export default function ApplicationsPage() {
       categoryId: 6,
       name: "Wniosek o zapomogę",
       applicationStartDate: "2024-10-16 09:00",
-      applicationEndDate: "2025-06-10 23:59",
+      applicationEndDate: "2026-06-10 23:59",
       description: "Wniosek o jednorazową zapomogę finansową",
       active: true
     }
@@ -131,6 +157,67 @@ export default function ApplicationsPage() {
       return `${currentYear}/${currentYear + 1}`;
     } else {
       return `${currentYear - 1}/${currentYear}`;
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      categoryId: 0,
+      title: "",
+      content: ""
+    });
+    setShowApplicationForm(false);
+    setSelectedCategory(null);
+    setSubmitSuccess("");
+  };
+
+  const handleSubmitApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim() || formData.title.trim().length < 3) {
+      alert("Tytuł musi mieć co najmniej 3 znaki");
+      return;
+    }
+    
+    if (!formData.content.trim() || formData.content.trim().length < 10) {
+      alert("Treść musi mieć co najmniej 10 znaków");
+      return;
+    }
+
+    setSubmitting(true);
+    
+    try {
+      const response = await fetch("http://localhost:8083/api/applications", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category_id: formData.categoryId,
+          title: formData.title.trim(),
+          content: formData.content.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Błąd HTTP: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setSubmitSuccess(`Wniosek został pomyślnie złożony! ID: ${result.application_id}`);
+      
+      // Reset formularza po udanym wysłaniu
+      setTimeout(() => {
+        resetForm();
+      }, 3000);
+      
+    } catch (err: any) {
+      console.error("Błąd podczas składania wniosku:", err);
+      alert(`Nie udało się złożyć wniosku: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -213,8 +300,19 @@ export default function ApplicationsPage() {
     if (action === "info") {
       setSelectedCategory(category);
     } else if (action === "apply") {
-      // Symulacja że POST nie jest jeszcze dostępny
-      alert("Funkcja składania wniosków będzie dostępna wkrótce. Backend jeszcze nie obsługuje POST requests.");
+      const status = getApplicationStatus(category);
+      if (status === "zakończona") {
+        alert("Termin składania wniosków dla tej kategorii już minął.");
+        return;
+      }
+      if (status === "planowana") {
+        alert("Termin składania wniosków dla tej kategorii jeszcze się nie rozpoczął.");
+        return;
+      }
+      
+      setFormData(prev => ({ ...prev, categoryId: category.categoryId }));
+      setSelectedCategory(category);
+      setShowApplicationForm(true);
     }
   };
 
@@ -258,6 +356,16 @@ export default function ApplicationsPage() {
               >
                 Ponów
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Komunikat o sukcesie */}
+        {submitSuccess && (
+          <div className="mb-6 bg-green-100 border border-green-400 rounded-lg p-4">
+            <div className="flex items-center">
+              <CheckIcon />
+              <p className="ml-2 text-green-800 font-semibold">{submitSuccess}</p>
             </div>
           </div>
         )}
@@ -364,8 +472,12 @@ export default function ApplicationsPage() {
                             <span className="text-[var(--color-text-secondary)]">→</span>
                             <button
                               onClick={() => handleApplicationAction(category, "apply")}
-                              className="flex items-center space-x-1 text-[var(--color-accent)] hover:text-[var(--color-accent2)] transition-colors text-sm"
-                              disabled={status === "zakończona"}
+                              className={`flex items-center space-x-1 transition-colors text-sm ${
+                                status === "zakończona" || status === "planowana"
+                                  ? "text-[var(--color-text-secondary)] cursor-not-allowed"
+                                  : "text-[var(--color-accent)] hover:text-[var(--color-accent2)]"
+                              }`}
+                              disabled={status === "zakończona" || status === "planowana"}
                             >
                               <span>zacznij wypełniać</span>
                               <ArrowRightIcon />
@@ -383,7 +495,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Modal z informacjami o wniosku */}
-      {selectedCategory && (
+      {selectedCategory && !showApplicationForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-md w-full mx-4 border border-[var(--color-accent)]">
             <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-4">
@@ -417,12 +529,97 @@ export default function ApplicationsPage() {
               </button>
               <button
                 onClick={() => handleApplicationAction(selectedCategory, "apply")}
-                className="px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent2)] transition-colors"
-                disabled={getApplicationStatus(selectedCategory) === "zakończona"}
+                className={`px-4 py-2 rounded transition-colors ${
+                  getApplicationStatus(selectedCategory) === "aktywna"
+                    ? "bg-[var(--color-accent)] hover:bg-[var(--color-accent2)] text-white"
+                    : "bg-[var(--color-text-secondary)] text-white cursor-not-allowed"
+                }`}
+                disabled={getApplicationStatus(selectedCategory) !== "aktywna"}
               >
                 Składaj wniosek
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal z formularzem wniosku */}
+      {showApplicationForm && selectedCategory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full mx-4 border border-[var(--color-accent)] my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-[var(--color-accent)]">
+                Złóż wniosek: {selectedCategory.name}
+              </h3>
+              <button
+                onClick={resetForm}
+                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitApplication} className="space-y-6">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                  Tytuł wniosku *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                  placeholder="Wprowadź tytuł wniosku (min. 3 znaki)"
+                  required
+                  minLength={3}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="content" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                  Treść wniosku *
+                </label>
+                <textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  rows={8}
+                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-vertical"
+                  placeholder="Wprowadź treść wniosku (min. 10 znaków)"
+                  required
+                  minLength={10}
+                />
+              </div>
+
+              <div className="bg-[var(--color-bg)] p-4 rounded-md border border-[var(--color-accent)]/30">
+                <h4 className="font-semibold text-[var(--color-text)] mb-2">Informacje o kategorii:</h4>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  {selectedCategory.description}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+                  Termin: {formatDate(selectedCategory.applicationStartDate)} - {formatDate(selectedCategory.applicationEndDate)}
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-2 bg-[var(--color-text-secondary)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
+                  disabled={submitting}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={submitting}
+                >
+                  {submitting ? "Składanie..." : "Złóż wniosek"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
