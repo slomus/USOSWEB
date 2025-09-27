@@ -17,11 +17,11 @@ message Grade {
   int32 added_by_teaching_staff_id = 17;
   string comment = 18;
   string created_at = 19;
+  string subject_name = 20;
+  string added_by_name = 21;
 }
 
-message ListGradesRequest {
-  optional int32 album_nr = 10;
-}
+message ListGradesRequest { optional int32 album_nr = 10; }
 
 message ListGradesResponse {
   repeated Grade grades = 10;
@@ -46,16 +46,14 @@ message AddGradeResponse {
 service GradesService {
   rpc ListGrades(ListGradesRequest) returns (ListGradesResponse) {
     option (google.api.http) = {
-      get: "/api/grades"
+      get : "/api/grades"
     };
   }
 
   rpc AddGrade(AddGradeRequest) returns (AddGradeResponse) {
     option (google.api.http) = {
-      post: "/api/grades"
-      body: "*"
+      post : "/api/grades"
+      body : "*"
     };
   }
 }
-
-
