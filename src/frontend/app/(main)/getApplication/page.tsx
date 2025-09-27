@@ -17,6 +17,7 @@ type ApplicationFormData = {
   categoryId: number;
   title: string;
   content: string;
+  albumNr: string;
 };
 
 export default function ApplicationsPage() {
@@ -28,12 +29,12 @@ export default function ApplicationsPage() {
   const [formData, setFormData] = useState<ApplicationFormData>({
     categoryId: 0,
     title: "",
-    content: ""
+    content: "",
+    albumNr: "1"
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string>("");
 
-  // Komponenty SVG dla ikon
   const InfoIcon = () => (
     <svg className="h-5 w-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -63,57 +64,6 @@ export default function ApplicationsPage() {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
-
-  const getMockData = (): ApplicationCategory[] => [
-    {
-      categoryId: 1,
-      name: "Oświadczenie o dochodach 2024",
-      applicationStartDate: "2025-06-01 09:00",
-      applicationEndDate: "2025-06-16 14:00",
-      description: "Oświadczenie o dochodach na rok akademicki 2024/25",
-      active: false
-    },
-    {
-      categoryId: 2,
-      name: "Wniosek o akademik 2025/26",
-      applicationStartDate: "2025-06-01 09:00",
-      applicationEndDate: "2025-06-16 14:00",
-      description: "Wniosek o zakwaterowanie w akademiku na rok 2025/26",
-      active: false
-    },
-    {
-      categoryId: 3,
-      name: "Wniosek o stypendium dla osób z niepełnosprawnościami",
-      applicationStartDate: "2024-10-23 09:00",
-      applicationEndDate: "2026-10-28 23:59",
-      description: "Wniosek o stypendium dla studentów z niepełnosprawnościami",
-      active: false
-    },
-    {
-      categoryId: 4,
-      name: "Wniosek o stypendium rektora dla studentów",
-      applicationStartDate: "2024-10-23 09:00",
-      applicationEndDate: "2026-10-28 23:59",
-      description: "Wniosek o stypendium rektora za wyniki w nauce",
-      active: false
-    },
-    {
-      categoryId: 5,
-      name: "Wniosek o stypendium socjalne",
-      applicationStartDate: "2024-10-16 09:00",
-      applicationEndDate: "2026-10-23 23:59",
-      description: "Wniosek o stypendium socjalne na rok akademicki 2024/25",
-      active: true
-    },
-    {
-      categoryId: 6,
-      name: "Wniosek o zapomogę",
-      applicationStartDate: "2024-10-16 09:00",
-      applicationEndDate: "2026-06-10 23:59",
-      description: "Wniosek o jednorazową zapomogę finansową",
-      active: true
-    }
-  ];
 
   const getApplicationStatus = (category: ApplicationCategory): ApplicationStatus => {
     const now = new Date();
@@ -153,7 +103,7 @@ export default function ApplicationsPage() {
     const currentYear = now.getFullYear();
     const month = now.getMonth();
     
-    if (month >= 9) { // od października
+    if (month >= 9) {
       return `${currentYear}/${currentYear + 1}`;
     } else {
       return `${currentYear - 1}/${currentYear}`;
@@ -164,7 +114,8 @@ export default function ApplicationsPage() {
     setFormData({
       categoryId: 0,
       title: "",
-      content: ""
+      content: "",
+      albumNr: "1"
     });
     setShowApplicationForm(false);
     setSelectedCategory(null);
@@ -196,7 +147,8 @@ export default function ApplicationsPage() {
         body: JSON.stringify({
           category_id: formData.categoryId,
           title: formData.title.trim(),
-          content: formData.content.trim()
+          content: formData.content.trim(),
+          album_nr: formData.albumNr
         }),
       });
 
@@ -206,12 +158,15 @@ export default function ApplicationsPage() {
       }
 
       const result = await response.json();
-      setSubmitSuccess(`Wniosek został pomyślnie złożony! ID: ${result.application_id}`);
       
-      // Reset formularza po udanym wysłaniu
+      console.log("Backend response:", result);
+      console.log("Response status:", response.status);
+      
+      setSubmitSuccess(`Wniosek został pomyślnie wypełniony i złożony! ${result.application_id || result.id || result.applicationId ? `Numer wniosku: ${result.application_id || result.id || result.applicationId}` : ''}`);
+      
       setTimeout(() => {
         resetForm();
-      }, 3000);
+      }, 5000);
       
     } catch (err: any) {
       console.error("Błąd podczas składania wniosku:", err);
@@ -254,7 +209,7 @@ export default function ApplicationsPage() {
         } else {
           setError("Nie udało się pobrać kategorii wniosków");
         }
-        setCategories(getMockData());
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -287,7 +242,7 @@ export default function ApplicationsPage() {
       } catch (err: any) {
         console.error("Błąd podczas pobierania kategorii wniosków:", err);
         setError("Nie udało się pobrać kategorii wniosków");
-        setCategories(getMockData());
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -310,7 +265,7 @@ export default function ApplicationsPage() {
         return;
       }
       
-      setFormData(prev => ({ ...prev, categoryId: category.categoryId }));
+      setFormData(prev => ({ ...prev, categoryId: category.categoryId, albumNr: "1" }));
       setSelectedCategory(category);
       setShowApplicationForm(true);
     }
@@ -362,10 +317,25 @@ export default function ApplicationsPage() {
 
         {/* Komunikat o sukcesie */}
         {submitSuccess && (
-          <div className="mb-6 bg-green-100 border border-green-400 rounded-lg p-4">
-            <div className="flex items-center">
-              <CheckIcon />
-              <p className="ml-2 text-green-800 font-semibold">{submitSuccess}</p>
+          <div className="mb-6 bg-green-50 border-2 border-green-400 rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckIcon />
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-semibold text-green-800 mb-1">Sukces!</h3>
+                  <p className="text-green-700">{submitSuccess}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSubmitSuccess("")}
+                className="text-green-600 hover:text-green-800 transition-colors"
+              >
+                <CloseIcon />
+              </button>
             </div>
           </div>
         )}
@@ -402,7 +372,7 @@ export default function ApplicationsPage() {
             <div className="px-6 py-12 text-center">
               <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">Brak dostępnych wniosków</h3>
               <p className="text-[var(--color-text-secondary)]">
-                Obecnie nie ma dostępnych kategorii wniosków.
+                Obecnie nie ma dostępnych kategorii wniosków dla Twojego konta.
               </p>
             </div>
           ) : (
@@ -411,9 +381,9 @@ export default function ApplicationsPage() {
                 <thead className="bg-[var(--color-accent)]/10">
                   <tr>
                     <th className="text-left py-4 px-6 font-semibold">Nazwa</th>
-                    <th className="text-center py-4 px-4 font-semibold">Tury</th>
+                    <th className="text-center py-4 px-4 font-semibold">Status</th>
                     <th className="text-left py-4 px-4 font-semibold">Organizator</th>
-                    <th className="text-center py-4 px-4 font-semibold">Cykl</th>
+                    <th className="text-center py-4 px-4 font-semibold">Termin</th>
                     <th className="text-center py-4 px-6 font-semibold">Akcje</th>
                   </tr>
                 </thead>
@@ -466,7 +436,7 @@ export default function ApplicationsPage() {
                               onClick={() => handleApplicationAction(category, "info")}
                               className="flex items-center space-x-1 text-[var(--color-accent)] hover:text-[var(--color-accent2)] transition-colors text-sm"
                             >
-                              <span>informacje o wniosku</span>
+                              <span>informacje</span>
                               <ArrowRightIcon />
                             </button>
                             <span className="text-[var(--color-text-secondary)]">→</span>
@@ -479,7 +449,7 @@ export default function ApplicationsPage() {
                               }`}
                               disabled={status === "zakończona" || status === "planowana"}
                             >
-                              <span>zacznij wypełniać</span>
+                              <span>wypełnij wniosek</span>
                               <ArrowRightIcon />
                             </button>
                           </div>
@@ -536,7 +506,7 @@ export default function ApplicationsPage() {
                 }`}
                 disabled={getApplicationStatus(selectedCategory) !== "aktywna"}
               >
-                Składaj wniosek
+                Wypełnij wniosek
               </button>
             </div>
           </div>
@@ -549,7 +519,7 @@ export default function ApplicationsPage() {
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full mx-4 border border-[var(--color-accent)] my-8">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-[var(--color-accent)]">
-                Złóż wniosek: {selectedCategory.name}
+                Wypełnij wniosek: {selectedCategory.name}
               </h3>
               <button
                 onClick={resetForm}
@@ -616,7 +586,7 @@ export default function ApplicationsPage() {
                   className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={submitting}
                 >
-                  {submitting ? "Składanie..." : "Złóż wniosek"}
+                  {submitting ? "Wypełnianie..." : "Wypełnij i złóż wniosek"}
                 </button>
               </div>
             </form>
