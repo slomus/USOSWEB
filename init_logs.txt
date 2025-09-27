@@ -1,0 +1,41 @@
+ Container postgres  Running
+DO
+psql:/seeds/init_relations.sql:7: NOTICE:  Znaleziono 9 użytkowników. Populuję relacje...
+INSERT 0 4
+psql:/seeds/init_relations.sql:58: ERROR:  duplicate key value violates unique constraint "message_recipients_pkey"
+DETAIL:  Key (message_id, recipient_id)=(1, 2) already exists.
+INSERT 0 3
+INSERT 0 2
+INSERT 0 5
+psql:/seeds/init_relations.sql:89: ERROR:  duplicate key value violates unique constraint "course_instructors_pkey"
+DETAIL:  Key (class_id, teaching_staff_id)=(1, 1) already exists.
+psql:/seeds/init_relations.sql:99: ERROR:  duplicate key value violates unique constraint "student_classes_pkey"
+DETAIL:  Key (class_id, album_nr)=(1, 1) already exists.
+psql:/seeds/init_relations.sql:132: ERROR:  duplicate key value violates unique constraint "grades_album_nr_class_id_attempt_key"
+DETAIL:  Key (album_nr, class_id, attempt)=(1, 1, 1) already exists.
+                 info                  
+---------------------------------------
+ PODSUMOWANIE DANYCH PO INICJALIZACJI:
+(1 row)
+
+        tabela        | liczba_rekordow |                       opis                       
+----------------------+-----------------+--------------------------------------------------
+ users                |               9 | Użytkownicy: studenci, wykładowcy, administracja
+ students             |               3 | Studenci zapisani w systemie
+ teaching_staff       |               3 | Kadra nauczycielska
+ administrative_staff |               3 | Kadra administracyjna
+ messages             |               8 | Wiadomości w systemie
+ classes              |               7 | Zajęcia/grupy
+ attachments          |               6 | Załączniki do wiadomości
+ applications         |               4 | Podania studentów
+ surveys              |              10 | Ankiety ocen
+ course_instructors   |               7 | Przypisania nauczycieli do zajęć
+ student_classes      |              11 | Zapisy studentów na zajęcia
+ grades               |               0 | Oceny studentów
+(12 rows)
+
+               success_message                
+----------------------------------------------
+ Wszystkie dane zostały pomyślnie załadowane!
+(1 row)
+
