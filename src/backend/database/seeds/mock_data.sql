@@ -69,39 +69,6 @@ INSERT INTO classes (class_type, credit, span_of_hours, group_nr, current_capaci
 ('wykład', 'egzamin', 30, 1, 35, 40, 103, 1, 3), -- class_id = 6, BD1 wykład
 ('laboratorium', 'projekt', 15, 1, 15, 20, 202, 2, 6); -- class_id = 7, SYS1 lab
 
-INSERT INTO calendar_events (event_type, title, description, start_date, end_date, academic_year, target_audience, is_holiday) VALUES
--- Semestry
-('semester', 'Semestr zimowy 2024/2025', 'Zajęcia dydaktyczne semestru zimowego', '2024-10-01', '2025-01-26', '2024/2025', 'all', FALSE),
-('semester', 'Semestr letni 2024/2025', 'Zajęcia dydaktyczne semestru letniego', '2025-02-17', '2025-06-14', '2024/2025', 'all', FALSE),
-
--- Sesje egzaminacyjne
-('exam_session', 'Sesja zimowa', 'Sesja egzaminacyjna semestru zimowego', '2025-01-27', '2025-02-14', '2024/2025', 'all', FALSE),
-('exam_session', 'Sesja letnia', 'Sesja egzaminacyjna semestru letniego', '2025-06-16', '2025-07-11', '2024/2025', 'all', FALSE),
-('exam_session', 'Sesja poprawkowa', 'Sesja poprawkowa dla obu semestrów', '2025-09-01', '2025-09-15', '2024/2025', 'all', FALSE),
-
--- Święta państwowe
-('holiday', 'Nowy Rok', 'Święto Nowego Roku', '2025-01-01', NULL, '2024/2025', 'all', TRUE),
-('holiday', 'Święto Trzech Króli', 'Objawienie Pańskie', '2025-01-06', NULL, '2024/2025', 'all', TRUE),
-('holiday', 'Wielkanoc', 'Niedziela Wielkanocna', '2025-04-20', NULL, '2024/2025', 'all', TRUE),
-('holiday', 'Poniedziałek Wielkanocny', 'Lany Poniedziałek', '2025-04-21', NULL, '2024/2025', 'all', TRUE),
-('holiday', 'Boże Ciało', 'Boże Ciało 2025', '2025-06-19', NULL, '2024/2025', 'all', FALSE),
-
--- Święta majowe
-('holiday', 'Święto Pracy', 'Święto Państwowe', '2025-05-01', NULL, '2024/2025', 'all', TRUE),
-('holiday', 'Święto Konstytucji 3 Maja', 'Święto Narodowe', '2025-05-03', NULL, '2024/2025', 'all', TRUE),
-
--- Przerwy świąteczne
-('break', 'Ferie zimowe', 'Przerwa zimowa w zajęciach', '2025-01-27', '2025-01-31', '2024/2025', 'all', FALSE),
-('break', 'Przerwa wielkanocna', 'Przerwa świąteczna', '2025-04-17', '2025-04-22', '2024/2025', 'all', FALSE),
-
--- Zapisy
-('registration', 'Zapisy na semestr zimowy', 'Okres zapisów na zajęcia', '2024-09-15', '2024-09-30', '2024/2025', 'all', TRUE),
-('registration', 'Zapisy na semestr letni', 'Okres zapisów na zajęcia', '2025-02-01', '2025-02-15', '2024/2025', 'all', TRUE),
-
--- Ważne daty administracyjne
-('deadline', 'Koniec roku akademickiego', 'Zakończenie roku akademickiego 2024/2025', '2025-09-30', NULL, '2024/2025', 'all', FALSE),
-('event', 'Dzień Otwarty', 'Dni otwarte uczelni', '2025-03-15', NULL, '2024/2025', 'all', FALSE);
-
 INSERT INTO application_categories (name, description, application_start_date, application_end_date, active) VALUES
 ('Stypendium socjalne', 'Wniosek o stypendium socjalne' , '2024-09-01 00:00:00', '2026-09-30 23:59:59', true),
 ('Urlop dziekański', 'Wniosek o urlop dziekański', '2024-09-15 00:00:00', '2026-10-31 23:59:59', true),
@@ -118,6 +85,7 @@ ON CONFLICT (name) DO NOTHING;
 -- - surveys (potrzebuje class_id)
 -- - course_instructors (potrzebuje teaching_staff_id)
 -- - student_classes (potrzebuje album_nr)
+-- - grades (potrzebuje album_nr i teaching_staff_id)
 -- - course_subjects i module_subjects można już teraz
 -- ========================================
 
