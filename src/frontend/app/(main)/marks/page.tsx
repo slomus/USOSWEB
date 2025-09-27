@@ -12,7 +12,8 @@ type Mark = {
   value: string;
   weight: number;
   attempt: number;
-  addedBy?: string;
+  addedByName?: string;
+  addedByTeachingStaffId?: number;
   comment: string;
   createdAt: string;
 };
@@ -317,7 +318,7 @@ export default function MarksPage() {
                                   {mark.attempt === 1 && <span className="text-[var(--color-text-secondary)]">-</span>}
                                 </td>
                                 <td className="py-3 px-4 text-sm">
-                                  {mark.addedBy || "Nieznany prowadzący"}
+                                  {mark.addedByName || "Nieznany prowadzący"}
                                 </td>
                                 <td className="py-3 pl-4 text-center text-sm text-[var(--color-text-secondary)]">
                                   {new Date(mark.createdAt).toLocaleDateString("pl-PL", {
