@@ -152,7 +152,7 @@ func (s *server) SuggestEmail(ctx context.Context, req *pb.SuggestEmailRequest) 
 // sendSMTPEmail wysyła email przez SMTP (implementacja dla production)
 func sendSMTPEmail(to, from, subject, body string, smtpUser, smtpPass string) error {
 	// Konfiguracja SMTP - w rzeczywistym środowisku powinno być w env variables
-	smtpHost := "smtp.wp.pl"
+	smtpHost := "smtp.student.ukw.edu.pl"
 	smtpPort := "465"
 	// smtpUser/smtpPass przekazywane per-user
 
@@ -173,7 +173,7 @@ func sendSMTPEmail(to, from, subject, body string, smtpUser, smtpPass string) er
 
 // connectToIMAP - helper to connect and login to IMAP server
 func connectToIMAP(email, password string) (*client.Client, error) {
-	imapHost := "imap.wp.pl"
+	imapHost := "imap.student.ukw.edu.pl"
 	imapPort := "993"
 
 	c, err := client.DialTLS(fmt.Sprintf("%s:%s", imapHost, imapPort), nil)
