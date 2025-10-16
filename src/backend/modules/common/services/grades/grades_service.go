@@ -52,11 +52,18 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 	_ = teachingStaffID
 
 	query := `
-        SELECT grade_id, album_nr, class_id, subject_id, value::text, weight, attempt,
-               added_by_teaching_staff_id, COALESCE(comment, ''), created_at
-        FROM grades
-        WHERE album_nr = $1
-        ORDER BY created_at DESC, grade_id DESC`
+       SELECT
+    g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+    g.added_by_teaching_staff_id, g.comment, g.created_at,
+    s.name as subject_name,
+    CONCAT(ts.degree, ' ', u.name, ' ', u.surname) as added_by_name
+FROM grades g
+LEFT JOIN classes c ON g.class_id = c.class_id
+LEFT JOIN subjects s ON c.subject_id = s.subject_id
+LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+LEFT JOIN users u ON ts.user_id = u.user_id
+WHERE g.album_nr = $1
+	`
 
 	rows, err := s.db.QueryContext(ctx, query, albumNr)
 	if err != nil {
@@ -69,14 +76,20 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 	for rows.Next() {
 		g := &pb.Grade{}
 		var createdAt time.Time
-		if err := rows.Scan(&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value, &g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &g.Comment, &createdAt); err != nil {
+		var subjectName, addedByName string
+
+		if err := rows.Scan(
+			&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value,
+			&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &g.Comment,
+			&createdAt, &subjectName, &addedByName); err != nil {
 			gradesLog.LogError("Failed to scan grade row", err)
 			continue
 		}
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
+		g.SubjectName = subjectName
+		g.AddedByName = addedByName
 		result = append(result, g)
 	}
-
 	return &pb.ListGradesResponse{
 		Grades:  result,
 		Message: "Grades retrieved successfully",
@@ -244,7 +257,7 @@ func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.A
 func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int64) (role string, albumNr int64, teachingStaffID int64, err error) {
 	// Query role similar to AuthServer.GetUserData
 	query := `
-        SELECT 
+        SELECT
             CASE
                 WHEN s.user_id IS NOT NULL THEN 'student'
                 WHEN ts.user_id IS NOT NULL THEN 'teacher'

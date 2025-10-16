@@ -7,12 +7,13 @@ type Mark = {
   albumNr: number;
   subjectId: number;
   classId: number;
-  subjectName: string;
-  classType: string;
+  subjectName?: string;
+  classType?: string;
   value: string;
   weight: number;
   attempt: number;
-  addedBy: string;
+  addedByName?: string;
+  addedByTeachingStaffId?: number;
   comment: string;
   createdAt: string;
 };
@@ -31,7 +32,6 @@ export default function MarksPage() {
   const [error, setError] = useState("");
   const [expandedSemesters, setExpandedSemesters] = useState<string[]>(["Semestr letni 2024/25"]);
 
-  // Komponenty SVG dla ikon
   const ChevronDownIcon = () => (
     <svg className="h-5 w-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
@@ -44,99 +44,32 @@ export default function MarksPage() {
     </svg>
   );
 
-  const getMockData = (): SemesterData[] => [
-    {
-      semester: "Semestr letni 2024/25",
-      year: "2024/25",
-      marks: [
-        {
-          gradeId: 1,
-          albumNr: 12345,
-          subjectId: 1,
-          classId: 1,
-          subjectName: "Systemy rozproszone",
-          classType: "LAB",
-          value: "4",
-          weight: 1,
-          attempt: 1,
-          addedBy: "dr inż. Jan Kowalski",
-          comment: "Bardzo dobra praca",
-          createdAt: "2024-12-15T10:00:00Z"
-        },
-        {
-          gradeId: 2,
-          albumNr: 12345,
-          subjectId: 2,
-          classId: 2,
-          subjectName: "Programowanie w aplikacjach użytkowych",
-          classType: "WYK",
-          value: "5",
-          weight: 2,
-          attempt: 1,
-          addedBy: "prof. dr hab. Anna Nowak",
-          comment: "Wzorowe wykonanie",
-          createdAt: "2024-12-10T14:30:00Z"
-        },
-        {
-          gradeId: 3,
-          albumNr: 12345,
-          subjectId: 3,
-          classId: 3,
-          subjectName: "Sieci komputerowe II",
-          classType: "LAB",
-          value: "3,5",
-          weight: 1,
-          attempt: 2,
-          addedBy: "dr Piotr Wiśniewski",
-          comment: "Poprawa wymagana",
-          createdAt: "2024-12-05T16:15:00Z"
-        }
-      ],
-      average: 4.2,
-      totalCredits: 15
-    },
-    {
-      semester: "Semestr zimowy 2024/25",
-      year: "2024/25",
-      marks: [
-        {
-          gradeId: 4,
-          albumNr: 12345,
-          subjectId: 4,
-          classId: 4,
-          subjectName: "Algorytmy i struktury danych",
-          classType: "WYK",
-          value: "4,5",
-          weight: 2,
-          attempt: 1,
-          addedBy: "prof. dr hab. Maria Kowalczyk",
-          comment: "Dobra znajomość tematu",
-          createdAt: "2024-02-20T11:00:00Z"
-        }
-      ],
-      average: 4.5,
-      totalCredits: 10
-    }
-  ];
-
   const calculateAverage = (marks: Mark[]): number => {
     if (marks.length === 0) return 0;
-    const sum = marks.reduce((acc, mark) => acc + parseFloat(mark.value.replace(',', '.')), 0);
-    return Math.round((sum / marks.length) * 100) / 100;
+    
+    const numericMarks = marks.filter(mark => {
+      const value = mark.value.replace(',', '.');
+      return !isNaN(parseFloat(value)) && isFinite(parseFloat(value));
+    });
+    
+    if (numericMarks.length === 0) return 0;
+    
+    const sum = numericMarks.reduce((acc, mark) => acc + parseFloat(mark.value.replace(',', '.')), 0);
+    return Math.round((sum / numericMarks.length) * 100) / 100;
   };
 
   const groupMarksBySemester = (marks: Mark[]): SemesterData[] => {
-    if (marks.length === 0) return getMockData();
+    if (marks.length === 0) return [];
     
-    return [
-      {
-        semester: "Semestr letni 2024/25",
-        year: "2024/25",
-        marks: marks,
-        average: calculateAverage(marks),
-        totalCredits: marks.length * 5
-      }
-    ];
+    const currentSemester = {
+      semester: "Semestr letni 2024/25",
+      year: "2024/25",
+      marks: marks,
+      average: calculateAverage(marks),
+      totalCredits: marks.length * 5 
+    };
+    
+    return [currentSemester];
   };
 
   useEffect(() => {
@@ -145,7 +78,7 @@ export default function MarksPage() {
         setLoading(true);
         setError("");
         
-        const res = await fetch("http://localhost:8083/api/marks", {
+        const res = await fetch("http://localhost:8083/api/grades?album_nr=1", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -164,7 +97,9 @@ export default function MarksPage() {
         }
 
         const data = await res.json();
-        const marks = data.marks || [];
+        console.log("Dane z API:", data); 
+        
+        const marks = data.grades || [];
         const grouped = groupMarksBySemester(marks);
         setSemesterData(grouped);
       } catch (err: any) {
@@ -174,7 +109,7 @@ export default function MarksPage() {
         } else {
           setError("Nie udało się pobrać ocen");
         }
-        setSemesterData(getMockData());
+        setSemesterData([]);
       } finally {
         setLoading(false);
       }
@@ -192,7 +127,12 @@ export default function MarksPage() {
   };
 
   const getGradeColor = (value: string) => {
+    if (value === "ZAL") return 'bg-[var(--color-accent)] text-white';
+    if (value === "NZAL") return 'bg-[var(--color-accent2)] text-white';
+    
     const numValue = parseFloat(value.replace(',', '.'));
+    if (isNaN(numValue)) return 'bg-[var(--color-text-secondary)] text-white';
+    
     if (numValue >= 4.5) return 'bg-[var(--color-accent)] text-white';
     if (numValue >= 3.0) return 'bg-[var(--color-text-secondary)] text-white';
     return 'bg-[var(--color-accent2)] text-white';
@@ -205,7 +145,7 @@ export default function MarksPage() {
     
     const fetchMarks = async () => {
       try {
-        const res = await fetch("http://localhost:8083/api/marks", {
+        const res = await fetch("http://localhost:8083/api/grades?album_nr=1", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -218,13 +158,13 @@ export default function MarksPage() {
         }
 
         const data = await res.json();
-        const marks = data.marks || [];
+        const marks = data.grades || [];
         const grouped = groupMarksBySemester(marks);
         setSemesterData(grouped);
       } catch (err: any) {
         console.error("Błąd podczas pobierania ocen:", err);
         setError("Nie udało się pobrać ocen");
-        setSemesterData(getMockData());
+        setSemesterData([]);
       } finally {
         setLoading(false);
       }
@@ -352,7 +292,9 @@ export default function MarksPage() {
                               <tr key={mark.gradeId} className="hover:bg-[var(--color-bg)] transition-colors">
                                 <td className="py-3 pr-4">
                                   <div>
-                                    <div className="font-medium">{mark.subjectName}</div>
+                                    <div className="font-medium">
+                                      {mark.subjectName || `Przedmiot ${mark.subjectId}`}
+                                    </div>
                                     {mark.comment && (
                                       <div className="text-sm text-[var(--color-text-secondary)]">{mark.comment}</div>
                                     )}
@@ -360,7 +302,7 @@ export default function MarksPage() {
                                 </td>
                                 <td className="py-3 px-4">
                                   <span className="px-2 py-1 bg-[var(--color-accent)] text-white text-xs rounded font-medium">
-                                    {mark.classType}
+                                    {mark.classType || "LAB"}
                                   </span>
                                 </td>
                                 <td className="py-3 px-4 text-center">
@@ -375,7 +317,9 @@ export default function MarksPage() {
                                   )}
                                   {mark.attempt === 1 && <span className="text-[var(--color-text-secondary)]">-</span>}
                                 </td>
-                                <td className="py-3 px-4 text-sm">{mark.addedBy}</td>
+                                <td className="py-3 px-4 text-sm">
+                                  {mark.addedByName || "Nieznany prowadzący"}
+                                </td>
                                 <td className="py-3 pl-4 text-center text-sm text-[var(--color-text-secondary)]">
                                   {new Date(mark.createdAt).toLocaleDateString("pl-PL", {
                                     day: '2-digit',
@@ -397,9 +341,9 @@ export default function MarksPage() {
 
           {semesterData.length === 0 && !loading && (
             <div className="px-6 py-12 text-center">
-              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">Brak danych</h3>
+              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">Brak ocen</h3>
               <p className="text-[var(--color-text-secondary)]">
-                Nie znaleziono żadnych ocen w systemie.
+                Nie znaleziono żadnych ocen w systemie dla Twojego konta.
               </p>
             </div>
           )}

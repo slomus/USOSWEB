@@ -64,43 +64,6 @@ migrate-create:
 	docker run --rm -v "$$(pwd)/src/backend/Database/migrations:/migrations" migrate/migrate create -ext sql -dir /migrations -seq $$name
 
 
-db-build: 
-	docker-compose down -v --remove-orphans
-	docker-compose rm -f migrate || true
-	docker images | grep 'usosweb.*migrate' | awk '{print $$3}' | xargs -r docker rmi -f || true
-	docker-compose build --no-cache migrate
-	docker-compose up -d postgres --remove-orphans
-	@echo "Czekam na PostgreSQL..."
-	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		if docker-compose exec postgres pg_isready -h localhost -p 5432 > /dev/null 2>&1; then \
-			echo "PostgreSQL jest gotowy!"; \
-			break; \
-		else \
-			echo "Próba $$i/10 - czekam 3 sekundy..."; \
-			sleep 3; \
-		fi; \
-	done
-	docker-compose run --rm migrate up
-	docker-compose --profile seeder run --rm seeder
-
-
-db-reset:
-	docker-compose down -v --remove-orphans
-	docker-compose up -d postgres --remove-orphans
-	@echo "Czekam na PostgreSQL..."
-	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		if docker-compose exec postgres pg_isready -h localhost -p 5432 > /dev/null 2>&1; then \
-			echo "PostgreSQL jest gotowy!"; \
-			break; \
-		else \
-			echo "Próba $$i/10 - czekam 3 sekundy..."; \
-			sleep 3; \
-		fi; \
-	done
-	docker-compose run migrate
-	docker-compose --profile seeder run seeder
-
-
 db-seed:
 	docker-compose --profile seeder build --no-cache seeder || echo "Seeder używa postgres image - OK"
 	docker-compose --profile seeder run --rm seeder
@@ -186,3 +149,34 @@ endif
 	@echo "Examples:"
 	@echo "  make db-build"
 	@echo "  make k8s-deploy"
+
+
+setup-db:
+	@if command -v bash >/dev/null 2>&1; then \
+		chmod +x ./scripts/setup-database.sh && ./scripts/setup-database.sh; \
+	else \
+		echo "Bash niedostępny. Na Windows uruchom scripts/setup-database.bat"; \
+	fi
+
+db-reset:
+	docker-compose down
+	docker volume rm $(docker volume ls -q | grep postgres) 2>/dev/null || true
+	$(MAKE) setup-db
+
+db-seed:
+	docker-compose --profile seeder build --no-cache seeder
+	docker-compose --profile seeder run --rm seeder
+
+db-users:
+	docker-compose --profile init run --rm init-users
+
+db-relations:
+	docker-compose --profile init run --rm init-relations
+
+db-status:
+	@docker-compose exec postgres psql -U postgres -d mydb -c "\dt" 2>/dev/null || echo "Baza niedostępna"
+	@docker-compose exec postgres psql -U postgres -d mydb -c "SELECT COUNT(*) as users_count FROM users;" 2>/dev/null || echo "Tabela users niedostępna"
+
+db-backup:
+	@mkdir -p backups
+	docker-compose exec postgres pg_dump -U postgres mydb > backups/backup_$(date +%Y%m%d_%H%M%S).sql

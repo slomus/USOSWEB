@@ -209,6 +209,37 @@ services:
       retries: 3
     restart: unless-stopped
 
+
+  init-users:
+    build:
+      context: ./src/backend
+      dockerfile: scripts/init_users/Dockerfile
+    environment:
+      - API_URL=http://api-gateway:8083
+    depends_on:
+      api-gateway:
+        condition: service_started
+      common:
+        condition: service_started
+    restart: "no"
+    profiles:
+      - init
+
+  init-relations:
+    image: postgres:latest
+    environment:
+      PGPASSWORD: mysecretpassword
+    volumes:
+      - ./src/backend/database/seeds:/seeds
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "psql -h postgres -U postgres -d mydb -f /seeds/init_relations.sql"
+    restart: "no"
+    profiles:
+      - init
+
 volumes:
   postgres_data:
   redis_data:
