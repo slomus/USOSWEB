@@ -16,6 +16,7 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
+	cryptoutil "github.com/slomus/USOSWEB/src/backend/pkg/crypto"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 )
@@ -68,12 +69,22 @@ func (s *server) SendEmail(ctx context.Context, req *pb.SendEmailRequest) (*pb.S
 	if !ok {
 		return &pb.SendEmailResponse{Success: false, Message: "User not authenticated"}, nil
 	}
-	var userEmail, appPass string
-	if err := s.db.QueryRow("SELECT email, COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userEmail, &appPass); err != nil || strings.TrimSpace(appPass) == "" {
+	var userEmail, encPass string
+	if err := s.db.QueryRow("SELECT email, COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userEmail, &encPass); err != nil || strings.TrimSpace(encPass) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.SendEmailResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
-	err := sendSMTPEmail(req.To, req.From, req.Subject, req.Body, userEmail, appPass)
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.SendEmailResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	plainPass, decErr := cryptoutil.DecryptAESGCMBase64(encPass, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.SendEmailResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	err := sendSMTPEmail(req.To, req.From, req.Subject, req.Body, userEmail, plainPass)
 	if err != nil {
 		appLog.LogError("Failed to send email via SMTP", err)
 		return &pb.SendEmailResponse{
@@ -209,12 +220,22 @@ func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.Get
 		return &pb.GetEmailResponse{Success: false, Message: "User not found"}, nil
 	}
 
-	var userPassword string
-	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userPassword); err != nil || strings.TrimSpace(userPassword) == "" {
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.GetEmailResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
-
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.GetEmailResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.GetEmailResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	appLog.LogDebug(fmt.Sprintf("IMAP auth attempt for %s, pwd_len=%d", userEmail, len(userPassword)))
 	c, err := connectToIMAP(userEmail, userPassword)
 	if err != nil {
 		appLog.LogError("Failed to connect to IMAP", err)
@@ -291,12 +312,22 @@ func (s *server) DeleteEmail(ctx context.Context, req *pb.DeleteEmailRequest) (*
 		appLog.LogError("Failed to get user data", err)
 		return &pb.DeleteEmailResponse{Success: false, Message: "User not found"}, nil
 	}
-	var userPassword string
-	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userPassword); err != nil || strings.TrimSpace(userPassword) == "" {
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.DeleteEmailResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
-
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.DeleteEmailResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.DeleteEmailResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	appLog.LogDebug(fmt.Sprintf("IMAP auth attempt for %s, pwd_len=%d", userEmail, len(userPassword)))
 	c, err := connectToIMAP(userEmail, userPassword)
 	if err != nil {
 		appLog.LogError("Failed to connect to IMAP", err)
@@ -349,12 +380,22 @@ func (s *server) SetEmailRead(ctx context.Context, req *pb.SetEmailReadRequest) 
 		appLog.LogError("Failed to get user data", err)
 		return &pb.SetEmailReadResponse{Success: false, Message: "User not found"}, nil
 	}
-	var userPassword string
-	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userPassword); err != nil || strings.TrimSpace(userPassword) == "" {
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.SetEmailReadResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
-
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.SetEmailReadResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.SetEmailReadResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	appLog.LogDebug(fmt.Sprintf("IMAP auth attempt for %s, pwd_len=%d", userEmail, len(userPassword)))
 	c, err := connectToIMAP(userEmail, userPassword)
 	if err != nil {
 		appLog.LogError("Failed to connect to IMAP", err)
@@ -402,12 +443,22 @@ func (s *server) SetEmailUnread(ctx context.Context, req *pb.SetEmailUnReadReque
 		appLog.LogError("Failed to get user data", err)
 		return &pb.SetEmailUnReadResponse{Success: false, Message: "User not found"}, nil
 	}
-	var userPassword string
-	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userPassword); err != nil || strings.TrimSpace(userPassword) == "" {
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.SetEmailUnReadResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
-
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.SetEmailUnReadResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.SetEmailUnReadResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	appLog.LogDebug(fmt.Sprintf("IMAP auth attempt for %s, pwd_len=%d", userEmail, len(userPassword)))
 	c, err := connectToIMAP(userEmail, userPassword)
 	if err != nil {
 		appLog.LogError("Failed to connect to IMAP", err)
@@ -453,12 +504,23 @@ func (s *server) GetAllEmails(ctx context.Context, req *pb.GetAllEmailsRequest) 
 		appLog.LogError("Failed to get user data", err)
 		return &pb.GetAllEmailsResponse{Success: false, Message: "User not found"}, nil
 	}
-	var userPassword string
-	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&userPassword); err != nil || strings.TrimSpace(userPassword) == "" {
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
 		appLog.LogWarn("Missing email_app_password for user")
 		return &pb.GetAllEmailsResponse{Success: false, Message: "Email app password not set for this user"}, nil
 	}
 
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.GetAllEmailsResponse{Success: false, Message: "Server encryption key misconfigured"}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.GetAllEmailsResponse{Success: false, Message: "Email password decryption failed"}, nil
+	}
+	appLog.LogDebug(fmt.Sprintf("IMAP auth attempt for %s, pwd_len=%d", userEmail, len(userPassword)))
 	c, err := connectToIMAP(userEmail, userPassword)
 	if err != nil {
 		appLog.LogError("Failed to connect to IMAP", err)

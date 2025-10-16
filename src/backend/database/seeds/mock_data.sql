@@ -26,16 +26,6 @@ VALUES ('admin@system.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.
 INSERT INTO administrative_staff (role, faculty_id, user_id)
 VALUES ('System Administrator', 1, (SELECT user_id FROM users WHERE email = 'admin@system.com'));
 
-INSERT INTO users (name, surname, password, email, PESEL, phone_nr, postal_address, registration_address, bank_account_nr, active, activation_date) VALUES
-('Michał', 'Grzonkowski', '$2a$10$hashedpassword3', 'michal.grzonkowski@student.ukw.edu.pl', '92030334567', '+48345678901', 'ul. Młodziezowa 3, Gdańsk', 'ul. Młodzieżowa 3, Gdańsk', '34567890123456789012345678', true, '2024-09-01 12:00:00'),
-('Jan', 'Kowalski', '$2a$10$hashedpassword1', 'jan.kowalski@student.ukw.edu.pl', '93040445678', '+48123456789', 'ul. Studencka 1, Warszawa', 'ul. Studencka 1, Warszawa', '12345678901234567890123456', true, '2024-09-01 10:00:00'),
-('Anna', 'Nowak', '$2a$10$hashedpassword2', 'anna.nowak@student.ukw.edu.pl', '94050556789', '+48234567890', 'ul. Akademicka 2, Kraków', 'ul. Akademicka 2, Kraków', '23456789012345678901234567', true, '2024-09-01 11:00:00'),
-('Emil', 'Kosicki', '$2a$10$hashedpassword4', 'emil.kosicki@student.ukw.edu.pl', '75040445678', '+48456789012', 'ul. Profesorska 10, Warszawa', 'ul. Profesorska 10, Warszawa', '45678901234567890123456789', true, '2024-08-15 09:00:00'),
-('Weronika', 'Mazurek', '$2a$10$hashedpassword5', 'weronika.mazurek@student.ukw.edu.pl', '70050556789', '+48567890123', 'ul. Naukowa 15, Kraków', 'ul. Naukowa 15, Kraków', '56789012345678901234567890', true, '2024-08-15 10:00:00'),
-('Kacper', 'Pawlak', '$2a$10$hashedpassword6', 'kacper.pawlak@student.ukw.edu.pl', '68060667890', '+48678901234', 'ul. Uniwersytecka 20, Gdańsk', 'ul. Uniwersytecka 20, Gdańsk', '67890123456789012345678901', true, '2024-08-15 11:00:00'),
-('Agnieszka', 'Kowalik', '$2a$10$hashedpassword7', 'agnieszka.kowalik@student.ukw.edu.pl', '80070778901', '+48789012345', 'ul. Biurowa 5, Warszawa', 'ul. Biurowa 5, Warszawa', '78901234567890123456789012', true, '2024-08-01 08:00:00'),
-('Karol', 'Kudłacz', '$2a$10$los4KGgs7C7id1QCy6QtnO7lGyqZVYQGLp9bxhHtlkWHWk80scYvq', 'karol.kudlacz@student.ukw.edu.pl', '82080889012', '+48890123456', 'ul. Administracyjna 7, Kraków', 'ul. Administracyjna 7, Kraków', '89012345678901234567890123', true, '2024-08-01 09:00:00');
-
 INSERT INTO faculties (name) VALUES
 ('Wydział Informatyki'),
 ('Wydział Matematyki'),

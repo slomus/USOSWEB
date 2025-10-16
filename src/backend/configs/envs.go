@@ -39,6 +39,9 @@ type Config struct {
 	// Cache
 	CacheEnabled    bool
 	CacheDefaultTTL string
+
+	// Secrets
+	EmailAppSecretKey string
 }
 
 var Envs = initConfig()
@@ -79,6 +82,9 @@ func initConfig() Config {
 		// Cache
 		CacheEnabled:    getEnvAsBool("CACHE_ENABLED", true),
 		CacheDefaultTTL: getEnv("CACHE_DEFAULT_TTL", "1h"),
+
+		// Secrets
+		EmailAppSecretKey: getEnv("EMAIL_APP_SECRET_KEY", ""),
 	}
 }
 

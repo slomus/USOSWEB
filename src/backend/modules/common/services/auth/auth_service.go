@@ -16,6 +16,7 @@ import (
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	messagingpb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
+	cryptoutil "github.com/slomus/USOSWEB/src/backend/pkg/crypto"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
@@ -455,15 +456,47 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 	currentTime := time.Now()
 
 	insertUserQuery := `
-		INSERT INTO users (
-			email, password, name, surname, pesel, phone_nr,
-			postal_address, registration_address, bank_account_nr,
-			active
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-		) RETURNING user_id`
+        INSERT INTO users (
+            email, password, name, surname, pesel, phone_nr,
+            postal_address, registration_address, bank_account_nr,
+            active, email_app_password
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        ) RETURNING user_id`
 
 	var userID int64
+	var encryptedAppPass *string
+
+	// Preferred: take email app password from request body (proto field)
+	if strings.TrimSpace(req.GetEmailAppPassword()) != "" {
+		key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+		if keyErr != nil {
+			authLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+			return &pb.RegisterResponse{Success: false, Message: "Server encryption key misconfigured"}, status.Error(codes.Internal, "Encryption key misconfigured")
+		}
+		enc, encErr := cryptoutil.EncryptAESGCMBase64(strings.TrimSpace(req.GetEmailAppPassword()), key)
+		if encErr != nil {
+			authLog.LogError("Failed to encrypt email_app_password", encErr)
+			return &pb.RegisterResponse{Success: false, Message: "Failed to process email app password"}, status.Error(codes.Internal, "Email app password encryption error")
+		}
+		encryptedAppPass = &enc
+	} else if md, ok := metadata.FromIncomingContext(ctx); ok { // Fallback: custom header for backward compat
+		vals := md.Get("email_app_password")
+		if len(vals) > 0 && strings.TrimSpace(vals[0]) != "" {
+			key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+			if keyErr != nil {
+				authLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+				return &pb.RegisterResponse{Success: false, Message: "Server encryption key misconfigured"}, status.Error(codes.Internal, "Encryption key misconfigured")
+			}
+			enc, encErr := cryptoutil.EncryptAESGCMBase64(strings.TrimSpace(vals[0]), key)
+			if encErr != nil {
+				authLog.LogError("Failed to encrypt email_app_password", encErr)
+				return &pb.RegisterResponse{Success: false, Message: "Failed to process email app password"}, status.Error(codes.Internal, "Email app password encryption error")
+			}
+			encryptedAppPass = &enc
+		}
+	}
+
 	err = tx.QueryRow(
 		insertUserQuery,
 		normalizedEmail,
@@ -476,6 +509,7 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 		strings.TrimSpace(req.RegistrationAddress),
 		strings.TrimSpace(req.BankAccountNr),
 		true,
+		encryptedAppPass,
 	).Scan(&userID)
 
 	if err != nil {

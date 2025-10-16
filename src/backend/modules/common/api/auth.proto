@@ -45,6 +45,7 @@ message RegisterRequest {
   int32 faculty_id = 23;
 
   string admin_role = 24;
+  string email_app_password = 25; // optional: per-user mail app password (encrypted at rest)
 }
 message RegisterResponse {
   bool success = 10;
