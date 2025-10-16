@@ -24,6 +24,7 @@ type RegisterRequest struct {
 	Title               string `json:"title,omitempty"`
 	FacultyId           int    `json:"faculty_id,omitempty"`
 	AdminRole           string `json:"admin_role,omitempty"`
+	EmailAppPassword    string `json:"email_app_password,omitempty"`
 }
 
 type RegisterResponse struct {
@@ -139,7 +140,7 @@ var users = []RegisterRequest{
 		AdminRole:           "Kierownik Dziekanatu",
 	},
 	{
-		Email:               "karol.kudlacz@edu.pl",
+		Email:               "karol.kudlacz@student.ukw.edu.pl",
 		Password:            "Karol123!",
 		Name:                "Karol",
 		Surname:             "Kudłacz",
@@ -151,6 +152,7 @@ var users = []RegisterRequest{
 		BankAccountNr:       "89012345678901234567890123",
 		FacultyId:           1,
 		AdminRole:           "Administrator Systemu",
+		EmailAppPassword:    "TUTAJ_PODAJESZ_SWOJE_HASŁO_DO_POCZTY!",
 	},
 }
 
@@ -173,7 +175,7 @@ func main() {
 	log.Println("weronika.mazurek@edu.pl / Weronika123!")
 	log.Println("kacper.pawlak@edu.pl / Kacper123!")
 	log.Println("agnieszka.kowalik@edu.pl / Agnieszka123!")
-	log.Println("karol.kudlacz@edu.pl / Karol123!")
+	log.Println("karol.kudlacz@student.ukw.edu.pl / Karol123!")
 }
 
 func registerUser(user RegisterRequest) {
