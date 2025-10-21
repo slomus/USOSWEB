@@ -14,9 +14,9 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Wnioski", href: "/getApplication" },
     { label: "Kierunek", href: "/field" },
     { label: "Rejestracja na przedmioty", href: "#" },
-    { label: "Egzaminy i zaliczenia", href: "#" },
+    { label: "Egzaminy i zaliczenia", href: "examsPasses" },
     { label: "Zarządzanie kontem", href: "#" },
-    { label: "Kontakt", href: "#" },
+    { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },
   ];
 
@@ -34,7 +34,6 @@ export default function Navigation({ transition }: { transition: Transition }) {
           <li key={index}>
             <Link href={item.href} legacyBehavior passHref>
               <a
-                target="_blank"
                 rel="noopener noreferrer"
                 className="block px-3 py-2 rounded hover:bg-[var(--color-bg)] transition-all text-sm"
               >

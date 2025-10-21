@@ -1,6 +1,12 @@
 "use client";
 import Image from "next/image";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "../wrappers/fetchWithAuth";
@@ -9,33 +15,47 @@ import { User } from "../wrappers/fetchWithAuth";
 const UserProfile = React.memo(() => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
       try {
         const response = await fetchWithAuth(
           "http://localhost:8083/api/auth/username"
         );
-        if (response.ok) {
+        if (response.ok && isMounted) {
           const data = await response.json();
           setUser(data);
         }
       } catch (error) {
-        console.error(error);
+        if (isMounted) {
+          console.error(error);
+          setError("Błąd ładowania użytkownika");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchUser();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Pusta tablica - wykonuje się tylko raz
 
   if (loading) return <div>Ładowanie...</div>;
+  if (error) return <div>{error}</div>;
   if (!user) return <div>Błąd ładowania użytkownika</div>;
 
   return <div>Witaj, {user.username}!</div>;
 });
 
-UserProfile.displayName = "UserProfile"; // Dla React DevTools
+UserProfile.displayName = "UserProfile";
 
 export default function TopBar({
   isNavVisible,
@@ -92,20 +112,25 @@ export default function TopBar({
     }
   }, [router]);
 
+  // Memoizujemy UserProfile aby nie renderował się przy każdej zmianie
+  const memoizedUserProfile = useMemo(() => <UserProfile />, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (document.activeElement?.tagName || "").toLowerCase();
-      if (
-        searchOpen ||
-        tag === "input" ||
-        tag === "textarea" ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.altKey
-      )
-        return;
 
+      // Jeśli search jest już otwarty, nie reaguj na dodatkowe klawisze
+      if (searchOpen) return;
+
+      // Ignoruj jeśli użytkownik pisze w innym input/textarea
+      if (tag === "input" || tag === "textarea") return;
+
+      // Ignoruj kombinacje z Ctrl, Meta, Alt
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      // Reaguj tylko na pojedyncze znaki alfanumeryczne
       if (e.key.length === 1 && !e.repeat) {
+        e.preventDefault(); // Zapobiega wpisywaniu znaku w inne miejsca
         openSearch(false);
         setTimeout(() => {
           setInputValue(e.key);
@@ -116,14 +141,16 @@ export default function TopBar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen, openSearch]);
+  }, [searchOpen, openSearch]); // Dodajemy zależności
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
-          <span className="font-bold tracking-wide text-sm">UNIVERSITY</span>
+          <span className="font-bold tracking-wide text-sm">
+            UNIWERSYTET KAZIMIERZA WIELKIEGO
+          </span>
         </div>
 
         {/* Search box */}
@@ -178,11 +205,11 @@ export default function TopBar({
             initial={false}
             animate={{
               backgroundColor: searchOpen
-                ? "[var(--color-accent)]"
-                : "[var(--color-bg)]",
+                ? "var(--color-accent)"
+                : "var(--color-bg)",
             }}
             transition={{ duration: 0.22 }}
-            className="rounded-full p-1 flex items-center"
+            className="rounded-full p-2 flex items-center justify-center"
             style={{
               cursor: "pointer",
               border: "none",
@@ -195,15 +222,18 @@ export default function TopBar({
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
-              stroke={
-                searchOpen ? "[var(--color-bg)]" : "[var(--color-bg-secondary)]"
-              }
+              stroke="currentColor"
               className="w-5 h-5"
+              style={{
+                color: searchOpen
+                  ? "var(--color-bg)"
+                  : "var(--color-text-secondary)",
+              }}
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
               />
             </svg>
           </motion.button>
@@ -211,9 +241,7 @@ export default function TopBar({
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm text-[var(--color-text)]">
-          Witaj Studencie!
-        </span>
+        {memoizedUserProfile}
         <button
           onClick={() => setIsNavVisible(!isNavVisible)}
           className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] text-xs px-3 py-1 rounded"
@@ -224,7 +252,7 @@ export default function TopBar({
           className="bg-[var(--color-accent2)] hover:bg-red-800 text-[var(--color-text)] text-xs px-3 py-1 rounded"
           onClick={handleLogout}
         >
-          Logout
+          Wyloguj
         </button>
         <Image
           src="/userPicture.jpg"

@@ -79,6 +79,7 @@ services:
       - ENV=development
       - LOG_LEVEL=info
       - LOG_FILE=/app/logs/api-gateway.log
+      - EMAIL_APP_SECRET_KEY=94X6hQt2ILQ5j1jM06VQR5DgiGD9Ox5i
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -139,8 +140,9 @@ services:
       - DB_PASSWORD=mysecretpassword
       - DB_NAME=mydb
       - DB_SSLMODE=disable
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       - LOG_FILE=/app/logs/messaging-service.log
+      - EMAIL_APP_SECRET_KEY=94X6hQt2ILQ5j1jM06VQR5DgiGD9Ox5i
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -171,6 +173,7 @@ services:
       - REDIS_DB=0
       - CACHE_ENABLED=true
       - CACHE_DEFAULT_TTL=1h
+      - EMAIL_APP_SECRET_KEY=94X6hQt2ILQ5j1jM06VQR5DgiGD9Ox5i
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -208,6 +211,37 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
+
+
+  init-users:
+    build:
+      context: ./src/backend
+      dockerfile: scripts/init_users/Dockerfile
+    environment:
+      - API_URL=http://api-gateway:8083
+    depends_on:
+      api-gateway:
+        condition: service_started
+      common:
+        condition: service_started
+    restart: "no"
+    profiles:
+      - init
+
+  init-relations:
+    image: postgres:latest
+    environment:
+      PGPASSWORD: mysecretpassword
+    volumes:
+      - ./src/backend/database/seeds:/seeds
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "psql -h postgres -U postgres -d mydb -f /seeds/init_relations.sql"
+    restart: "no"
+    profiles:
+      - init
 
 volumes:
   postgres_data:

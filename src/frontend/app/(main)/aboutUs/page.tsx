@@ -116,38 +116,38 @@ export default function AboutPage() {
 const teamMembers = [
   {
     name: "Karol Kudłacz ",
+    role: "Backend Develope",
+    description: "Dba o logikę, API i integrację z bazą danych.",
+    image: "/audi80.jpg",
+  },
+  {
+    name: "Michał Grzonkowski",
+    role: "Project Manager",
+    description: "Lider zespołu projektowego.",
+    image: "/audi80.jpg",
+  },
+  {
+    name: "Weronika Mazurek",
+    role: "Backend Develope",
+    description: "Dba o logikę, API i integrację z bazą danych.",
+    image: "/audi80.jpg",
+  },
+  {
+    name: "Agnieszka Kowalik",
     role: "Frontend Developer",
     description: "Odpowiedzialny za wygląd i interakcje w aplikacji.",
     image: "/audi80.jpg",
   },
   {
-    name: "Michał Grzonkowski",
-    role: "Backend Developer",
-    description: "Dba o logikę, API i integrację z bazą danych.",
-    image: "/audi80.jpg",
-  },
-  {
-    name: "Weronika Mazurek",
-    role: "Project Manager",
-    description: "Koordynuje prace zespołu i kontakt z uczelnią.",
-    image: "/audi80.jpg",
-  },
-  {
-    name: "Agnieszka Kowalik",
-    role: "Project Manager",
-    description: "Koordynuje prace zespołu i kontakt z uczelnią.",
-    image: "/audi80.jpg",
-  },
-  {
     name: "Emil Kosicki",
-    role: "Project Manager",
-    description: "Koordynuje prace zespołu i kontakt z uczelnią.",
+    role: "Frontend Developer",
+    description: "Odpowiedzialny za wygląd i interakcje w aplikacji.",
     image: "/audi80.jpg",
   },
   {
     name: "Kacper Pawlak",
-    role: "Project Manager",
-    description: "Koordynuje prace zespołu i kontakt z uczelnią.",
+    role: "Frontend Developer",
+    description: "Odpowiedzialny za wygląd i interakcje w aplikacji.",
     image: "/audi80.jpg",
   },
 ];

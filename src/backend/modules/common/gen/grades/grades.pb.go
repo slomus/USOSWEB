@@ -35,6 +35,8 @@ type Grade struct {
 	AddedByTeachingStaffId int32                  `protobuf:"varint,17,opt,name=added_by_teaching_staff_id,json=addedByTeachingStaffId,proto3" json:"added_by_teaching_staff_id,omitempty"`
 	Comment                string                 `protobuf:"bytes,18,opt,name=comment,proto3" json:"comment,omitempty"`
 	CreatedAt              string                 `protobuf:"bytes,19,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	SubjectName            string                 `protobuf:"bytes,20,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	AddedByName            string                 `protobuf:"bytes,21,opt,name=added_by_name,json=addedByName,proto3" json:"added_by_name,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -135,6 +137,20 @@ func (x *Grade) GetComment() string {
 func (x *Grade) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *Grade) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *Grade) GetAddedByName() string {
+	if x != nil {
+		return x.AddedByName
 	}
 	return ""
 }
@@ -383,7 +399,7 @@ var File_grades_proto protoreflect.FileDescriptor
 
 const file_grades_proto_rawDesc = "" +
 	"\n" +
-	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb4\x02\n" +
+	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xfb\x02\n" +
 	"\x05Grade\x12\x19\n" +
 	"\bgrade_id\x18\n" +
 	" \x01(\x05R\agradeId\x12\x19\n" +
@@ -397,7 +413,9 @@ const file_grades_proto_rawDesc = "" +
 	"\x1aadded_by_teaching_staff_id\x18\x11 \x01(\x05R\x16addedByTeachingStaffId\x12\x18\n" +
 	"\acomment\x18\x12 \x01(\tR\acomment\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x13 \x01(\tR\tcreatedAt\"@\n" +
+	"created_at\x18\x13 \x01(\tR\tcreatedAt\x12!\n" +
+	"\fsubject_name\x18\x14 \x01(\tR\vsubjectName\x12\"\n" +
+	"\radded_by_name\x18\x15 \x01(\tR\vaddedByName\"@\n" +
 	"\x11ListGradesRequest\x12\x1e\n" +
 	"\balbum_nr\x18\n" +
 	" \x01(\x05H\x00R\aalbumNr\x88\x01\x01B\v\n" +

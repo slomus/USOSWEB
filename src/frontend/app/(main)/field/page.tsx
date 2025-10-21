@@ -1,10 +1,7 @@
-
 export default function KierunekPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-
       <div className="flex-1 flex flex-col">
-
         <main className="p-6 max-w-6xl mx-auto w-full pt-24">
           <h1 className="text-4xl font-bold mb-8 border-b border-[var(--color-accent)] pb-4">
             Informacje o kierunku
@@ -13,10 +10,16 @@ export default function KierunekPage() {
           {/* Sekcja informacji o kierunku */}
           <section className="bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-lg mb-10">
             <div className="grid md:grid-cols-2 gap-6">
-              <InfoRow label="Uniwersytet" value="Uniwersytet Michała Wielkiego" />
-              <InfoRow label="Kolegium" value="Kolegium II" />
+              <InfoRow
+                label="Uniwersytet"
+                value="Uniwersytet Kazimierza Wielkiego"
+              />
+              <InfoRow label="Kolegium" value="Kolegium III" />
               <InfoRow label="Wydział" value="Informatyki" />
-              <InfoRow label="Adres wydziału" value="ul. Urzędnicza 2, Toruń" />
+              <InfoRow
+                label="Adres wydziału"
+                value="ul. Mikołaja Kopernika 1, Bydgoszcz"
+              />
               <InfoRow label="Kierunek" value="Informatyka" />
               <InfoRow label="Rok" value="3" />
               <InfoRow label="Semestr" value="Letni (6)" />
@@ -37,7 +40,9 @@ export default function KierunekPage() {
 
           {/* Filtry wyszukiwania */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Wyszukaj innego kierunku</h2>
+            <h2 className="text-2xl font-semibold mb-4">
+              Wyszukaj innego kierunku
+            </h2>
             <div className="grid md:grid-cols-3 gap-4 bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-md mb-6">
               <input
                 type="text"
@@ -83,8 +88,12 @@ export default function KierunekPage() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">{label}</p>
-      <p className="text-base font-semibold text-[var(--color-text)]">{value}</p>
+      <p className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">
+        {label}
+      </p>
+      <p className="text-base font-semibold text-[var(--color-text)]">
+        {value}
+      </p>
     </div>
   );
 }

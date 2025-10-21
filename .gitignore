@@ -3,3 +3,4 @@ logs/
 cookies.txt
 admin_cookies.txt
 logstash/
+logstash-output/
