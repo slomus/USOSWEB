@@ -1,6 +1,12 @@
 "use client";
 import Image from "next/image";
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "../wrappers/fetchWithAuth";
@@ -112,13 +118,13 @@ export default function TopBar({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (document.activeElement?.tagName || "").toLowerCase();
-      
+
       // Jeśli search jest już otwarty, nie reaguj na dodatkowe klawisze
       if (searchOpen) return;
-      
+
       // Ignoruj jeśli użytkownik pisze w innym input/textarea
       if (tag === "input" || tag === "textarea") return;
-      
+
       // Ignoruj kombinacje z Ctrl, Meta, Alt
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
@@ -142,7 +148,9 @@ export default function TopBar({
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
-          <span className="font-bold tracking-wide text-sm">UNIVERSITY</span>
+          <span className="font-bold tracking-wide text-sm">
+            UNIWERSYTET KAZIMIERZA WIELKIEGO
+          </span>
         </div>
 
         {/* Search box */}
@@ -217,7 +225,9 @@ export default function TopBar({
               stroke="currentColor"
               className="w-5 h-5"
               style={{
-                color: searchOpen ? "var(--color-bg)" : "var(--color-text-secondary)"
+                color: searchOpen
+                  ? "var(--color-bg)"
+                  : "var(--color-text-secondary)",
               }}
             >
               <path
@@ -242,7 +252,7 @@ export default function TopBar({
           className="bg-[var(--color-accent2)] hover:bg-red-800 text-[var(--color-text)] text-xs px-3 py-1 rounded"
           onClick={handleLogout}
         >
-          Logout
+          Wyloguj
         </button>
         <Image
           src="/userPicture.jpg"
