@@ -3,4 +3,5 @@ logs/
 cookies.txt
 admin_cookies.txt
 logstash/
-logstash-output/
+logstash-output/*
+!logstash-output/.gitkeep
