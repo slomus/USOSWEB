@@ -126,7 +126,7 @@ var users = []RegisterRequest{
 		FacultyId:           3,
 	},
 	{
-		Email:               "agnieszka.kowalik@edu.pl",
+		Email:               "agnieszka.kowalik@student.ukw.edu.pl",
 		Password:            "Agnieszka123!",
 		Name:                "Agnieszka",
 		Surname:             "Kowalik",
@@ -138,6 +138,7 @@ var users = []RegisterRequest{
 		BankAccountNr:       "78901234567890123456789012",
 		FacultyId:           1,
 		AdminRole:           "Kierownik Dziekanatu",
+		EmailAppPassword:    "xxxxx",
 	},
 	{
 		Email:               "karol.kudlacz@student.ukw.edu.pl",
