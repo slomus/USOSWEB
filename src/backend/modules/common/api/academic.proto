@@ -8,127 +8,125 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic;academic";
 
 message TimeSlot {
-  string day_of_week = 1;      
-  string start_time = 2;      
-  string end_time = 3;        
-  int32 classroom = 4;        
-  string building_name = 5;   
+  string day_of_week = 10;
+  string start_time = 11;
+  string end_time = 12;
+  int32 classroom = 13;
+  string building_name = 14;
 }
 
 message ClassInfo {
-  int32 class_id = 1;
-  string class_type = 2;        
-  int32 group_nr = 3;          
-  int32 current_capacity = 4;  
-  int32 capacity = 5;          
-  int32 available_spots = 6;   
-  repeated TimeSlot schedule = 7;  
-  repeated string instructors = 8;
+  int32 class_id = 10;
+  string class_type = 11;
+  int32 group_nr = 12;
+  int32 current_capacity = 13;
+  int32 capacity = 14;
+  int32 available_spots = 15;
+  repeated TimeSlot schedule = 16;
+  repeated string instructors = 17;
 }
 
 message RegistrationPeriod {
-  string start_date = 1;       
-  string end_date = 2;        
-  bool is_active = 3;        
+  string start_date = 10;
+  string end_date = 11;
+  bool is_active = 12;
 }
 
 message SubjectSummary {
-  int32 subject_id = 1;
-  string alias = 2;    
-  string name = 3;    
-  float ects = 4;
-  int32 total_capacity = 5;  
-  int32 total_enrolled = 6;  
-  int32 available_spots = 7; 
-  bool is_enrolled = 8;     
-  RegistrationPeriod registration_period = 9;
+  int32 subject_id = 10;
+  string alias = 11;
+  string name = 12;
+  float ects = 13;
+  int32 total_capacity = 14;
+  int32 total_enrolled = 15;
+  int32 available_spots = 16;
+  bool is_enrolled = 17;
+  RegistrationPeriod registration_period = 18;
 }
 
 message SubjectDetails {
-  int32 subject_id = 1;
-  string alias = 2;
-  string name = 3;
-  float ects = 4;
-  string description = 5;
-  string syllabus = 6;
-  repeated ClassInfo classes = 7;    
-  RegistrationPeriod registration_period = 8;
-  bool is_enrolled = 9;
+  int32 subject_id = 10;
+  string alias = 11;
+  string name = 12;
+  float ects = 13;
+  string description = 14;
+  string syllabus = 15;
+  repeated ClassInfo classes = 16;
+  RegistrationPeriod registration_period = 17;
+  bool is_enrolled = 18;
 }
 
 message GetSubjectsRequest {
-  optional int32 course_id = 1; 
-  optional int32 semester = 2;   
+  optional int32 course_id = 10;
+  optional int32 semester = 11;
 }
 
 message GetSubjectsResponse {
-  repeated SubjectSummary subjects = 1;
-  string message = 2;
+  repeated SubjectSummary subjects = 10;
+  string message = 11;
 }
 
 message GetSubjectDetailsRequest {
-  int32 subject_id = 1;
+  int32 subject_id = 10;
 }
 
 message GetSubjectDetailsResponse {
-  SubjectDetails subject = 1;
-  string message = 2;
+  SubjectDetails subject = 10;
+  string message = 11;
 }
 
 message Enrollment {
-  int32 subject_id = 1;
-  string subject_name = 2;
-  repeated ClassInfo enrolled_classes = 3;  
-  google.protobuf.Timestamp enrolled_at = 4;
+  int32 subject_id = 10;
+  string subject_name = 11;
+  repeated ClassInfo enrolled_classes = 12;
+  google.protobuf.Timestamp enrolled_at = 13;
 }
 
-
 message EnrollSubjectRequest {
-  int32 subject_id = 1;
-  repeated int32 class_ids = 2;  
+  int32 subject_id = 10;
+  repeated int32 class_ids = 11;
 }
 
 message EnrollSubjectResponse {
-  bool success = 1;
-  string message = 2;
-  Enrollment enrollment = 3;
+  bool success = 10;
+  string message = 11;
+  Enrollment enrollment = 12;
 }
 
 message UnenrollSubjectRequest {
-  int32 subject_id = 1;
+  int32 subject_id = 10;
 }
 
 message UnenrollSubjectResponse {
-  bool success = 1;
-  string message = 2;
+  bool success = 10;
+  string message = 11;
 }
 
 message GetMyEnrollmentsRequest {
 }
 
 message GetMyEnrollmentsResponse {
-  repeated Enrollment enrollments = 1;
-  string message = 2;
+  repeated Enrollment enrollments = 10;
+  string message = 11;
 }
 
 message CheckScheduleConflictsRequest {
-  repeated int32 class_ids = 1;
+  repeated int32 class_ids = 10;
 }
 
 message ScheduleConflict {
-  int32 class_id_1 = 1;
-  int32 class_id_2 = 2;
-  string subject_name_1 = 3;
-  string subject_name_2 = 4;
-  TimeSlot conflicting_time = 5;
+  int32 class_id_1 = 10;
+  int32 class_id_2 = 11;
+  string subject_name_1 = 12;
+  string subject_name_2 = 13;
+  TimeSlot conflicting_time = 14;
 }
 
 message CheckScheduleConflictsResponse {
-  bool has_conflicts = 1;
-  repeated ScheduleConflict conflicts = 2;
-  string message = 3;
+  bool has_conflicts = 10;
+  repeated ScheduleConflict conflicts = 11;
+  string message = 12;
 }
-
 
 service SubjectsService {
   rpc GetSubjects(GetSubjectsRequest) returns (GetSubjectsResponse) {
