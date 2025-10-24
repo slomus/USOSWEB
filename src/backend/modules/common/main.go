@@ -18,6 +18,9 @@ import (
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
+	subjectsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/subjects"
+  enrollmentsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/enrollments"
+  pbAcademic "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 )
 
 var appLog = logger.NewLogger("common-service")
@@ -88,8 +91,17 @@ func main() {
 	gradesPb.RegisterGradesServiceServer(grpcServer, gradesServer)
 	appLog.LogInfo("GradesService registered")
 
+	// Rejestracja serwisu Applications
 	applicationsPb.RegisterApplicationsServiceServer(grpcServer, applicationsServer)
 	appLog.LogInfo("ApplicationsService registered")
+
+	// Rejestracja serwisu Subjects
+	subjectsServer := subjectsService.NewSubjectsServer(db)
+	pbAcademic.RegisterSubjectsServiceServer(grpcServer, subjectsServer)
+
+	// Rejestracja serwisu Enrollment
+  enrollmentsServer := enrollmentsService.NewEnrollmentsServer(db)
+	pbAcademic.RegisterEnrollmentsServiceServer(grpcServer, enrollmentsServer)
 
 	appLog.LogInfo("Common Service registered and listening on :3003")
 	appLog.LogInfo("Available services:")
@@ -115,6 +127,14 @@ func main() {
 	appLog.LogInfo("   ApplicationsService:")
 	appLog.LogInfo("    - GET  /api/applications")
 	appLog.LogInfo("    - POST /api/applications")
+	appLog.LogInfo("   SubjectsService:")
+  appLog.LogInfo("    - GET  /api/subjects")
+  appLog.LogInfo("    - GET  /api/subjects/{id}")
+  appLog.LogInfo("   EnrollmentsService:")
+  appLog.LogInfo("    - POST /api/enrollments")
+  appLog.LogInfo("    - DELETE /api/enrollments/{subject_id}")
+  appLog.LogInfo("    - GET  /api/enrollments")
+  appLog.LogInfo("    - POST /api/enrollments/check-conflicts")
 
 	if err := grpcServer.Serve(lis); err != nil {
 		appLog.LogError("Failed to serve gRPC server", err)
