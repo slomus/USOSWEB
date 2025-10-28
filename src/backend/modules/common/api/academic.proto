@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package academic;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic;academic";
+
+message TimeSlot {
+  string day_of_week = 10;
+  string start_time = 11;
+  string end_time = 12;
+  int32 classroom = 13;
+  string building_name = 14;
+}
+
+message ClassInfo {
+  int32 class_id = 10;
+  string class_type = 11;
+  int32 group_nr = 12;
+  int32 current_capacity = 13;
+  int32 capacity = 14;
+  int32 available_spots = 15;
+  repeated TimeSlot schedule = 16;
+  repeated string instructors = 17;
+}
+
+message RegistrationPeriod {
+  string start_date = 10;
+  string end_date = 11;
+  bool is_active = 12;
+}
+
+message SubjectSummary {
+  int32 subject_id = 10;
+  string alias = 11;
+  string name = 12;
+  float ects = 13;
+  int32 total_capacity = 14;
+  int32 total_enrolled = 15;
+  int32 available_spots = 16;
+  bool is_enrolled = 17;
+  RegistrationPeriod registration_period = 18;
+}
+
+message SubjectDetails {
+  int32 subject_id = 10;
+  string alias = 11;
+  string name = 12;
+  float ects = 13;
+  string description = 14;
+  string syllabus = 15;
+  repeated ClassInfo classes = 16;
+  RegistrationPeriod registration_period = 17;
+  bool is_enrolled = 18;
+}
+
+message GetSubjectsRequest {
+  optional int32 course_id = 10;
+  optional int32 semester = 11;
+}
+
+message GetSubjectsResponse {
+  repeated SubjectSummary subjects = 10;
+  string message = 11;
+}
+
+message GetSubjectDetailsRequest {
+  int32 subject_id = 10;
+}
+
+message GetSubjectDetailsResponse {
+  SubjectDetails subject = 10;
+  string message = 11;
+}
+
+message Enrollment {
+  int32 subject_id = 10;
+  string subject_name = 11;
+  repeated ClassInfo enrolled_classes = 12;
+  google.protobuf.Timestamp enrolled_at = 13;
+}
+
+message EnrollSubjectRequest {
+  int32 subject_id = 10;
+  repeated int32 class_ids = 11;
+}
+
+message EnrollSubjectResponse {
+  bool success = 10;
+  string message = 11;
+  Enrollment enrollment = 12;
+}
+
+message UnenrollSubjectRequest {
+  int32 subject_id = 10;
+}
+
+message UnenrollSubjectResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+message GetMyEnrollmentsRequest {
+}
+
+message GetMyEnrollmentsResponse {
+  repeated Enrollment enrollments = 10;
+  string message = 11;
+}
+
+message CheckScheduleConflictsRequest {
+  repeated int32 class_ids = 10;
+}
+
+message ScheduleConflict {
+  int32 class_id_1 = 10;
+  int32 class_id_2 = 11;
+  string subject_name_1 = 12;
+  string subject_name_2 = 13;
+  TimeSlot conflicting_time = 14;
+}
+
+message CheckScheduleConflictsResponse {
+  bool has_conflicts = 10;
+  repeated ScheduleConflict conflicts = 11;
+  string message = 12;
+}
+
+service SubjectsService {
+  rpc GetSubjects(GetSubjectsRequest) returns (GetSubjectsResponse) {
+    option (google.api.http) = {
+      get: "/api/subjects"
+    };
+  }
+
+  rpc GetSubjectDetails(GetSubjectDetailsRequest) returns (GetSubjectDetailsResponse) {
+    option (google.api.http) = {
+      get: "/api/subjects/{subject_id}"
+    };
+  }
+}
+
+service EnrollmentsService {
+  rpc EnrollSubject(EnrollSubjectRequest) returns (EnrollSubjectResponse) {
+    option (google.api.http) = {
+      post: "/api/enrollments"
+      body: "*"
+    };
+  }
+
+  rpc UnenrollSubject(UnenrollSubjectRequest) returns (UnenrollSubjectResponse) {
+    option (google.api.http) = {
+      delete: "/api/enrollments/{subject_id}"
+    };
+  }
+
+  rpc GetMyEnrollments(GetMyEnrollmentsRequest) returns (GetMyEnrollmentsResponse) {
+    option (google.api.http) = {
+      get: "/api/enrollments"
+    };
+  }
+
+  rpc CheckScheduleConflicts(CheckScheduleConflictsRequest) returns (CheckScheduleConflictsResponse) {
+    option (google.api.http) = {
+      post: "/api/enrollments/check-conflicts"
+      body: "*"
+    };
+  }
+}
