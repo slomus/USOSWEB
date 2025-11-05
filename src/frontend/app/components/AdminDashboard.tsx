@@ -10,7 +10,8 @@ import {
   FaUserShield,
   FaFileAlt,
   FaBook,
-  FaCheckCircle
+  FaCheckCircle,
+  FaClipboardList
 } from "react-icons/fa";
 
 type SystemStats = {
@@ -64,7 +65,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
           totalApplications = applications.length;
           // Policz wnioski ze statusem "pending"
           pendingApplications = applications.filter(
-            (app: any) => app.status === "pending"
+            (app: any) => app.status === "submitted"
           ).length;
         } catch (error) {
           console.log("Could not fetch applications:", error);
@@ -115,6 +116,9 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
         <h1 className="text-3xl font-bold text-[var(--color-accent)]">
           Panel Administratora IT
         </h1>
+        <p className="text-[var(--color-text-secondary)] mt-2">
+          Witaj, {userData?.name}! Zarządzaj systemem USOSWEB
+        </p>
       </div>
 
       {/* Statystyki użytkowników */}
@@ -203,33 +207,33 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
         </div>
       </section>
 
-      {/* Szybkie akcje */}
+      {/* Szybkie akcje - Panel zarządzania */}
       <section className="bg-[var(--color-bg-secondary)] p-6 rounded-xl shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Zarządzanie systemem</h2>
+        <h2 className="text-xl font-semibold mb-4">Panel zarządzania systemem</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ActionButton
-            href="/users"
+            href="/admin/users"
             icon={<FaUsers />}
             label="Użytkownicy"
-            description="Dodaj, edytuj, usuń"
+            description="Zarządzaj użytkownikami"
           />
           <ActionButton
-            href="/marks"
-            icon={<FaCheckCircle />}
+            href="/admin/marks"
+            icon={<FaClipboardList />}
             label="Oceny"
             description="Zarządzaj ocenami"
           />
           <ActionButton
-            href="/getApplication"
+            href="/admin/applications"
             icon={<FaFileAlt />}
             label="Wnioski"
-            description="Wszystkie wnioski"
+            description="Zarządzaj wnioskami"
           />
           <ActionButton
-            href="/subjects"
+            href="/admin/subjects"
             icon={<FaBook />}
             label="Przedmioty"
-            description="Przedmioty i zajęcia"
+            description="Zarządzaj przedmiotami"
           />
         </div>
       </section>

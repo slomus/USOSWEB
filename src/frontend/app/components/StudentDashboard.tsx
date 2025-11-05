@@ -54,25 +54,25 @@ export default function StudentDashboard() {
       <section className="mt-10">
         <h2 className="text-xl font-semibold text-center mb-2">Aktualności</h2>
         <div className="border-t-4 border-[#327f7a] w-1/3 mx-auto mb-4"></div>
-
         <h3 className="text-lg font-bold text-center mb-2">
-          SABOTAŻ W BIAŁY DZIEŃ! – OPEL ASTRA NIE PRZYJĘTY NA ZŁOMIE!!!
+          Spotkanie informacyjne dla studentów I roku
         </h3>
         <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
-          W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
-          się, że nikt nie kupuje do nich części, bo i tak już są popsute –
-          ujawnił redaktor. Nikt tego nie chce nawet na złomie – oświadczył
-          mężczyzna.
+          W środę 12 listopada o godz. 16:00 w auli A odbędzie się spotkanie organizacyjne dla studentów pierwszego roku. Tematy: zasady zaliczeń, dostęp do platformy e-learningowej, pomoc materialna.
         </p>
         <div className="border-t-2 border-[#327f7a] w-1/3 mx-auto mb-4 mt-4"></div>
         <h3 className="text-lg font-bold text-center mb-2">
-          JEDNAK GO PRZYJĘLI!!! 0,50 zł za kilogram - nie ma tragedii
+          Targi pracy i praktyk studenckich
         </h3>
         <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
-          W rozmowie z właścicielem – 22 letnim Panem Karolem dowiedzieliśmy
-          się, że mimo wszystko cieszy się z oddania auta na szrot &quot;Panie i
-          tak by tego nikt nie kupił&quot; odpowiedział na pytanie dlaczego
-          poszedł na żyletki.
+          W dniach 18–19 listopada w holu głównym uczelni odbędą się targi pracy. Obecni będą przedstawiciele firm z branży IT, edukacji, administracji i NGO. Warto zabrać CV!
+        </p>
+        <div className="border-t-4 border-[#327f7a] w-1/3 mx-auto mb-4"></div>
+        <h3 className="text-lg font-bold text-center mb-2">
+          Warsztaty „Zarządzanie stresem przed sesją”
+        </h3>
+        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
+          Centrum Wsparcia Psychologicznego zaprasza na bezpłatne warsztaty 21 listopada o godz. 17:00 w auli A.
         </p>
       </section>
     </main>
