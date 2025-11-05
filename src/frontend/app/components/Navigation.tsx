@@ -74,11 +74,12 @@ export default function Navigation({ transition }: { transition: Transition }) {
   // Menu dla wykładowców
   const teacherMenuItems: MenuItem[] = [
     { label: "Strona główna", href: "/StudentMainPage" },
-    { label: "Moje zajęcia", href: "#" },
+    { label: "Moje zajęcia", href: "/teacher/subjects" },
     { label: "Oceny studentów", href: "/teacher/marks" },
-    { label: "Plan zajęć", href: "#" },
+    { label: "Plan zajęć", href: "/teacher/x" },
+    { label: "Kalendarz", href: "/teacher/calendar" },
     { label: "Wiadomości", href: "/messages" },
-    { label: "Kalendarz", href: "#" },
+    { label: "Użytkownicy", href: "/teacher/users" },
     { label: "Zarządzanie kontem", href: "/accountManagement" },
     { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },

@@ -432,8 +432,8 @@ export default function AdminApplicationsManagementPage() {
                   className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
                 >
                   <option value="">Wszyscy studenci</option>
-                  {students.map((student) => (
-                    <option key={student.user_id} value={student.album_nr}>
+                  {students.map((student, index) => (
+                    <option key={`student-filter-${student.user_id}-${index}`} value={student.album_nr}>
                       {student.name} {student.surname}
                     </option>
                   ))}
@@ -678,8 +678,8 @@ export default function AdminApplicationsManagementPage() {
                     required
                   >
                     <option value="">Wybierz studenta</option>
-                    {students.map((student) => (
-                      <option key={student.user_id} value={student.album_nr}>
+                    {students.map((student, index) => (
+                      <option key={`student-add-${student.user_id}-${index}`} value={student.album_nr}>
                         {student.name} {student.surname} (Album: {student.album_nr})
                       </option>
                     ))}

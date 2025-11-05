@@ -44,7 +44,7 @@ export default function StudentDashboard() {
               Następne zajęcia:
             </p>
             <div className="bg-teal-700 text-white px-4 py-1 rounded inline-block text-sm">
-              Złomowanie opli
+              Podstawy programowania
             </div>
           </div>
         </div>

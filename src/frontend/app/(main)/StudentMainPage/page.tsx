@@ -3,6 +3,7 @@
 import { useUserRole } from "@/app/hooks/useUserRole";
 import AdminDashboard from "@/app/components/AdminDashboard";
 import StudentDashboard from "@/app/components/StudentDashboard";
+import TeacherDashboard from "@/app/components/TeacherDashboard";
 
 export default function MainPage() {
   const { role, userData, loading } = useUserRole();
@@ -22,7 +23,7 @@ export default function MainPage() {
   if (role === "admin") {
     return <AdminDashboard userData={userData} />;
   } else if (role === "teacher") {
-    return <div className="p-6">Dashboard wykładowcy - TODO</div>;
+    return <TeacherDashboard />;
   } else {
     return <StudentDashboard />;
   }
