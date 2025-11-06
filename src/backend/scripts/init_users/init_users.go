@@ -181,6 +181,8 @@ func main() {
 func registerUser(user RegisterRequest) {
 	jsonData, _ := json.Marshal(user)
 
+	log.Printf("EmailAppPassword wysyłany dla %s: %s", user.Email, user.EmailAppPassword)
+
 	resp, err := http.Post("http://api-gateway:8083/api/auth/register", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Błąd dla %s: %v", user.Email, err)
