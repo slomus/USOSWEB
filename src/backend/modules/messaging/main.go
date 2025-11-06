@@ -259,7 +259,7 @@ func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.Get
 	items := []imap.FetchItem{section.FetchItem(), imap.FetchEnvelope, imap.FetchFlags}
 	messages := make(chan *imap.Message, 1)
 	go func() {
-		_ = c.Fetch(seqSet, items, messages)
+		_ = c.UidFetch(seqSet, items, messages)
 	}()
 
 	msg := <-messages

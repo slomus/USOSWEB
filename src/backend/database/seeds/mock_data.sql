@@ -20,12 +20,6 @@ TRUNCATE TABLE
     users
 RESTART IDENTITY CASCADE;
 
-INSERT INTO users (email, password, name, surname, active)
-VALUES ('admin@system.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System', 'Admin', true);
-
-INSERT INTO administrative_staff (role, faculty_id, user_id)
-VALUES ('System Administrator', 1, (SELECT user_id FROM users WHERE email = 'admin@system.com'));
-
 INSERT INTO faculties (name) VALUES
 ('Wydział Informatyki'),
 ('Wydział Matematyki'),
