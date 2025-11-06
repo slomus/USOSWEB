@@ -29,6 +29,55 @@ type server struct {
 	db *sql.DB
 }
 
+// ListFolders - returns available IMAP mailboxes
+func (s *server) ListFolders(ctx context.Context, req *pb.ListFoldersRequest) (*pb.ListFoldersResponse, error) {
+	userID, ok := ctx.Value("user_id").(int64)
+	if !ok {
+		return &pb.ListFoldersResponse{}, nil
+	}
+
+	var userEmail string
+	if err := s.db.QueryRow("SELECT email FROM users WHERE user_id = $1", userID).Scan(&userEmail); err != nil {
+		appLog.LogError("Failed to get user data", err)
+		return &pb.ListFoldersResponse{}, nil
+	}
+	var encUserPassword string
+	if err := s.db.QueryRow("SELECT COALESCE(email_app_password, '') FROM users WHERE user_id = $1", userID).Scan(&encUserPassword); err != nil || strings.TrimSpace(encUserPassword) == "" {
+		appLog.LogWarn("Missing email_app_password for user")
+		return &pb.ListFoldersResponse{}, nil
+	}
+	key, keyErr := cryptoutil.ParseKey(configs.Envs.EmailAppSecretKey)
+	if keyErr != nil {
+		appLog.LogError("Invalid EMAIL_APP_SECRET_KEY", keyErr)
+		return &pb.ListFoldersResponse{}, nil
+	}
+	userPassword, decErr := cryptoutil.DecryptAESGCMBase64(encUserPassword, key)
+	if decErr != nil {
+		appLog.LogError("Failed to decrypt email_app_password", decErr)
+		return &pb.ListFoldersResponse{}, nil
+	}
+
+	c, err := connectToIMAP(userEmail, userPassword)
+	if err != nil {
+		appLog.LogError("Failed to connect to IMAP", err)
+		return &pb.ListFoldersResponse{}, nil
+	}
+	defer c.Logout()
+
+	ch := make(chan *imap.MailboxInfo, 20)
+	go func() { _ = c.List("", "*", ch) }()
+
+	var folders []*pb.FolderItem
+	for m := range ch {
+		if m == nil {
+			continue
+		}
+		folders = append(folders, &pb.FolderItem{Name: m.Name})
+	}
+
+	return &pb.ListFoldersResponse{Folders: folders}, nil
+}
+
 func (s *server) SendEmail(ctx context.Context, req *pb.SendEmailRequest) (*pb.SendEmailResponse, error) {
 	appLog.LogInfo(fmt.Sprintf("Sending email to: %s, subject: %s", req.To, req.Subject))
 
@@ -289,9 +338,13 @@ func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.Get
 	}
 	defer c.Logout()
 
-	if _, err := c.Select("INBOX", false); err != nil {
-		appLog.LogError("Failed to select INBOX", err)
-		return &pb.GetEmailResponse{Success: false, Message: "Failed to access inbox"}, nil
+	folder := strings.TrimSpace(req.GetFolder())
+	if folder == "" {
+		folder = "INBOX"
+	}
+	if _, err := c.Select(folder, false); err != nil {
+		appLog.LogError(fmt.Sprintf("Failed to select folder %s", folder), err)
+		return &pb.GetEmailResponse{Success: false, Message: "Failed to access folder"}, nil
 	}
 
 	seqSet := new(imap.SeqSet)
@@ -381,9 +434,13 @@ func (s *server) DeleteEmail(ctx context.Context, req *pb.DeleteEmailRequest) (*
 	}
 	defer c.Logout()
 
-	if _, err := c.Select("INBOX", false); err != nil {
-		appLog.LogError("Failed to select INBOX", err)
-		return &pb.DeleteEmailResponse{Success: false, Message: "Failed to access inbox"}, nil
+	folder := req.Folder
+	if strings.TrimSpace(folder) == "" {
+		folder = "INBOX"
+	}
+	if _, err := c.Select(folder, false); err != nil {
+		appLog.LogError(fmt.Sprintf("Failed to select folder '%s'", folder), err)
+		return &pb.DeleteEmailResponse{Success: false, Message: fmt.Sprintf("Failed to access folder '%s'", folder)}, nil
 	}
 
 	seqSet := new(imap.SeqSet)
@@ -449,9 +506,13 @@ func (s *server) SetEmailRead(ctx context.Context, req *pb.SetEmailReadRequest) 
 	}
 	defer c.Logout()
 
-	if _, err := c.Select("INBOX", false); err != nil {
-		appLog.LogError("Failed to select INBOX", err)
-		return &pb.SetEmailReadResponse{Success: false, Message: "Failed to access inbox"}, nil
+	folder := req.Folder
+	if strings.TrimSpace(folder) == "" {
+		folder = "INBOX"
+	}
+	if _, err := c.Select(folder, false); err != nil {
+		appLog.LogError(fmt.Sprintf("Failed to select folder '%s'", folder), err)
+		return &pb.SetEmailReadResponse{Success: false, Message: fmt.Sprintf("Failed to access folder '%s'", folder)}, nil
 	}
 
 	seqSet := new(imap.SeqSet)
@@ -512,9 +573,13 @@ func (s *server) SetEmailUnread(ctx context.Context, req *pb.SetEmailUnReadReque
 	}
 	defer c.Logout()
 
-	if _, err := c.Select("INBOX", false); err != nil {
-		appLog.LogError("Failed to select INBOX", err)
-		return &pb.SetEmailUnReadResponse{Success: false, Message: "Failed to access inbox"}, nil
+	folder := req.Folder
+	if strings.TrimSpace(folder) == "" {
+		folder = "INBOX"
+	}
+	if _, err := c.Select(folder, false); err != nil {
+		appLog.LogError(fmt.Sprintf("Failed to select folder '%s'", folder), err)
+		return &pb.SetEmailUnReadResponse{Success: false, Message: fmt.Sprintf("Failed to access folder '%s'", folder)}, nil
 	}
 
 	seqSet := new(imap.SeqSet)
@@ -574,10 +639,14 @@ func (s *server) GetAllEmails(ctx context.Context, req *pb.GetAllEmailsRequest) 
 	}
 	defer c.Logout()
 
-	mbox, err := c.Select("INBOX", false)
+	folder := strings.TrimSpace(req.GetFolder())
+	if folder == "" {
+		folder = "INBOX"
+	}
+	mbox, err := c.Select(folder, false)
 	if err != nil {
-		appLog.LogError("Failed to select INBOX", err)
-		return &pb.GetAllEmailsResponse{Success: false, Message: "Failed to access inbox"}, nil
+		appLog.LogError(fmt.Sprintf("Failed to select folder %s", folder), err)
+		return &pb.GetAllEmailsResponse{Success: false, Message: "Failed to access folder"}, nil
 	}
 
 	limit := int(req.Limit)
@@ -691,6 +760,9 @@ func main() {
 	appLog.LogInfo("Messaging Service running on port :3002")
 	appLog.LogInfo("Available endpoints:")
 	appLog.LogInfo("  - POST /api/messaging/send-email")
+	appLog.LogInfo("  - POST /api/messaging/get_all_emails")
+	appLog.LogInfo("  - POST /api/messaging/get_email")
+	appLog.LogInfo("  - GET  /api/messaging/list-folders")
 	appLog.LogInfo("  - GET  /api/messaging/suggest-email")
 
 	if err := s.Serve(lis); err != nil {
