@@ -78,9 +78,10 @@ $DOCKER_COMPOSE --profile seeder run --rm seeder
 verify_seeder
 
 $DOCKER_COMPOSE --profile init run --rm init-users
+$DOCKER_COMPOSE --profile generator build --no-cache generator || exit 1
+$DOCKER_COMPOSE --profile generator run --rm generator || exit 1
 
 if ! verify_users; then
     exit 1
 fi
 
-$DOCKER_COMPOSE --profile init run --rm init-relations

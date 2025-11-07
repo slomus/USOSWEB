@@ -89,11 +89,18 @@ if errorlevel 1 (
     exit /b 1
 )
 
-
-!DOCKER_COMPOSE! --profile init run --rm init-relations
+!DOCKER_COMPOSE! --profile generator build --no-cache generator
 if errorlevel 1 (
-    echo  Tworzenie relacji nie powiodło się
+    echo  Budowanie generatora nie powiodło się
     pause
     exit /b 1
 )
+
+!DOCKER_COMPOSE! --profile generator run --rm generator
+if errorlevel 1 (
+    echo  Generator nie powiódł się
+    pause
+    exit /b 1
+)
+
 pause

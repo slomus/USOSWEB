@@ -1,4 +1,26 @@
 services:
+  generator:
+    build:
+      context: ./src/backend/database/seeds/generator
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=mydb
+      - API_URL=http://api-gateway:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+      common:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+    restart: "no"
+    profiles:
+      - generator
+
   postgres:
     image: postgres:18
     container_name: postgres
