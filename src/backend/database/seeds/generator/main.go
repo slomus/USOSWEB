@@ -13,27 +13,29 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
+	"github.com/brianvoe/gofakeit/v6"
 	_ "github.com/lib/pq"
 )
 
 var (
 	polishFirstNames = []string{
-		"Jan", "Anna", "Piotr", "Maria", "Krzysztof", "Katarzyna", "Andrzej", "Magdalena",
-		"Tomasz", "Agnieszka", "Paweł", "Barbara", "Michał", "Ewa", "Marcin", "Joanna",
-		"Kamil", "Monika", "Jakub", "Natalia", "Mateusz", "Aleksandra", "Adam", "Karolina",
-		"Łukasz", "Justyna", "Wojciech", "Martyna", "Bartosz", "Paulina", "Maciej", "Weronika",
-		"Grzegorz", "Sylwia", "Rafał", "Izabela", "Szymon", "Beata", "Damian", "Patrycja",
-		"Adrian", "Dorota", "Dawid", "Zofia", "Sebastian", "Julia", "Kacper", "Iwona",
+		"Adam", "Piotr", "Krzysztof", "Andrzej", "Tomasz", "Jan", "Paweł", "Michał",
+		"Marcin", "Marek", "Łukasz", "Jakub", "Mateusz", "Rafał", "Kamil", "Wojciech",
+		"Bartosz", "Maciej", "Damian", "Grzegorz", "Sebastian", "Dawid", "Szymon", "Kacper",
+		"Anna", "Maria", "Katarzyna", "Małgorzata", "Agnieszka", "Barbara", "Ewa", "Magdalena",
+		"Joanna", "Krystyna", "Monika", "Teresa", "Beata", "Danuta", "Zofia", "Karolina",
+		"Justyna", "Aleksandra", "Natalia", "Paulina", "Sylwia", "Weronika", "Patrycja",
+		"Izabela", "Martyna", "Julia",
 	}
 
 	polishLastNames = []string{
 		"Nowak", "Kowalski", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Lewandowski",
 		"Zieliński", "Szymański", "Woźniak", "Dąbrowski", "Kozłowski", "Jankowski", "Mazur",
-		"Kwiatkowski", "Krawczyk", "Piotrowski", "Grabowski", "Nowakowski", "Pawłowski",
-		"Michalski", "Adamczyk", "Dudek", "Stępień", "Jaworski", "Pawlak", "Górski",
-		"Witkowski", "Rutkowski", "Sikora", "Bąk", "Ostrowski", "Baran", "Szewczyk",
-		"Tomaszewski", "Pietrzak", "Marciniak", "Wróbel", "Zalewski", "Król",
+		"Kwiatkowski", "Wojciechowski", "Krawczyk", "Kaczmarek", "Piotrowski", "Grabowski",
+		"Pawłowski", "Michalski", "Król", "Wieczorek", "Jabłoński", "Nowakowski", "Majewski",
+		"Olszewski", "Jaworski", "Stępień", "Malinowski", "Dudek", "Zajączkowski", "Witkowski",
+		"Walczak", "Górski", "Rutkowski", "Sikora", "Baran", "Pietrzak", "Marciniak",
+		"Adamczyk", "Zalewski", "Ostrowski", "Bąk", "Szewczyk",
 	}
 
 	bydgoszczStreets = []string{
@@ -50,6 +52,18 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	APIURL     string
+}
+
+type Subject struct {
+	id          int
+	name        string
+	facultyID   int
+	description string
+}
+
+type Course struct {
+	id   int
+	name string
 }
 
 func loadConfig() Config {
@@ -86,6 +100,71 @@ func connectDB(cfg Config) (*sql.DB, error) {
 	return db, nil
 }
 
+func transliterate(s string) string {
+	replacements := map[rune]string{
+		'ą': "a", 'Ą': "A",
+		'ć': "c", 'Ć': "C",
+		'ę': "e", 'Ę': "E",
+		'ł': "l", 'Ł': "L",
+		'ń': "n", 'Ń': "N",
+		'ó': "o", 'Ó': "O",
+		'ś': "s", 'Ś': "S",
+		'ź': "z", 'Ź': "Z",
+		'ż': "z", 'Ż': "Z",
+	}
+
+	var result strings.Builder
+	for _, char := range s {
+		if replacement, ok := replacements[char]; ok {
+			result.WriteString(replacement)
+		} else {
+			result.WriteRune(char)
+		}
+	}
+	return result.String()
+}
+
+func generateValidPESEL(birthDate time.Time, isFemale bool) string {
+	year := birthDate.Year() % 100
+	month := int(birthDate.Month())
+	day := birthDate.Day()
+
+	if birthDate.Year() >= 2000 && birthDate.Year() < 2100 {
+		month += 20
+	}
+
+	serialFirst := rand.Intn(10)
+	serialSecond := rand.Intn(10)
+	
+	genderDigit := rand.Intn(10)
+	if isFemale && genderDigit%2 != 0 {
+		genderDigit = (genderDigit + 1) % 10
+	} else if !isFemale && genderDigit%2 == 0 {
+		genderDigit = (genderDigit + 1) % 10
+	}
+
+	peselDigits := []int{
+		year / 10, year % 10,
+		month / 10, month % 10,
+		day / 10, day % 10,
+		serialFirst, serialSecond, genderDigit,
+	}
+
+	weights := []int{9, 7, 3, 1, 9, 7, 3, 1, 9}
+	sum := 0
+	for i := 0; i < 9; i++ {
+		sum += peselDigits[i] * weights[i]
+	}
+	
+	tentDigit := rand.Intn(10)
+	sum += tentDigit * 7
+	
+	checksum := sum % 10
+
+	return fmt.Sprintf("%02d%02d%02d%d%d%d%d%d",
+		year, month, day, serialFirst, serialSecond, genderDigit, tentDigit, checksum)
+}
+
 func randomPolishName() string {
 	return polishFirstNames[rand.Intn(len(polishFirstNames))]
 }
@@ -100,18 +179,14 @@ func randomBydgoszczAddress() string {
 	return fmt.Sprintf("%s %d, Bydgoszcz", street, number)
 }
 
-func randomPESEL() string {
-	return fmt.Sprintf("%02d%02d%02d%05d",
-		rand.Intn(100), rand.Intn(13), rand.Intn(32),
-		rand.Intn(100000))
-}
-
 func randomPhoneNumber() string {
 	return fmt.Sprintf("+48%d%08d", rand.Intn(9)+1, rand.Intn(100000000))
 }
 
 func randomBankAccount() string {
-	return fmt.Sprintf("PL%026d", rand.Intn(1000000000000000000))
+	part1 := rand.Int63n(1000000000000)
+	part2 := rand.Int63n(1000000000000)
+	return fmt.Sprintf("PL%012d%012d", part1, part2)
 }
 
 func main() {
@@ -125,7 +200,7 @@ func main() {
 	}
 	defer db.Close()
 
-	log.Println("✅ Connected to database")
+	log.Println(" Connected to database")
 
 	if err := generateSubjects(db); err != nil {
 		log.Fatalf("Failed to generate subjects: %v", err)
@@ -144,111 +219,107 @@ func main() {
 	}
 
 	if err := linkCourseSubjects(db); err != nil {
-		log.Fatalf("Failed to link course subjects: %v", err)
+		log.Fatalf("Failed to link course-subjects: %v", err)
 	}
 
 	if err := linkModuleSubjects(db); err != nil {
-		log.Fatalf("Failed to link module subjects: %v", err)
+		log.Fatalf("Failed to link module-subjects: %v", err)
 	}
 
 	if err := generateAdditionalUsers(db, cfg); err != nil {
-		log.Fatalf("Failed to generate additional users: %v", err)
+		log.Fatalf("Failed to generate users: %v", err)
 	}
 
 	if err := generateProductionRelations(db); err != nil {
-		log.Fatalf("Failed to generate production relations: %v", err)
+		log.Fatalf("Failed to generate relations: %v", err)
 	}
 
 	printSummary(db)
+	log.Println(" Database seeding completed successfully")
 }
 
 func generateSubjects(db *sql.DB) error {
-
 	subjects := []struct {
-		alias       string
 		name        string
-		ects        float64
+		alias       string
+		ects        int
 		description string
 		syllabus    string
 	}{
-		// Przedmioty ogólne (15)
-		{"MAT1", "Matematyka I", 6, "Analiza matematyczna", "Granice, pochodne, całki"},
-		{"MAT2", "Matematyka II", 6, "Algebra liniowa", "Macierze, układy równań, przestrzenie wektorowe"},
-		{"FIZ1", "Fizyka I", 5, "Mechanika klasyczna", "Kinematyka, dynamika"},
-		{"FIZ2", "Fizyka II", 5, "Elektromagnetyzm", "Pole elektryczne i magnetyczne"},
-		{"ANG1", "Język angielski I", 2, "Angielski akademicki", "Czytanie tekstów naukowych"},
-		{"ANG2", "Język angielski II", 2, "Konwersacje techniczne", "Prezentacje i dyskusje"},
-		{"WF1", "Wychowanie fizyczne", 0, "Aktywność fizyczna", "Zajęcia sportowe"},
-		{"FIL1", "Filozofia", 2, "Wprowadzenie do filozofii", "Historia myśli filozoficznej"},
-		{"STAT", "Statystyka", 4, "Statystyka opisowa i indukcyjna", "Testy, rozkłady prawdopodobieństwa"},
-		{"LOG", "Logika", 3, "Logika matematyczna", "Rachunek zdań, kwantyfikatory"},
-		{"EKON", "Ekonomia", 3, "Podstawy ekonomii", "Mikro i makroekonomia"},
-		{"PRAWN", "Prawo", 2, "Prawo dla inżynierów", "Prawo gospodarcze i autorskie"},
-		{"PSYCH", "Psychologia", 2, "Psychologia pracy", "Zarządzanie zespołem"},
-		{"EKOL", "Ekologia", 2, "Ochrona środowiska", "Zrównoważony rozwój"},
-		{"PROJ", "Zarządzanie projektami", 3, "Metodyki projektowe", "Agile, Scrum, Waterfall"},
+		{"Programowanie", "INF-101", 6, "Podstawy programowania", "Kurs wprowadzający do programowania w językach wysokiego poziomu"},
+		{"Bazy danych", "INF-102", 5, "Systemy baz danych", "Projektowanie i implementacja relacyjnych baz danych"},
+		{"Algorytmy i struktury danych", "INF-103", 6, "Projektowanie algorytmów", "Zaawansowane techniki algorytmiczne i struktury danych"},
+		{"Inżynieria oprogramowania", "INF-104", 5, "Metodyki tworzenia oprogramowania", "Cykl życia projektu i metodyki agile"},
+		{"Systemy operacyjne", "INF-105", 5, "Architektury systemów operacyjnych", "Procesy, wątki, zarządzanie pamięcią"},
+		{"Sieci komputerowe", "INF-106", 5, "Protokoły sieciowe", "TCP/IP, routing, bezpieczeństwo sieci"},
+		{"Sztuczna inteligencja", "INF-107", 6, "Uczenie maszynowe", "Algorytmy AI, sieci neuronowe, deep learning"},
+		{"Grafika komputerowa", "INF-108", 4, "Renderowanie 3D", "OpenGL, raytracing, grafika czasu rzeczywistego"},
+		{"Bezpieczeństwo IT", "INF-109", 5, "Kryptografia i bezpieczeństwo", "Kryptografia symetryczna i asymetryczna, PKI"},
+		{"Aplikacje webowe", "INF-110", 6, "Frontend i backend", "HTML/CSS/JS, React, Node.js, REST API"},
+		{"Programowanie mobilne", "INF-111", 5, "Android i iOS", "Kotlin, Swift, aplikacje natywne i hybrydowe"},
+		{"Cloud Computing", "INF-112", 4, "AWS i Azure", "Infrastruktura chmurowa, konteneryzacja"},
+		{"DevOps", "INF-113", 4, "CI/CD i automatyzacja", "Jenkins, GitLab CI, automatyzacja wdrożeń"},
+		{"Blockchain", "INF-114", 4, "Technologie rozproszone", "Smart contracts, Ethereum, konsensus"},
+		{"Internet Rzeczy", "INF-115", 5, "IoT i embedded systems", "Arduino, Raspberry Pi, protokoły IoT"},
 
-		// Informatyka (25)
-		{"PROG1", "Programowanie I", 6, "Podstawy C", "Zmienne, funkcje, wskaźniki"},
-		{"PROG2", "Programowanie II", 6, "Programowanie obiektowe", "Klasy, dziedziczenie, polimorfizm"},
-		{"PROG3", "Programowanie III", 5, "Struktury danych", "Listy, drzewa, grafy"},
-		{"ALG", "Algorytmy", 6, "Algorytmy i złożoność", "Sortowanie, przeszukiwanie"},
-		{"BD", "Bazy danych", 5, "SQL i projektowanie BD", "Normalizacja, transakcje"},
-		{"SYST", "Systemy operacyjne", 5, "Unix/Linux", "Procesy, pamięć, systemy plików"},
-		{"SIECI", "Sieci komputerowe", 5, "Protokoły TCP/IP", "Routing, switching"},
-		{"WEB", "Aplikacje webowe", 5, "Frontend i backend", "HTML, CSS, JS, REST API"},
-		{"MOBILE", "Aplikacje mobilne", 4, "Android/iOS", "UI, architektura aplikacji"},
-		{"AI", "Sztuczna inteligencja", 5, "ML i deep learning", "Sieci neuronowe, klasyfikacja"},
-		{"BIG", "Big Data", 4, "Przetwarzanie dużych zbiorów", "Hadoop, Spark"},
-		{"CYBER", "Cyberbezpieczeństwo", 4, "Bezpieczeństwo systemów", "Kryptografia, ataki, obrona"},
-		{"CLOUD", "Cloud Computing", 4, "AWS, Azure, GCP", "Wdrażanie w chmurze"},
-		{"DEVOPS", "DevOps", 3, "CI/CD", "Docker, Kubernetes, Jenkins"},
-		{"GAME", "Game Development", 4, "Tworzenie gier", "Unity, Unreal Engine"},
-		{"IOT", "Internet of Things", 4, "Urządzenia IoT", "Sensory, komunikacja"},
-		{"BLOCK", "Blockchain", 3, "Technologia blockchain", "Bitcoin, Ethereum, smart contracts"},
-		{"COMP", "Grafika komputerowa", 4, "Renderowanie 3D", "OpenGL, ray tracing"},
-		{"NLP", "Przetwarzanie języka", 4, "NLP", "Analiza tekstu, chatboty"},
-		{"ROBO", "Robotyka", 5, "Projektowanie robotów", "Kinematyka, sterowanie"},
-		{"VR", "Virtual Reality", 4, "Rzeczywistość wirtualna", "VR headsets, interakcja"},
-		{"UI", "User Interface Design", 3, "Projektowanie UI/UX", "Prototypowanie, testy użyteczności"},
-		{"SOFT", "Software Engineering", 5, "Inżynieria oprogramowania", "Wzorce projektowe, testowanie"},
-		{"COMP-ARCH", "Architektura komputerów", 5, "Budowa komputera", "CPU, pamięć, magistrale"},
-		{"COMPILER", "Kompilatory", 5, "Teoria kompilatorów", "Parsowanie, optymalizacja kodu"},
+		{"Algebra", "MAT-201", 6, "Algebra liniowa i abstrakcyjna", "Macierze, przestrzenie wektorowe, grupy"},
+		{"Analiza matematyczna I", "MAT-202", 7, "Rachunek różniczkowy i całkowy", "Granice, pochodne, całki"},
+		{"Analiza matematyczna II", "MAT-203", 7, "Równania różniczkowe", "ODEs, PDEs, metody rozwiązywania"},
+		{"Geometria analityczna", "MAT-204", 5, "Geometria przestrzeni", "Wektory, płaszczyzny, powierzchnie"},
+		{"Równania różniczkowe", "MAT-205", 6, "ODEs i PDEs", "Metody analityczne i numeryczne"},
+		{"Rachunek prawdopodobieństwa", "MAT-206", 5, "Teoria prawdopodobieństwa", "Zmienne losowe, rozkłady, wartość oczekiwana"},
+		{"Statystyka matematyczna", "MAT-207", 5, "Estymacja i testy", "Testy hipotez, analiza wariancji"},
+		{"Topologia", "MAT-208", 5, "Przestrzenie topologiczne", "Otwarte i zamknięte zbiory, zwartość"},
+		{"Teoria liczb", "MAT-209", 4, "Arytmetyka modularna", "Liczby pierwsze, kongruencje"},
+		{"Kombinatoryka", "MAT-210", 4, "Metody kombinatoryczne", "Permutacje, kombinacje, zasada włączeń"},
+		{"Optymalizacja", "MAT-211", 5, "Programowanie liniowe", "Sympleks, dualność, optymalizacja nieliniowa"},
+		{"Teoria grafów", "MAT-212", 5, "Algorytmy grafowe", "Drzewa, najkrótsze ścieżki, przepływy"},
+		{"Matematyka dyskretna", "MAT-213", 5, "Logika i zbiory", "Rachunki zdań, indukcja matematyczna"},
+		{"Analiza funkcjonalna", "MAT-214", 6, "Przestrzenie Banacha", "Przestrzenie liniowe, operatory"},
+		{"Teoria miary", "MAT-215", 6, "Miara Lebesgue'a", "Całka Lebesgue'a, przestrzenie mierzalne"},
 
-		// Fizyka (10)
-		{"FIZ-TERMO", "Termodynamika", 5, "Zasady termodynamiki", "Entropia, silniki cieplne"},
-		{"FIZ-KWANT", "Mechanika kwantowa", 6, "Fizyka kwantowa", "Funkcja falowa, operatory"},
-		{"FIZ-ATOM", "Fizyka atomowa", 5, "Struktura atomu", "Model Bohra, widma"},
-		{"FIZ-JAD", "Fizyka jądrowa", 5, "Jądro atomowe", "Rozpad, synteza"},
-		{"FIZ-CZAST", "Fizyka cząstek", 6, "Cząstki elementarne", "Model standardowy"},
-		{"FIZ-OPT", "Optyka", 4, "Optyka geometryczna i falowa", "Soczewki, interferencja"},
-		{"FIZ-AKUST", "Akustyka", 3, "Fale dźwiękowe", "Rezonans, ultradźwięki"},
-		{"FIZ-MAT", "Fizyka materiałów", 4, "Właściwości materiałów", "Kryształy, półprzewodniki"},
-		{"FIZ-ASTRO", "Astrofizyka", 4, "Fizyka ciał niebieskich", "Gwiazdy, galaktyki"},
-		{"FIZ-LAB", "Laboratorium fizyczne", 3, "Doświadczenia", "Pomiary, analiza błędów"},
+		{"Fizyka klasyczna", "FIZ-301", 6, "Mechanika i termodynamika", "Mechanika Newtona, prawa termodynamiki"},
+		{"Fizyka kwantowa", "FIZ-302", 7, "Mechanika kwantowa", "Równanie Schrödingera, kwantowanie"},
+		{"Elektrodynamika", "FIZ-303", 6, "Teoria pola elektromagnetycznego", "Równania Maxwella, fale elektromagnetyczne"},
+		{"Optyka", "FIZ-304", 5, "Fale świetlne", "Załamanie, dyfrakcja, interferencja"},
+		{"Mechanika kwantowa zaawansowana", "FIZ-305", 7, "Operator Hamiltona", "Teoria perturbacji, spin"},
+		{"Fizyka jądrowa", "FIZ-306", 6, "Reakcje jądrowe", "Rozpad radioaktywny, fuzja i rozszczepienie"},
+		{"Fizyka ciała stałego", "FIZ-307", 6, "Struktura krystaliczna", "Sieci krystaliczne, fonony"},
+		{"Astrofizyka", "FIZ-308", 5, "Ewolucja gwiazd", "Nukleosynteza, czarne dziury"},
+		{"Fizyka cząstek elementarnych", "FIZ-309", 6, "Model standardowy", "Kwarki, leptony, oddziaływania"},
+		{"Metody numeryczne w fizyce", "FIZ-310", 5, "Symulacje komputerowe", "Monte Carlo, dynamika molekularna"},
+		{"Teoria względności", "FIZ-311", 6, "STW i OTW", "Transformacje Lorentza, tensory"},
+		{"Fizyka plazmy", "FIZ-312", 5, "Plazma niskotemperaturowa", "Jonizacja, debye length"},
+		{"Spektroskopia", "FIZ-313", 4, "Analiza spektralna", "Spektrometria mas, NMR"},
+		{"Kriogenika", "FIZ-314", 4, "Niskie temperatury", "Nadprzewodnictwo, nadciekłość"},
+		{"Nanotechnologia", "FIZ-315", 5, "Materiały nanometryczne", "Nanorurki, grafen, nanocząstki"},
 
-		// Mechatronika (10)
-		{"MECH-TECH", "Technologie 3D", 4, "Druk 3D", "CAD, prototypowanie"},
-		{"MECH-AUTO", "Automatyka", 5, "Sterowanie automatyczne", "Regulatory PID"},
-		{"MECH-ELEKTRO", "Elektronika", 5, "Układy elektroniczne", "Tranzystory, wzmacniacze"},
-		{"MECH-MECHAN", "Mechanika techniczna", 6, "Statyka i dynamika", "Wytrzymałość materiałów"},
-		{"MECH-HYDRA", "Hydraulika", 4, "Układy hydrauliczne", "Pompy, zawory"},
-		{"MECH-PNEUMA", "Pneumatyka", 4, "Układy pneumatyczne", "Sprężarki, siłowniki"},
-		{"MECH-SENS", "Sensoryka", 4, "Czujniki i przetworniki", "Pomiar temperatury, ciśnienia"},
-		{"MECH-EMB", "Systemy wbudowane", 5, "Mikrokontrolery", "Arduino, STM32"},
-		{"MECH-ROBOT", "Robotyka przemysłowa", 5, "Roboty przemysłowe", "Programowanie robotów"},
-		{"MECH-CNC", "Obrabiarki CNC", 4, "Sterowanie numeryczne", "Programowanie G-code"},
+		{"Mechanika techniczna", "MEC-401", 6, "Statyka i dynamika", "Równowaga, kinematyka, dynamika"},
+		{"Elektronika", "MEC-402", 6, "Obwody elektroniczne", "Diody, tranzystory, wzmacniacze"},
+		{"Sterowanie i automatyka", "MEC-403", 6, "Regulatory PID", "Regulatory, stabilność układów"},
+		{"Robotyka", "MEC-404", 7, "Kinematyka robotów", "Manipulatory, planowanie ruchu"},
+		{"CAD/CAM", "MEC-405", 5, "Projektowanie wspomagane", "SolidWorks, AutoCAD, CNC"},
+		{"Napędy elektryczne", "MEC-406", 5, "Silniki AC i DC", "Silniki krokowe, serwo"},
+		{"Programowanie sterowników PLC", "MEC-407", 6, "Ladder logic", "Siemens S7, Allen-Bradley"},
+		{"Systemy wbudowane", "MEC-408", 6, "Mikrokontrolery", "ARM Cortex, STM32, RTOS"},
+		{"Teoria maszyn", "MEC-409", 5, "Mechanizmy i przekładnie", "Przekładnie zębate, łożyska"},
+		{"Pomiary przemysłowe", "MEC-410", 5, "Czujniki i przetworniki", "Tensometry, termopary, LVDT"},
+		{"Materiałoznawstwo", "MEC-411", 4, "Właściwości materiałów", "Stal, aluminium, polimery"},
+		{"Wytrzymałość materiałów", "MEC-412", 5, "Naprężenia i odkształcenia", "MES, analiza wytrzymałości"},
+		{"Techniki wytwarzania", "MEC-413", 5, "Obróbka skrawaniem", "Toczenie, frezowanie, szlifowanie"},
+		{"Pneumatyka i hydraulika", "MEC-414", 4, "Układy pneumatyczne", "Zawory, siłowniki, pompy"},
+		{"Vision systems", "MEC-415", 5, "Przetwarzanie obrazu", "OpenCV, detekcja obiektów"},
 	}
 
 	for _, s := range subjects {
 		_, err := db.Exec(`
-			INSERT INTO subjects (alias, name, ECTS, description, syllabus)
+			INSERT INTO subjects (name, alias, ECTS, description, syllabus)
 			VALUES ($1, $2, $3, $4, $5)
 			ON CONFLICT (alias) DO NOTHING
-		`, s.alias, s.name, s.ects, s.description, s.syllabus)
+		`, s.name, s.alias, s.ects, s.description, s.syllabus)
 
 		if err != nil {
-			return fmt.Errorf("failed to insert subject %s: %w", s.alias, err)
+			return fmt.Errorf("failed to insert subject %s: %w", s.name, err)
 		}
 	}
 
@@ -256,53 +327,47 @@ func generateSubjects(db *sql.DB) error {
 }
 
 func generateCourses(db *sql.DB) error {
-
 	courses := []struct {
 		alias      string
 		name       string
 		year       int
 		semester   int
-		mode       string
+		courseMode string
 		degreeType string
 		degree     string
 		facultyID  int
 	}{
-		// Informatyka - 6 kierunków
-		{"INF-S-I-1", "Informatyka", 1, 1, "stacjonarne", "inzynierskie", "1", 1},
-		{"INF-S-I-2", "Informatyka", 1, 2, "stacjonarne", "inzynierskie", "1", 1},
-		{"INF-NS-I-1", "Informatyka", 1, 1, "niestacjonarne", "inzynierskie", "1", 1},
-		{"INF-NS-M-1", "Informatyka", 1, 1, "niestacjonarne", "magisterskie", "2", 1},
-		{"INF-S-M-1", "Informatyka", 1, 1, "stacjonarne", "magisterskie", "2", 1},
-		{"INF-S-L-1", "Informatyka stosowana", 1, 1, "stacjonarne", "licencjackie", "1", 1},
+		{"INF-I-1", "Informatyka", 1, 1, "stacjonarne", "inżynierskie", "1", 1},
+		{"INF-I-2", "Informatyka", 1, 2, "stacjonarne", "inżynierskie", "1", 1},
+		{"INF-I-3", "Informatyka", 2, 1, "stacjonarne", "inżynierskie", "1", 1},
+		{"INF-M-1", "Informatyka", 1, 1, "stacjonarne", "inżynierskie", "2", 1},
+		{"CYB-I-1", "Cyberbezpieczeństwo", 1, 1, "stacjonarne", "inżynierskie", "1", 1},
+		{"AI-M-1", "Sztuczna Inteligencja", 1, 1, "stacjonarne", "magisterskie", "2", 1},
 
-		// Matematyka - 4 kierunki
-		{"MAT-S-L-1", "Matematyka", 1, 1, "stacjonarne", "licencjackie", "1", 2},
-		{"MAT-S-M-1", "Matematyka", 1, 1, "stacjonarne", "magisterskie", "2", 2},
-		{"MAT-NS-L-1", "Matematyka stosowana", 1, 1, "niestacjonarne", "licencjackie", "1", 2},
-		{"MAT-S-I-1", "Matematyka", 1, 1, "stacjonarne", "inzynierskie", "1", 2},
+		{"MAT-I-1", "Matematyka", 1, 1, "stacjonarne", "inżynierskie", "1", 2},
+		{"MAT-I-2", "Matematyka", 1, 2, "stacjonarne", "inżynierskie", "1", 2},
+		{"MAT-M-1", "Matematyka", 1, 1, "stacjonarne", "magisterskie", "2", 2},
+		{"MATS-I-1", "Matematyka stosowana", 1, 1, "stacjonarne", "inżynierskie", "1", 2},
 
-		// Fizyka - 4 kierunki
-		{"FIZ-S-I-1", "Fizyka", 1, 1, "stacjonarne", "inzynierskie", "1", 3},
-		{"FIZ-S-M-1", "Fizyka", 1, 1, "stacjonarne", "magisterskie", "2", 3},
-		{"FIZ-NS-I-1", "Fizyka techniczna", 1, 1, "niestacjonarne", "inzynierskie", "1", 3},
-		{"FIZ-S-L-1", "Fizyka medyczna", 1, 1, "stacjonarne", "licencjackie", "1", 3},
+		{"FIZ-I-1", "Fizyka", 1, 1, "stacjonarne", "inżynierskie", "1", 3},
+		{"FIZ-I-2", "Fizyka", 1, 2, "stacjonarne", "inżynierskie", "1", 3},
+		{"FIZ-M-1", "Fizyka", 1, 1, "stacjonarne", "magisterskie", "2", 3},
+		{"FIZT-I-1", "Fizyka techniczna", 1, 1, "stacjonarne", "inżynierskie", "1", 3},
 
-		// Mechatronika - 4 kierunki
-		{"MECH-S-I-1", "Mechatronika", 1, 1, "stacjonarne", "inzynierskie", "1", 4},
-		{"MECH-NS-I-1", "Mechatronika", 1, 1, "niestacjonarne", "inzynierskie", "1", 4},
-		{"MECH-S-M-1", "Mechatronika", 1, 1, "stacjonarne", "magisterskie", "2", 4},
-		{"MECH-S-I-2", "Automatyka i Robotyka", 1, 1, "stacjonarne", "inzynierskie", "1", 4},
+		{"MEC-I-1", "Mechatronika", 1, 1, "stacjonarne", "inżynierskie", "1", 4},
+		{"MEC-I-2", "Mechatronika", 1, 2, "stacjonarne", "inżynierskie", "1", 4},
+		{"MEC-M-1", "Mechatronika", 1, 1, "stacjonarne", "magisterskie", "2", 4},
+		{"ROB-I-1", "Automatyka i robotyka", 1, 1, "stacjonarne", "inżynierskie", "1", 4},
 	}
 
 	for _, c := range courses {
 		_, err := db.Exec(`
 			INSERT INTO courses (alias, name, year, semester, course_mode, degree_type, degree, faculty_id)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			ON CONFLICT DO NOTHING
-		`, c.alias, c.name, c.year, c.semester, c.mode, c.degreeType, c.degree, c.facultyID)
+		`, c.alias, c.name, c.year, c.semester, c.courseMode, c.degreeType, c.degree, c.facultyID)
 
 		if err != nil {
-			return fmt.Errorf("failed to insert course %s: %w", c.alias, err)
+			return fmt.Errorf("failed to insert course %s: %w", c.name, err)
 		}
 	}
 
@@ -310,49 +375,52 @@ func generateCourses(db *sql.DB) error {
 }
 
 func generateModules(db *sql.DB) error {
-
-	rows, err := db.Query("SELECT course_id, alias FROM courses")
+	var courseIDs []int
+	rows, err := db.Query("SELECT course_id FROM courses")
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
-	var courseIDs []int
 	for rows.Next() {
 		var id int
-		var alias string
-		if err := rows.Scan(&id, &alias); err != nil {
-			return err
-		}
+		rows.Scan(&id)
 		courseIDs = append(courseIDs, id)
 	}
+	rows.Close()
 
-	moduleNames := []string{
-		"Programowanie aplikacji", "Bazy danych i BigData", "Sieci i bezpieczeństwo",
-		"AI i Machine Learning", "Rozwój mobilny", "Cloud Computing",
-		"Analiza matematyczna", "Algebra i geometria", "Statystyka stosowana",
-		"Fizyka doświadczalna", "Mechanika kwantowa", "Elektronika i automatyka",
-		"Robotyka i IoT", "Systemy wbudowane", "Projektowanie CAD",
+	modules := []struct {
+		alias     string
+		name      string
+		courseID  int
+	}{
+		{"MOD-INF-1", "Podstawy programowania", 1},
+		{"MOD-INF-2", "Zaawansowane programowanie", 1},
+		{"MOD-INF-3", "Systemy rozproszone", 2},
+		{"MOD-INF-4", "Data Science", 3},
+
+		{"MOD-MAT-1", "Matematyka dyskretna i algebra", 1},
+		{"MOD-MAT-2", "Analiza matematyczna", 2},
+		{"MOD-MAT-3", "Matematyka stosowana", 3},
+
+		{"MOD-FIZ-1", "Mechanika klasyczna", 1},
+		{"MOD-FIZ-2", "Fizyka współczesna", 2},
+		{"MOD-FIZ-3", "Fizyka eksperymentalna", 3},
+
+		{"MOD-MEC-1", "Podstawy mechatroniki", 1},
+		{"MOD-MEC-2", "Elektronika przemysłowa", 2},
+		{"MOD-MEC-3", "Automatyka", 3},
+		{"MOD-MEC-4", "Robotyka przemysłowa", 4},
+		{"MOD-MEC-5", "Systemy wbudowane i IoT", 5},
 	}
 
-	count := 0
-	for _, courseID := range courseIDs {
-		// 3-5 modułów na kierunek
-		numModules := rand.Intn(3) + 3
-		for i := 0; i < numModules; i++ {
-			moduleName := moduleNames[rand.Intn(len(moduleNames))]
-			alias := fmt.Sprintf("MOD-%d-%d", courseID, i+1)
+	for i, m := range modules {
+		courseID := courseIDs[i%len(courseIDs)]
+		_, err := db.Exec(`
+			INSERT INTO modules (alias, name, course_id)
+			VALUES ($1, $2, $3)
+		`, m.alias, m.name, courseID)
 
-			_, err := db.Exec(`
-				INSERT INTO modules (alias, name, course_id)
-				VALUES ($1, $2, $3)
-				ON CONFLICT DO NOTHING
-			`, alias, moduleName, courseID)
-
-			if err != nil {
-				return fmt.Errorf("failed to insert module: %w", err)
-			}
-			count++
+		if err != nil {
+			return fmt.Errorf("failed to insert module %s: %w", m.name, err)
 		}
 	}
 
@@ -360,64 +428,56 @@ func generateModules(db *sql.DB) error {
 }
 
 func generateClasses(db *sql.DB) error {
-
-	rows, err := db.Query("SELECT subject_id, alias FROM subjects")
+	var subjectIDs []int
+	rows, err := db.Query("SELECT subject_id FROM subjects")
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
-	type subject struct {
-		id    int
-		alias string
-	}
-
-	var subjects []subject
 	for rows.Next() {
-		var s subject
-		if err := rows.Scan(&s.id, &s.alias); err != nil {
-			return err
-		}
-		subjects = append(subjects, s)
+		var id int
+		rows.Scan(&id)
+		subjectIDs = append(subjectIDs, id)
 	}
+	rows.Close()
 
-	classTypes := []string{"wykład", "laboratorium", "ćwiczenia", "projekt", "seminarium"}
-	credits := []string{"egzamin", "zaliczenie na ocenę", "zaliczenie", "kolokwium", "projekt"}
-	buildings := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	var buildingIDs []int
+	rows, err = db.Query("SELECT building_id FROM buildings")
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id int
+		rows.Scan(&id)
+		buildingIDs = append(buildingIDs, id)
+	}
+	rows.Close()
 
-	count := 0
-	for _, subj := range subjects {
-		// Każdy przedmiot ma 2-4 grupy zajęciowe
+	classTypes := []string{"wykład", "ćwiczenia", "laboratorium", "projekt", "seminarium"}
+	creditTypes := []string{"zaliczenie na ocenę", "kolokwium", "egzamin", "projekt"}
+
+	for _, subjectID := range subjectIDs {
 		numClasses := rand.Intn(3) + 2
+
 		for i := 0; i < numClasses; i++ {
 			classType := classTypes[rand.Intn(len(classTypes))]
-			credit := credits[rand.Intn(len(credits))]
-			spanHours := rand.Intn(30) + 15
-			groupNr := i + 1
-			
-			var capacity, currentCapacity int
-			if classType == "wykład" {
-				capacity = rand.Intn(50) + 50
-			} else if classType == "laboratorium" {
-				capacity = rand.Intn(8) + 12
-			} else {
-				capacity = rand.Intn(15) + 20
-			}
-			currentCapacity = rand.Intn(capacity-5) + 5
-
-			classroom := rand.Intn(400) + 100
-			buildingID := buildings[rand.Intn(len(buildings))]
+			credit := creditTypes[rand.Intn(len(creditTypes))]
+			spanOfHours := (rand.Intn(3) + 1) * 15
+			groupNr := rand.Intn(5) + 1
+			capacity := rand.Intn(80) + 20
+			currentCapacity := rand.Intn(capacity + 1)
+			classroom := rand.Intn(300) + 100
+			buildingID := buildingIDs[rand.Intn(len(buildingIDs))]
 
 			_, err := db.Exec(`
-				INSERT INTO classes (class_type, credit, span_of_hours, group_nr, current_capacity, 
-									capacity, classroom, building_id, subject_id)
+				INSERT INTO classes (class_type, credit, span_of_hours, group_nr, 
+					current_capacity, capacity, classroom, building_id, subject_id)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			`, classType, credit, spanHours, groupNr, currentCapacity, capacity, classroom, buildingID, subj.id)
+			`, classType, credit, spanOfHours, groupNr, currentCapacity, capacity, 
+				classroom, buildingID, subjectID)
 
 			if err != nil {
 				return fmt.Errorf("failed to insert class: %w", err)
 			}
-			count++
 		}
 	}
 
@@ -425,26 +485,17 @@ func generateClasses(db *sql.DB) error {
 }
 
 func linkCourseSubjects(db *sql.DB) error {
-
-	rows, err := db.Query("SELECT course_id, alias FROM courses")
+	var courses []Course
+	rows, err := db.Query("SELECT course_id, name FROM courses")
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
-	type course struct {
-		id    int
-		alias string
-	}
-
-	var courses []course
 	for rows.Next() {
-		var c course
-		if err := rows.Scan(&c.id, &c.alias); err != nil {
-			return err
-		}
+		var c Course
+		rows.Scan(&c.id, &c.name)
 		courses = append(courses, c)
 	}
+	rows.Close()
 
 	subjectRows, err := db.Query("SELECT subject_id FROM subjects")
 	if err != nil {
@@ -461,10 +512,9 @@ func linkCourseSubjects(db *sql.DB) error {
 		subjectIDs = append(subjectIDs, id)
 	}
 
-	count := 0
 	for _, course := range courses {
 		numSubjects := rand.Intn(6) + 5
-		
+
 		shuffled := make([]int, len(subjectIDs))
 		copy(shuffled, subjectIDs)
 		rand.Shuffle(len(shuffled), func(i, j int) {
@@ -481,7 +531,6 @@ func linkCourseSubjects(db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("failed to link course-subject: %w", err)
 			}
-			count++
 		}
 	}
 
@@ -489,7 +538,6 @@ func linkCourseSubjects(db *sql.DB) error {
 }
 
 func linkModuleSubjects(db *sql.DB) error {
-
 	rows, err := db.Query("SELECT module_id FROM modules")
 	if err != nil {
 		return err
@@ -520,10 +568,9 @@ func linkModuleSubjects(db *sql.DB) error {
 		subjectIDs = append(subjectIDs, id)
 	}
 
-	count := 0
 	for _, moduleID := range moduleIDs {
 		numSubjects := rand.Intn(3) + 2
-		
+
 		shuffled := make([]int, len(subjectIDs))
 		copy(shuffled, subjectIDs)
 		rand.Shuffle(len(shuffled), func(i, j int) {
@@ -540,7 +587,6 @@ func linkModuleSubjects(db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("failed to link module-subject: %w", err)
 			}
-			count++
 		}
 	}
 
@@ -548,7 +594,6 @@ func linkModuleSubjects(db *sql.DB) error {
 }
 
 func generateAdditionalUsers(db *sql.DB, cfg Config) error {
-
 	var existingCount int
 	if err := db.QueryRow("SELECT COUNT(*) FROM users").Scan(&existingCount); err != nil {
 		return err
@@ -556,15 +601,53 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 
 	log.Printf("Found %d existing users from init_users", existingCount)
 
+	usedPhones := make(map[string]bool)
+	usedBankAccounts := make(map[string]bool)
+	usedPESELs := make(map[string]bool)
+
 	for i := 0; i < 61; i++ {
 		firstName := randomPolishName()
 		lastName := randomPolishSurname()
-		email := fmt.Sprintf("%s.%s%d@student.edu.pl", 
-			strings.ToLower(firstName), 
-			strings.ToLower(lastName), 
+
+		translitFirstName := strings.ToLower(transliterate(firstName))
+		translitLastName := strings.ToLower(transliterate(lastName))
+
+		email := fmt.Sprintf("%s.%s%d@student.edu.pl",
+			translitFirstName,
+			translitLastName,
 			i+1)
+
+		password := fmt.Sprintf("Student%d!", 1000+i)
+
+		isFemale := strings.HasSuffix(firstName, "a")
+		birthDate := time.Date(2000+rand.Intn(7), time.Month(rand.Intn(12)+1), rand.Intn(28)+1, 0, 0, 0, 0, time.UTC)
 		
-		password := fmt.Sprintf("%s123!", firstName)
+		var pesel string
+		for {
+			pesel = generateValidPESEL(birthDate, isFemale)
+			if !usedPESELs[pesel] {
+				usedPESELs[pesel] = true
+				break
+			}
+		}
+
+		var phoneNr string
+		for {
+			phoneNr = randomPhoneNumber()
+			if !usedPhones[phoneNr] {
+				usedPhones[phoneNr] = true
+				break
+			}
+		}
+
+		var bankAccount string
+		for {
+			bankAccount = randomBankAccount()
+			if !usedBankAccounts[bankAccount] {
+				usedBankAccounts[bankAccount] = true
+				break
+			}
+		}
 
 		user := map[string]interface{}{
 			"email":                email,
@@ -572,35 +655,67 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 			"name":                 firstName,
 			"surname":              lastName,
 			"role":                 "student",
-			"pesel":                randomPESEL(),
-			"phone_nr":             randomPhoneNumber(),
+			"pesel":                pesel,
+			"phone_nr":             phoneNr,
 			"postal_address":       randomBydgoszczAddress(),
 			"registration_address": randomBydgoszczAddress(),
-			"bank_account_nr":      randomBankAccount(),
+			"bank_account_nr":      bankAccount,
 		}
 
 		if err := registerUserViaAPI(cfg.APIURL, user); err != nil {
 			log.Printf("  Warning: Failed to create student %s: %v", email, err)
-		} else {
-			log.Printf(" Created student: %s", email)
 		}
 
-		time.Sleep(100 * time.Millisecond) // Rate limiting
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	degrees := []string{"Dr", "Dr hab.", "Prof. dr hab."}
 	titles := []string{"Adiunkt", "Profesor nadzwyczajny", "Profesor zwyczajny", "Wykładowca"}
-	
+
 	for i := 0; i < 20; i++ {
 		firstName := randomPolishName()
 		lastName := randomPolishSurname()
-		email := fmt.Sprintf("%s.%s%d@edu.pl", 
-			strings.ToLower(firstName), 
-			strings.ToLower(lastName), 
+
+		translitFirstName := strings.ToLower(transliterate(firstName))
+		translitLastName := strings.ToLower(transliterate(lastName))
+
+		email := fmt.Sprintf("%s.%s%d@edu.pl",
+			translitFirstName,
+			translitLastName,
 			i+1)
+
+		password := fmt.Sprintf("Teacher%d!", 2000+i)
+		facultyID := rand.Intn(4) + 1
+
+		isFemale := strings.HasSuffix(firstName, "a")
+		birthDate := time.Date(1970+rand.Intn(21), time.Month(rand.Intn(12)+1), rand.Intn(28)+1, 0, 0, 0, 0, time.UTC)
 		
-		password := fmt.Sprintf("%s123!", firstName)
-		facultyID := rand.Intn(4) + 1 // 1-4
+		var pesel string
+		for {
+			pesel = generateValidPESEL(birthDate, isFemale)
+			if !usedPESELs[pesel] {
+				usedPESELs[pesel] = true
+				break
+			}
+		}
+
+		var phoneNr string
+		for {
+			phoneNr = randomPhoneNumber()
+			if !usedPhones[phoneNr] {
+				usedPhones[phoneNr] = true
+				break
+			}
+		}
+
+		var bankAccount string
+		for {
+			bankAccount = randomBankAccount()
+			if !usedBankAccounts[bankAccount] {
+				usedBankAccounts[bankAccount] = true
+				break
+			}
+		}
 
 		user := map[string]interface{}{
 			"email":                email,
@@ -608,11 +723,11 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 			"name":                 firstName,
 			"surname":              lastName,
 			"role":                 "teacher",
-			"pesel":                randomPESEL(),
-			"phone_nr":             randomPhoneNumber(),
+			"pesel":                pesel,
+			"phone_nr":             phoneNr,
 			"postal_address":       randomBydgoszczAddress(),
 			"registration_address": randomBydgoszczAddress(),
-			"bank_account_nr":      randomBankAccount(),
+			"bank_account_nr":      bankAccount,
 			"degree":               degrees[rand.Intn(len(degrees))],
 			"title":                titles[rand.Intn(len(titles))],
 			"faculty_id":           facultyID,
@@ -620,25 +735,57 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 
 		if err := registerUserViaAPI(cfg.APIURL, user); err != nil {
 			log.Printf("  Warning: Failed to create teacher %s: %v", email, err)
-		} else {
-			log.Printf(" Created teacher: %s", email)
 		}
 
 		time.Sleep(100 * time.Millisecond)
 	}
 
 	adminRoles := []string{"Dziekan", "Prodziekan", "Kierownik Dziekanatu", "Sekretarz", "Administrator IT"}
-	
+
 	for i := 0; i < 10; i++ {
 		firstName := randomPolishName()
 		lastName := randomPolishSurname()
-		email := fmt.Sprintf("%s.%s%d@admin.edu.pl", 
-			strings.ToLower(firstName), 
-			strings.ToLower(lastName), 
+
+		translitFirstName := strings.ToLower(transliterate(firstName))
+		translitLastName := strings.ToLower(transliterate(lastName))
+
+		email := fmt.Sprintf("%s.%s%d@admin.edu.pl",
+			translitFirstName,
+			translitLastName,
 			i+1)
-		
-		password := fmt.Sprintf("%s123!", firstName)
+
+		password := fmt.Sprintf("Admin%d!", 3000+i)
 		facultyID := rand.Intn(4) + 1
+
+		isFemale := strings.HasSuffix(firstName, "a")
+		birthDate := time.Date(1975+rand.Intn(21), time.Month(rand.Intn(12)+1), rand.Intn(28)+1, 0, 0, 0, 0, time.UTC)
+		
+		var pesel string
+		for {
+			pesel = generateValidPESEL(birthDate, isFemale)
+			if !usedPESELs[pesel] {
+				usedPESELs[pesel] = true
+				break
+			}
+		}
+
+		var phoneNr string
+		for {
+			phoneNr = randomPhoneNumber()
+			if !usedPhones[phoneNr] {
+				usedPhones[phoneNr] = true
+				break
+			}
+		}
+
+		var bankAccount string
+		for {
+			bankAccount = randomBankAccount()
+			if !usedBankAccounts[bankAccount] {
+				usedBankAccounts[bankAccount] = true
+				break
+			}
+		}
 
 		user := map[string]interface{}{
 			"email":                email,
@@ -646,19 +793,17 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 			"name":                 firstName,
 			"surname":              lastName,
 			"role":                 "admin",
-			"pesel":                randomPESEL(),
-			"phone_nr":             randomPhoneNumber(),
+			"pesel":                pesel,
+			"phone_nr":             phoneNr,
 			"postal_address":       randomBydgoszczAddress(),
 			"registration_address": randomBydgoszczAddress(),
-			"bank_account_nr":      randomBankAccount(),
+			"bank_account_nr":      bankAccount,
 			"faculty_id":           facultyID,
 			"admin_role":           adminRoles[rand.Intn(len(adminRoles))],
 		}
 
 		if err := registerUserViaAPI(cfg.APIURL, user); err != nil {
 			log.Printf("  Warning: Failed to create admin %s: %v", email, err)
-		} else {
-			log.Printf(" Created admin: %s", email)
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -669,7 +814,7 @@ func generateAdditionalUsers(db *sql.DB, cfg Config) error {
 		return err
 	}
 
-	log.Printf(" Total users in database: %d", finalCount)
+	log.Printf("Total users in database: %d", finalCount)
 	return nil
 }
 
@@ -686,7 +831,7 @@ func registerUserViaAPI(apiURL string, user map[string]interface{}) error {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	
+
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
 		return err
@@ -695,7 +840,7 @@ func registerUserViaAPI(apiURL string, user map[string]interface{}) error {
 	if success, ok := response["success"].(bool); !ok || !success {
 		if msg, ok := response["message"].(string); ok {
 			if strings.Contains(msg, "already exists") {
-				return nil // Not an error, just skip
+				return nil
 			}
 			return fmt.Errorf(msg)
 		}
@@ -705,22 +850,7 @@ func registerUserViaAPI(apiURL string, user map[string]interface{}) error {
 	return nil
 }
 
-func printSummary(db *sql.DB) {
-	tables := []string{"faculties", "buildings", "subjects", "courses", "modules", "classes", 
-		"course_subjects", "module_subjects", "users", "students", "teaching_staff", "administrative_staff",
-		"course_instructors", "student_classes", "grades", "messages", "applications", "surveys"}
-	
-	for _, table := range tables {
-		var count int
-		query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-		if err := db.QueryRow(query).Scan(&count); err == nil {
-			log.Printf("  %s: %d", table, count)
-		}
-	}
-}
-
 func generateProductionRelations(db *sql.DB) error {
-
 	var classIDs []int
 	rows, err := db.Query("SELECT class_id FROM classes")
 	if err != nil {
@@ -757,7 +887,6 @@ func generateProductionRelations(db *sql.DB) error {
 	}
 	rows.Close()
 
-	countInstructors := 0
 	for _, classID := range classIDs {
 		numTeachers := rand.Intn(2) + 1
 		shuffled := make([]int, len(teacherIDs))
@@ -772,16 +901,16 @@ func generateProductionRelations(db *sql.DB) error {
 				VALUES ($1, $2)
 				ON CONFLICT DO NOTHING
 			`, classID, shuffled[i])
-			if err == nil {
-				countInstructors++
+
+			if err != nil {
+				return fmt.Errorf("failed to insert course instructor: %w", err)
 			}
 		}
 	}
 
-	countEnrollments := 0
 	for _, albumNr := range studentAlbums {
-		// Each student enrolls in 5-8 classes
-		numClasses := rand.Intn(4) + 5
+		numClasses := rand.Intn(6) + 3
+
 		shuffled := make([]int, len(classIDs))
 		copy(shuffled, classIDs)
 		rand.Shuffle(len(shuffled), func(i, j int) {
@@ -790,266 +919,222 @@ func generateProductionRelations(db *sql.DB) error {
 
 		for i := 0; i < numClasses && i < len(shuffled); i++ {
 			_, err := db.Exec(`
-				INSERT INTO student_classes (class_id, album_nr)
+				INSERT INTO student_classes (album_nr, class_id)
 				VALUES ($1, $2)
 				ON CONFLICT DO NOTHING
-			`, shuffled[i], albumNr)
-			if err == nil {
-				countEnrollments++
+			`, albumNr, shuffled[i])
+
+			if err != nil {
+				return fmt.Errorf("failed to insert student class: %w", err)
 			}
 		}
 	}
 
-	countGrades := 0
-	
-	gradeValues := []string{"2.0", "3.0", "3.5", "4.0", "4.5", "5.0", "ZAL", "NZAL"}
-	gradeWeights := []float64{0.05, 0.15, 0.20, 0.25, 0.25, 0.10} 
-	
-	comments := []string{
-		"Dobra praca", "Bardzo dobrze", "Zadowalająco", "Wymaga poprawy",
-		"Świetne wykonanie", "Poprawnie", "Zaliczone", "Niezaliczone",
-		"Bardzo dobra znajomość tematu", "Podstawowa znajomość", "",
+	gradeValues := []string{"2.0", "3.0", "3.5", "4.0", "4.5", "5.0"}
+
+	if len(teacherIDs) == 0 {
+		return nil
 	}
 
-	enrollmentRows, err := db.Query(`
-		SELECT sc.album_nr, sc.class_id, c.subject_id
-		FROM student_classes sc
-		JOIN classes c ON sc.class_id = c.class_id
-	`)
-	if err != nil {
-		return err
-	}
-	defer enrollmentRows.Close()
+	for _, albumNr := range studentAlbums {
+		rows, err := db.Query(`
+			SELECT sc.class_id, c.subject_id 
+			FROM student_classes sc
+			JOIN classes c ON sc.class_id = c.class_id
+			WHERE sc.album_nr = $1
+		`, albumNr)
 
-	type enrollment struct {
-		albumNr   int
-		classID   int
-		subjectID int
-	}
-	var enrollments []enrollment
-	for enrollmentRows.Next() {
-		var e enrollment
-		enrollmentRows.Scan(&e.albumNr, &e.classID, &e.subjectID)
-		enrollments = append(enrollments, e)
-	}
-
-	for _, enr := range enrollments {
-		if rand.Float64() > 0.7 {
-			continue
-		}
-
-		var teacherID int
-		err := db.QueryRow(`
-			SELECT teaching_staff_id 
-			FROM course_instructors 
-			WHERE class_id = $1 
-			ORDER BY RANDOM() 
-			LIMIT 1
-		`, enr.classID).Scan(&teacherID)
 		if err != nil {
-			continue 
+			return err
 		}
 
-		r := rand.Float64()
-		var gradeValue string
-		cumulative := 0.0
-		for i, weight := range gradeWeights {
-			cumulative += weight
-			if r <= cumulative {
-				gradeValue = gradeValues[i]
-				break
+		var enrollments []struct {
+			classID   int
+			subjectID int
+		}
+
+		for rows.Next() {
+			var e struct {
+				classID   int
+				subjectID int
+			}
+			rows.Scan(&e.classID, &e.subjectID)
+			enrollments = append(enrollments, e)
+		}
+		rows.Close()
+
+		numGrades := rand.Intn(len(enrollments)/2) + 1
+		if numGrades > len(enrollments) {
+			numGrades = len(enrollments)
+		}
+
+		shuffled := make([]int, len(enrollments))
+		for i := range enrollments {
+			shuffled[i] = i
+		}
+		rand.Shuffle(len(shuffled), func(i, j int) {
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+		})
+
+		for i := 0; i < numGrades; i++ {
+			idx := shuffled[i]
+			gradeValue := gradeValues[rand.Intn(len(gradeValues))]
+			weight := rand.Intn(3) + 1
+			attempt := 1
+			teacherID := teacherIDs[rand.Intn(len(teacherIDs))]
+
+			_, err := db.Exec(`
+				INSERT INTO grades (album_nr, class_id, subject_id, value, weight, attempt, added_by_teaching_staff_id)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
+			`, albumNr, enrollments[idx].classID, enrollments[idx].subjectID, gradeValue, weight, attempt, teacherID)
+
+			if err != nil {
+				return fmt.Errorf("failed to insert grade: %w", err)
 			}
 		}
-		if gradeValue == "" {
-			gradeValue = "4.0" 
-		}
-
-		comment := comments[rand.Intn(len(comments))]
-		weight := 1
-		attempt := 1
-
-		daysAgo := rand.Intn(90)
-		gradeDate := time.Now().AddDate(0, 0, -daysAgo)
-
-		_, err = db.Exec(`
-			INSERT INTO grades (album_nr, class_id, subject_id, value, weight, attempt, 
-								added_by_teaching_staff_id, comment, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			ON CONFLICT (album_nr, class_id, attempt) DO NOTHING
-		`, enr.albumNr, enr.classID, enr.subjectID, gradeValue, weight, attempt, 
-		   teacherID, comment, gradeDate)
-
-		if err == nil {
-			countGrades++
-		}
 	}
-	countMessages := 0
-	
-	messageTitles := []string{
-		"Rozpoczęcie semestru", "Harmonogram egzaminów", "Zmiana terminu zajęć",
-		"Konsultacje", "Materiały do zajęć", "Projekt zaliczeniowy",
-		"Laboratorium - przypomnienie", "Kolokwium", "Egzamin poprawkowy",
-		"Ankieta oceny zajęć", "Dzień otwarty", "Konferencja naukowa",
-	}
-
-	messageContent := "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Informuję o ważnych zmianach."
 
 	var userIDs []int
-	userRows, err := db.Query("SELECT user_id FROM users")
+	rows, err = db.Query("SELECT user_id FROM users")
 	if err != nil {
 		return err
 	}
-	for userRows.Next() {
+	for rows.Next() {
 		var id int
-		userRows.Scan(&id)
+		rows.Scan(&id)
 		userIDs = append(userIDs, id)
 	}
-	userRows.Close()
+	rows.Close()
 
-	var teacherUserIDs []int
-	teacherUserRows, err := db.Query(`
-		SELECT u.user_id 
-		FROM users u 
-		JOIN teaching_staff ts ON u.user_id = ts.user_id
-	`)
-	if err != nil {
-		return err
+	messageTitles := []string{
+		"Zmiana terminu zajęć",
+		"Konsultacje",
+		"Egzamin",
+		"Projekt zaliczeniowy",
+		"Materiały do zajęć",
+		"Spotkanie grupowe",
+		"Wyniki testu",
+		"Literatura dodatkowa",
+		"Przypomnienie o terminie",
+		"Spotkanie online",
 	}
-	for teacherUserRows.Next() {
-		var id int
-		teacherUserRows.Scan(&id)
-		teacherUserIDs = append(teacherUserIDs, id)
-	}
-	teacherUserRows.Close()
 
-	numMessages := rand.Intn(31) + 50
-	for i := 0; i < numMessages; i++ {
-		if len(teacherUserIDs) == 0 {
-			break
-		}
-
-		senderID := teacherUserIDs[rand.Intn(len(teacherUserIDs))]
+	for i := 0; i < 80; i++ {
+		senderID := userIDs[rand.Intn(len(userIDs))]
 		title := messageTitles[rand.Intn(len(messageTitles))]
-		
-		daysAgo := rand.Intn(60)
-		sendDate := time.Now().AddDate(0, 0, -daysAgo)
+		content := gofakeit.Paragraph(2, 5, 10, " ")
+		sentAt := time.Date(2024, time.Month(10+rand.Intn(2)), rand.Intn(28)+1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 
 		var messageID int
 		err := db.QueryRow(`
-			INSERT INTO messages (sender_id, title, content, send_date)
+			INSERT INTO messages (sender_id, title, content, sent_at)
 			VALUES ($1, $2, $3, $4)
 			RETURNING message_id
-		`, senderID, title, messageContent, sendDate).Scan(&messageID)
+		`, senderID, title, content, sentAt).Scan(&messageID)
 
 		if err != nil {
-			continue
+			return fmt.Errorf("failed to insert message: %w", err)
 		}
-		countMessages++
 
-		numRecipients := rand.Intn(11) + 5
-		shuffledUsers := make([]int, len(userIDs))
-		copy(shuffledUsers, userIDs)
-		rand.Shuffle(len(shuffledUsers), func(i, j int) {
-			shuffledUsers[i], shuffledUsers[j] = shuffledUsers[j], shuffledUsers[i]
+		numRecipients := rand.Intn(3) + 1
+		shuffled := make([]int, len(userIDs))
+		copy(shuffled, userIDs)
+		rand.Shuffle(len(shuffled), func(i, j int) {
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 		})
 
-		for j := 0; j < numRecipients && j < len(shuffledUsers); j++ {
-			var readAt *time.Time
-			if rand.Float64() < 0.6 {
-				readTime := sendDate.Add(time.Duration(rand.Intn(48)) * time.Hour)
-				readAt = &readTime
+		for j := 0; j < numRecipients && j < len(shuffled); j++ {
+			if shuffled[j] == senderID {
+				continue
 			}
 
-			if readAt != nil {
-				db.Exec(`
-					INSERT INTO message_recipients (message_id, recipient_id, read_at)
-					VALUES ($1, $2, $3)
-					ON CONFLICT DO NOTHING
-				`, messageID, shuffledUsers[j], readAt)
-			} else {
-				db.Exec(`
-					INSERT INTO message_recipients (message_id, recipient_id, read_at)
-					VALUES ($1, $2, NULL)
-					ON CONFLICT DO NOTHING
-				`, messageID, shuffledUsers[j])
+			isRead := rand.Float32() < 0.6
+
+			_, err := db.Exec(`
+				INSERT INTO message_recipients (message_id, recipient_id, is_read)
+				VALUES ($1, $2, $3)
+			`, messageID, shuffled[j], isRead)
+
+			if err != nil {
+				return fmt.Errorf("failed to insert message recipient: %w", err)
 			}
 		}
 	}
 
-	countApplications := 0
+	applicationCategories := []string{
+		"Stypendium socjalne",
+		"Urlop dziekański",
+		"Zapomoga",
+		"Stypendium naukowe",
+		"Wymiana zagraniczna",
+	}
 
-	var categoryIDs []int
-	catRows, err := db.Query("SELECT category_id FROM application_categories")
+	for i := 0; i < 50; i++ {
+		studentAlbum := studentAlbums[rand.Intn(len(studentAlbums))]
+		category := applicationCategories[rand.Intn(len(applicationCategories))]
+		
+		startDate := time.Date(2024, time.Month(10+rand.Intn(2)), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 2, 0)
+
+		_, err := db.Exec(`
+			INSERT INTO applications (category, registration_round_start, registration_round_end, album_nr)
+			VALUES ($1, $2, $3, $4)
+		`, category, startDate, endDate, studentAlbum)
+
+		if err != nil {
+			return fmt.Errorf("failed to insert application: %w", err)
+		}
+	}
+
+	var subjectIDs []int
+	subjectRows, err := db.Query("SELECT subject_id FROM subjects")
 	if err != nil {
 		return err
 	}
-	for catRows.Next() {
+	for subjectRows.Next() {
 		var id int
-		catRows.Scan(&id)
-		categoryIDs = append(categoryIDs, id)
+		subjectRows.Scan(&id)
+		subjectIDs = append(subjectIDs, id)
 	}
-	catRows.Close()
+	subjectRows.Close()
 
-	applicationTitles := map[int]string{
-		1: "Wniosek o stypendium socjalne",
-		2: "Wniosek o urlop dziekański",
-		3: "Wniosek o zapomogę",
-		4: "Wniosek o stypendium naukowe",
-		5: "Wniosek o wymianę zagraniczną",
-	}
-
-	statuses := []string{"submitted", "submitted", "submitted", "approved", "rejected"}
-
-	for _, albumNr := range studentAlbums {
-		numApps := rand.Intn(3) 
+	for i := 0; i < 100; i++ {
+		classID := classIDs[rand.Intn(len(classIDs))]
 		
-		for i := 0; i < numApps && len(categoryIDs) > 0; i++ {
-			catID := categoryIDs[rand.Intn(len(categoryIDs))]
-			title := applicationTitles[catID]
-			if title == "" {
-				title = "Wniosek"
-			}
-			status := statuses[rand.Intn(len(statuses))]
-			content := "Proszę o rozpatrzenie mojego wniosku."
+		questions := []string{
+			"Czy zajęcia były dobrze zorganizowane?",
+			"Czy materiały były pomocne?",
+			"Czy prowadzący był kompetentny?",
+			"Czy formy zaliczenia były sprawiedliwe?",
+			"Czy zajęcia były interesujące?",
+		}
+		
+		question := questions[rand.Intn(len(questions))]
+		mark := rand.Intn(5) + 1
 
-			_, err := db.Exec(`
-				INSERT INTO applications (category_id, album_nr, title, content, status)
-				VALUES ($1, $2, $3, $4, $5)
-			`, catID, albumNr, title, content, status)
+		_, err := db.Exec(`
+			INSERT INTO surveys (class_id, question, mark)
+			VALUES ($1, $2, $3)
+		`, classID, question, mark)
 
-			if err == nil {
-				countApplications++
-			}
+		if err != nil {
+			return fmt.Errorf("failed to insert survey: %w", err)
 		}
 	}
 
-	countSurveys := 0
-
-	surveyQuestions := []string{
-		"Jak oceniasz przydatność wykładu?",
-		"Czy tempo prowadzenia zajęć było odpowiednie?",
-		"Jak oceniasz jakość materiałów?",
-		"Czy wykład był zrozumiały?",
-		"Jak oceniasz trudność ćwiczeń?",
-		"Czy zajęcia były dobrze zorganizowane?",
-	}
-
-	for _, classID := range classIDs {
-		numSurveys := rand.Intn(11) + 10
-		
-		for i := 0; i < numSurveys; i++ {
-			question := surveyQuestions[rand.Intn(len(surveyQuestions))]
-			mark := rand.Intn(3) + 3 
-
-			_, err := db.Exec(`
-				INSERT INTO surveys (class_id, question, mark)
-				VALUES ($1, $2, $3)
-			`, classID, question, mark)
-
-			if err == nil {
-				countSurveys++
-			}
-		}
-	}
 	return nil
+}
+
+func printSummary(db *sql.DB) {
+	tables := []string{"faculties", "buildings", "subjects", "courses", "modules", "classes",
+		"course_subjects", "module_subjects", "users", "students", "teaching_staff", "administrative_staff",
+		"course_instructors", "student_classes", "grades", "messages", "applications", "surveys"}
+
+	for _, table := range tables {
+		var count int
+		query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+		if err := db.QueryRow(query).Scan(&count); err == nil {
+			log.Printf("  %s: %d", table, count)
+		}
+	}
 }
