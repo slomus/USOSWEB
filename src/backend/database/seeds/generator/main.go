@@ -1027,7 +1027,7 @@ func generateProductionRelations(db *sql.DB) error {
 
 		var messageID int
 		err := db.QueryRow(`
-			INSERT INTO messages (sender_id, title, content, sent_at)
+			INSERT INTO messages (sender_id, title, content, send_date)
 			VALUES ($1, $2, $3, $4)
 			RETURNING message_id
 		`, senderID, title, content, sentAt).Scan(&messageID)
@@ -1048,12 +1048,16 @@ func generateProductionRelations(db *sql.DB) error {
 				continue
 			}
 
-			isRead := rand.Float32() < 0.6
+			var readAt *time.Time
 
+			if rand.Float32() < 0.6 {
+					readTime := time.Now().Add(-time.Duration(rand.Intn(48)) * time.Hour)
+					readAt = &readTime
+			}
 			_, err := db.Exec(`
-				INSERT INTO message_recipients (message_id, recipient_id, is_read)
+				INSERT INTO message_recipients (message_id, recipient_id, read_at)
 				VALUES ($1, $2, $3)
-			`, messageID, shuffled[j], isRead)
+			`, messageID, shuffled[j], readAt)
 
 			if err != nil {
 				return fmt.Errorf("failed to insert message recipient: %w", err)
@@ -1061,7 +1065,7 @@ func generateProductionRelations(db *sql.DB) error {
 		}
 	}
 
-	applicationCategories := []string{
+	applicationCategoryNames := []string{
 		"Stypendium socjalne",
 		"Urlop dziekański",
 		"Zapomoga",
@@ -1069,23 +1073,58 @@ func generateProductionRelations(db *sql.DB) error {
 		"Wymiana zagraniczna",
 	}
 
-	for i := 0; i < 50; i++ {
-		studentAlbum := studentAlbums[rand.Intn(len(studentAlbums))]
-		category := applicationCategories[rand.Intn(len(applicationCategories))]
-		
-		startDate := time.Date(2024, time.Month(10+rand.Intn(2)), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 2, 0)
-
-		_, err := db.Exec(`
-			INSERT INTO applications (category, registration_round_start, registration_round_end, album_nr)
-			VALUES ($1, $2, $3, $4)
-		`, category, startDate, endDate, studentAlbum)
-
-		if err != nil {
-			return fmt.Errorf("failed to insert application: %w", err)
-		}
+	var categoryIDs []int
+	for _, categoryName := range applicationCategoryNames {
+			var categoryID int
+			
+			err := db.QueryRow(`
+					SELECT category_id FROM application_categories WHERE name = $1
+			`, categoryName).Scan(&categoryID)
+			
+			if err != nil {
+					// Jeśli nie istnieje, utwórz ją
+					startDate := time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC)
+					endDate := time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)
+					
+					err = db.QueryRow(`
+							INSERT INTO application_categories (name, description, application_start_date, application_end_date, active)
+							VALUES ($1, $2, $3, $4, true)
+							RETURNING category_id
+					`, categoryName, fmt.Sprintf("Wniosek dotyczący: %s", categoryName), startDate, endDate).Scan(&categoryID)
+					
+					if err != nil {
+							return fmt.Errorf("failed to insert application category: %w", err)
+					}
+			}
+			
+			categoryIDs = append(categoryIDs, categoryID)
 	}
 
+	statuses := []string{"submitted", "under_review", "approved", "rejected"}
+	titles := []string{
+			"Wniosek o stypendium",
+			"Wniosek o urlop",
+			"Wniosek o zapomogę",
+			"Wniosek o wymianę",
+			"Wniosek o dofinansowanie",
+	}
+
+	for i := 0; i < 50; i++ {
+			studentAlbum := studentAlbums[rand.Intn(len(studentAlbums))]
+			categoryID := categoryIDs[rand.Intn(len(categoryIDs))]
+			status := statuses[rand.Intn(len(statuses))]
+			title := titles[rand.Intn(len(titles))]
+			content := gofakeit.Paragraph(3, 5, 12, " ")
+
+			_, err := db.Exec(`
+					INSERT INTO applications (category_id, album_nr, title, content, status, created_at, updated_at)
+					VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+			`, categoryID, studentAlbum, title, content, status)
+
+			if err != nil {
+					return fmt.Errorf("failed to insert application: %w", err)
+			}
+	}
 	var subjectIDs []int
 	subjectRows, err := db.Query("SELECT subject_id FROM subjects")
 	if err != nil {
@@ -1121,6 +1160,259 @@ func generateProductionRelations(db *sql.DB) error {
 			return fmt.Errorf("failed to insert survey: %w", err)
 		}
 	}
+		ptrTime := func(t time.Time) *time.Time {
+			return &t
+	}
+
+	academicYears := []struct {
+			year      string
+			startYear int
+	}{
+			{"2020/2021", 2020},
+			{"2021/2022", 2021},
+			{"2022/2023", 2022},
+			{"2023/2024", 2023},
+			{"2024/2025", 2024},
+	}
+
+	for _, ay := range academicYears {
+			year := ay.startYear
+			academicYear := ay.year
+
+			calendarEvents := []struct {
+					eventType   string
+					title       string
+					description string
+					startDate   time.Time
+					endDate     *time.Time
+					appliesTo   string
+			}{
+					// SEMESTR ZIMOWY
+					{
+							eventType:   "registration",
+							title:       "Rejestracja na zajęcia - semestr zimowy",
+							description: "Okres zapisów na zajęcia w semestrze zimowym",
+							startDate:   time.Date(year, 9, 15, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year, 9, 30, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "semester_start",
+							title:       "Rozpoczęcie semestru zimowego",
+							description: "Pierwszy dzień zajęć w semestrze zimowym",
+							startDate:   time.Date(year, 10, 1, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "holiday",
+							title:       "Święto Wszystkich Świętych",
+							description: "Dzień wolny od zajęć",
+							startDate:   time.Date(year, 11, 1, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "holiday",
+							title:       "Święto Niepodległości",
+							description: "Dzień wolny od zajęć - rocznica odzyskania niepodległości",
+							startDate:   time.Date(year, 11, 11, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "break",
+							title:       "Przerwa świąteczna",
+							description: "Przerwa w zajęciach z okazji świąt Bożego Narodzenia i Nowego Roku",
+							startDate:   time.Date(year, 12, 23, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 1, 2, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "exam_session",
+							title:       "Sesja egzaminacyjna zimowa",
+							description: "Sesja egzaminacyjna dla semestru zimowego",
+							startDate:   time.Date(year+1, 1, 20, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 2, 10, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "semester_end",
+							title:       "Zakończenie semestru zimowego",
+							description: "Ostatni dzień semestru zimowego",
+							startDate:   time.Date(year+1, 2, 10, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					// SEMESTR LETNI
+					{
+							eventType:   "registration",
+							title:       "Rejestracja na zajęcia - semestr letni",
+							description: "Okres zapisów na zajęcia w semestrze letnim",
+							startDate:   time.Date(year+1, 2, 1, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 2, 20, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "semester_start",
+							title:       "Rozpoczęcie semestru letniego",
+							description: "Pierwszy dzień zajęć w semestrze letnim",
+							startDate:   time.Date(year+1, 2, 24, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "break",
+							title:       "Przerwa wielkanocna",
+							description: "Przerwa w zajęciach z okazji świąt wielkanocnych",
+							startDate:   time.Date(year+1, 4, 14, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 4, 18, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "holiday",
+							title:       "Święto Pracy",
+							description: "Dzień wolny od zajęć",
+							startDate:   time.Date(year+1, 5, 1, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "holiday",
+							title:       "Święto Konstytucji 3 Maja",
+							description: "Dzień wolny od zajęć - rocznica uchwalenia Konstytucji",
+							startDate:   time.Date(year+1, 5, 3, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "exam_session",
+							title:       "Sesja egzaminacyjna letnia",
+							description: "Sesja egzaminacyjna dla semestru letniego",
+							startDate:   time.Date(year+1, 6, 10, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 6, 30, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "semester_end",
+							title:       "Zakończenie semestru letniego",
+							description: "Ostatni dzień semestru letniego",
+							startDate:   time.Date(year+1, 6, 30, 0, 0, 0, 0, time.UTC),
+							endDate:     nil,
+							appliesTo:   "all",
+					},
+					{
+							eventType:   "exam_session",
+							title:       "Sesja poprawkowa",
+							description: "Sesja egzaminacyjna poprawkowa",
+							startDate:   time.Date(year+1, 9, 1, 0, 0, 0, 0, time.UTC),
+							endDate:     ptrTime(time.Date(year+1, 9, 14, 23, 59, 59, 0, time.UTC)),
+							appliesTo:   "all",
+					},
+			}
+
+			for _, event := range calendarEvents {
+					var endDate interface{}
+					if event.endDate != nil {
+							endDate = *event.endDate
+					} else {
+							endDate = nil
+					}
+
+					_, err := db.Exec(`
+							INSERT INTO academic_calendar (event_type, title, description, start_date, end_date, academic_year, applies_to, is_recurring)
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+					`, event.eventType, event.title, event.description, event.startDate, endDate, academicYear, event.appliesTo, false)
+
+					if err != nil {
+							return fmt.Errorf("failed to insert academic calendar event: %w", err)
+					}
+			}
+	}
+
+
+	var messageIDs []int
+	rows, err = db.Query("SELECT message_id FROM messages")
+	if err != nil {
+			return err
+	}
+	for rows.Next() {
+			var id int
+			rows.Scan(&id)
+			messageIDs = append(messageIDs, id)
+	}
+	rows.Close()
+
+	var applicationIDs []int
+	rows, err = db.Query("SELECT application_id FROM applications")
+	if err != nil {
+			return err
+	}
+	for rows.Next() {
+			var id int
+			rows.Scan(&id)
+			applicationIDs = append(applicationIDs, id)
+	}
+	rows.Close()
+
+	fileTypes := []struct {
+			extension string
+			mimeType  string
+			prefix    string
+	}{
+			{".pdf", "application/pdf", "dokument"},
+			{".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "raport"},
+			{".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "arkusz"},
+			{".jpg", "image/jpeg", "zdjecie"},
+			{".png", "image/png", "obraz"},
+			{".txt", "text/plain", "notatka"},
+			{".zip", "application/zip", "archiwum"},
+	}
+
+	numMessageAttachments := len(messageIDs) * 30 / 100
+	for i := 0; i < numMessageAttachments; i++ {
+			messageID := messageIDs[rand.Intn(len(messageIDs))]
+			fileType := fileTypes[rand.Intn(len(fileTypes))]
+			
+			originalFilename := fmt.Sprintf("%s_%d%s", fileType.prefix, rand.Intn(1000), fileType.extension)
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix()+int64(i), originalFilename)
+			filePath := fmt.Sprintf("/uploads/messages/%d/%s", messageID, filename)
+			fileSize := int64(rand.Intn(5000000) + 10000) // 10KB - 5MB
+
+			_, err := db.Exec(`
+					INSERT INTO attachments (message_id, filename, original_filename, file_size, mime_type, file_path)
+					VALUES ($1, $2, $3, $4, $5, $6)
+			`, messageID, filename, originalFilename, fileSize, fileType.mimeType, filePath)
+
+			if err != nil {
+					return fmt.Errorf("failed to insert message attachment: %w", err)
+			}
+	}
+
+	numApplicationAttachments := len(applicationIDs) * 40 / 100
+	for i := 0; i < numApplicationAttachments; i++ {
+			applicationID := applicationIDs[rand.Intn(len(applicationIDs))]
+			
+			fileType := fileTypes[0] // PDF
+			if rand.Float32() < 0.2 {
+					fileType = fileTypes[3] // czasem zdjęcie/skan
+			}
+			
+			originalFilename := fmt.Sprintf("zalacznik_wniosku_%d%s", rand.Intn(1000), fileType.extension)
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix()+int64(i), originalFilename)
+			filePath := fmt.Sprintf("/uploads/applications/%d/%s", applicationID, filename)
+			fileSize := int64(rand.Intn(3000000) + 50000) // 50KB - 3MB
+
+			_, err := db.Exec(`
+					INSERT INTO attachments (application_id, filename, original_filename, file_size, mime_type, file_path)
+					VALUES ($1, $2, $3, $4, $5, $6)
+			`, applicationID, filename, originalFilename, fileSize, fileType.mimeType, filePath)
+
+			if err != nil {
+					return fmt.Errorf("failed to insert application attachment: %w", err)
+			}
+	}
+
 
 	return nil
 }
@@ -1138,3 +1430,5 @@ func printSummary(db *sql.DB) {
 		}
 	}
 }
+
+
