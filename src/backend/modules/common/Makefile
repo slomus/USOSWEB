@@ -6,6 +6,8 @@ AUTH_PROTO=$(PROTO_DIR)/auth.proto
 COURSE_PROTO=$(PROTO_DIR)/course.proto
 APPLICATIONS_PROTO=$(PROTO_DIR)/applications.proto
 GRADES_PROTO=$(PROTO_DIR)/grades.proto
+ACADEMIC_PROTO=$(PROTO_DIR)/academic.proto
+
 
 .PHONY: help generate-proto generate-auth generate-course generate-grades clean run test build
 
@@ -44,6 +46,17 @@ generate-applications:
 		--go-grpc_out=$(OUT_DIR)/applications --go-grpc_opt=paths=source_relative \
 		--grpc-gateway_out=$(OUT_DIR)/applications --grpc-gateway_opt=paths=source_relative \
 		$(APPLICATIONS_PROTO)
+
+generate-academic:
+	mkdir -p $(OUT_DIR)/academic
+	protoc -I $(PROTO_DIR) \
+		-I $(GOOGLEAPIS_DIR) \
+		--go_out=$(OUT_DIR)/academic --go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR)/academic --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=$(OUT_DIR)/academic \
+		--grpc-gateway_opt=paths=source_relative \
+		--grpc-gateway_opt=generate_unbound_methods=true \
+		$(ACADEMIC_PROTO)
 
 run: generate-proto
 	go run main.go
