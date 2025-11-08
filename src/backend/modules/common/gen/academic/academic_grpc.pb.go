@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SubjectsService_GetSubjects_FullMethodName       = "/academic.SubjectsService/GetSubjects"
-	SubjectsService_GetSubjectDetails_FullMethodName = "/academic.SubjectsService/GetSubjectDetails"
+	SubjectsService_GetSubjects_FullMethodName          = "/academic.SubjectsService/GetSubjects"
+	SubjectsService_GetSubjectDetails_FullMethodName    = "/academic.SubjectsService/GetSubjectDetails"
+	SubjectsService_GetAvailableSubjects_FullMethodName = "/academic.SubjectsService/GetAvailableSubjects"
 )
 
 // SubjectsServiceClient is the client API for SubjectsService service.
@@ -29,6 +30,7 @@ const (
 type SubjectsServiceClient interface {
 	GetSubjects(ctx context.Context, in *GetSubjectsRequest, opts ...grpc.CallOption) (*GetSubjectsResponse, error)
 	GetSubjectDetails(ctx context.Context, in *GetSubjectDetailsRequest, opts ...grpc.CallOption) (*GetSubjectDetailsResponse, error)
+	GetAvailableSubjects(ctx context.Context, in *GetAvailableSubjectsRequest, opts ...grpc.CallOption) (*GetAvailableSubjectsResponse, error)
 }
 
 type subjectsServiceClient struct {
@@ -59,12 +61,23 @@ func (c *subjectsServiceClient) GetSubjectDetails(ctx context.Context, in *GetSu
 	return out, nil
 }
 
+func (c *subjectsServiceClient) GetAvailableSubjects(ctx context.Context, in *GetAvailableSubjectsRequest, opts ...grpc.CallOption) (*GetAvailableSubjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAvailableSubjectsResponse)
+	err := c.cc.Invoke(ctx, SubjectsService_GetAvailableSubjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SubjectsServiceServer is the server API for SubjectsService service.
 // All implementations must embed UnimplementedSubjectsServiceServer
 // for forward compatibility.
 type SubjectsServiceServer interface {
 	GetSubjects(context.Context, *GetSubjectsRequest) (*GetSubjectsResponse, error)
 	GetSubjectDetails(context.Context, *GetSubjectDetailsRequest) (*GetSubjectDetailsResponse, error)
+	GetAvailableSubjects(context.Context, *GetAvailableSubjectsRequest) (*GetAvailableSubjectsResponse, error)
 	mustEmbedUnimplementedSubjectsServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedSubjectsServiceServer) GetSubjects(context.Context, *GetSubje
 }
 func (UnimplementedSubjectsServiceServer) GetSubjectDetails(context.Context, *GetSubjectDetailsRequest) (*GetSubjectDetailsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSubjectDetails not implemented")
+}
+func (UnimplementedSubjectsServiceServer) GetAvailableSubjects(context.Context, *GetAvailableSubjectsRequest) (*GetAvailableSubjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAvailableSubjects not implemented")
 }
 func (UnimplementedSubjectsServiceServer) mustEmbedUnimplementedSubjectsServiceServer() {}
 func (UnimplementedSubjectsServiceServer) testEmbeddedByValue()                         {}
@@ -138,6 +154,24 @@ func _SubjectsService_GetSubjectDetails_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SubjectsService_GetAvailableSubjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAvailableSubjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubjectsServiceServer).GetAvailableSubjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubjectsService_GetAvailableSubjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubjectsServiceServer).GetAvailableSubjects(ctx, req.(*GetAvailableSubjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SubjectsService_ServiceDesc is the grpc.ServiceDesc for SubjectsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var SubjectsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSubjectDetails",
 			Handler:    _SubjectsService_GetSubjectDetails_Handler,
+		},
+		{
+			MethodName: "GetAvailableSubjects",
+			Handler:    _SubjectsService_GetAvailableSubjects_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

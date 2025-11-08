@@ -1219,6 +1219,110 @@ func (x *CheckScheduleConflictsResponse) GetMessage() string {
 	return ""
 }
 
+type GetAvailableSubjectsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAvailableSubjectsRequest) Reset() {
+	*x = GetAvailableSubjectsRequest{}
+	mi := &file_academic_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAvailableSubjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAvailableSubjectsRequest) ProtoMessage() {}
+
+func (x *GetAvailableSubjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAvailableSubjectsRequest.ProtoReflect.Descriptor instead.
+func (*GetAvailableSubjectsRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{19}
+}
+
+type GetAvailableSubjectsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Subjects      []*SubjectSummary      `protobuf:"bytes,1,rep,name=subjects,proto3" json:"subjects,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	CourseId      int32                  `protobuf:"varint,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	ModuleId      int32                  `protobuf:"varint,4,opt,name=module_id,json=moduleId,proto3" json:"module_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAvailableSubjectsResponse) Reset() {
+	*x = GetAvailableSubjectsResponse{}
+	mi := &file_academic_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAvailableSubjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAvailableSubjectsResponse) ProtoMessage() {}
+
+func (x *GetAvailableSubjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAvailableSubjectsResponse.ProtoReflect.Descriptor instead.
+func (*GetAvailableSubjectsResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetAvailableSubjectsResponse) GetSubjects() []*SubjectSummary {
+	if x != nil {
+		return x.Subjects
+	}
+	return nil
+}
+
+func (x *GetAvailableSubjectsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetAvailableSubjectsResponse) GetCourseId() int32 {
+	if x != nil {
+		return x.CourseId
+	}
+	return 0
+}
+
+func (x *GetAvailableSubjectsResponse) GetModuleId() int32 {
+	if x != nil {
+		return x.ModuleId
+	}
+	return 0
+}
+
 var File_academic_proto protoreflect.FileDescriptor
 
 const file_academic_proto_rawDesc = "" +
@@ -1326,10 +1430,17 @@ const file_academic_proto_rawDesc = "" +
 	"\x1eCheckScheduleConflictsResponse\x12#\n" +
 	"\rhas_conflicts\x18\x01 \x01(\bR\fhasConflicts\x128\n" +
 	"\tconflicts\x18\x02 \x03(\v2\x1a.academic.ScheduleConflictR\tconflicts\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\xf7\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x1d\n" +
+	"\x1bGetAvailableSubjectsRequest\"\xa8\x01\n" +
+	"\x1cGetAvailableSubjectsResponse\x124\n" +
+	"\bsubjects\x18\x01 \x03(\v2\x18.academic.SubjectSummaryR\bsubjects\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1b\n" +
+	"\tcourse_id\x18\x03 \x01(\x05R\bcourseId\x12\x1b\n" +
+	"\tmodule_id\x18\x04 \x01(\x05R\bmoduleId2\x88\x03\n" +
 	"\x0fSubjectsService\x12a\n" +
 	"\vGetSubjects\x12\x1c.academic.GetSubjectsRequest\x1a\x1d.academic.GetSubjectsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/subjects\x12\x80\x01\n" +
-	"\x11GetSubjectDetails\x12\".academic.GetSubjectDetailsRequest\x1a#.academic.GetSubjectDetailsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/subjects/{subject_id}2\x92\x04\n" +
+	"\x11GetSubjectDetails\x12\".academic.GetSubjectDetailsRequest\x1a#.academic.GetSubjectDetailsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/subjects/{subject_id}\x12\x8e\x01\n" +
+	"\x14GetAvailableSubjects\x12%.academic.GetAvailableSubjectsRequest\x1a&.academic.GetAvailableSubjectsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/student/subjects/available2\x92\x04\n" +
 	"\x12EnrollmentsService\x12m\n" +
 	"\rEnrollSubject\x12\x1e.academic.EnrollSubjectRequest\x1a\x1f.academic.EnrollSubjectResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/enrollments\x12}\n" +
 	"\x0fUnenrollSubject\x12 .academic.UnenrollSubjectRequest\x1a!.academic.UnenrollSubjectResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/enrollments/{subject_id}\x12s\n" +
@@ -1348,7 +1459,7 @@ func file_academic_proto_rawDescGZIP() []byte {
 	return file_academic_proto_rawDescData
 }
 
-var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_academic_proto_goTypes = []any{
 	(*TimeSlot)(nil),                       // 0: academic.TimeSlot
 	(*ClassInfo)(nil),                      // 1: academic.ClassInfo
@@ -1369,7 +1480,9 @@ var file_academic_proto_goTypes = []any{
 	(*CheckScheduleConflictsRequest)(nil),  // 16: academic.CheckScheduleConflictsRequest
 	(*ScheduleConflict)(nil),               // 17: academic.ScheduleConflict
 	(*CheckScheduleConflictsResponse)(nil), // 18: academic.CheckScheduleConflictsResponse
-	(*timestamppb.Timestamp)(nil),          // 19: google.protobuf.Timestamp
+	(*GetAvailableSubjectsRequest)(nil),    // 19: academic.GetAvailableSubjectsRequest
+	(*GetAvailableSubjectsResponse)(nil),   // 20: academic.GetAvailableSubjectsResponse
+	(*timestamppb.Timestamp)(nil),          // 21: google.protobuf.Timestamp
 }
 var file_academic_proto_depIdxs = []int32{
 	0,  // 0: academic.ClassInfo.schedule:type_name -> academic.TimeSlot
@@ -1379,28 +1492,31 @@ var file_academic_proto_depIdxs = []int32{
 	3,  // 4: academic.GetSubjectsResponse.subjects:type_name -> academic.SubjectSummary
 	4,  // 5: academic.GetSubjectDetailsResponse.subject:type_name -> academic.SubjectDetails
 	1,  // 6: academic.Enrollment.enrolled_classes:type_name -> academic.ClassInfo
-	19, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
+	21, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
 	9,  // 8: academic.EnrollSubjectResponse.enrollment:type_name -> academic.Enrollment
 	9,  // 9: academic.GetMyEnrollmentsResponse.enrollments:type_name -> academic.Enrollment
 	0,  // 10: academic.ScheduleConflict.conflicting_time:type_name -> academic.TimeSlot
 	17, // 11: academic.CheckScheduleConflictsResponse.conflicts:type_name -> academic.ScheduleConflict
-	5,  // 12: academic.SubjectsService.GetSubjects:input_type -> academic.GetSubjectsRequest
-	7,  // 13: academic.SubjectsService.GetSubjectDetails:input_type -> academic.GetSubjectDetailsRequest
-	10, // 14: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
-	12, // 15: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
-	14, // 16: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
-	16, // 17: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
-	6,  // 18: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
-	8,  // 19: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
-	11, // 20: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
-	13, // 21: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
-	15, // 22: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
-	18, // 23: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
-	18, // [18:24] is the sub-list for method output_type
-	12, // [12:18] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	3,  // 12: academic.GetAvailableSubjectsResponse.subjects:type_name -> academic.SubjectSummary
+	5,  // 13: academic.SubjectsService.GetSubjects:input_type -> academic.GetSubjectsRequest
+	7,  // 14: academic.SubjectsService.GetSubjectDetails:input_type -> academic.GetSubjectDetailsRequest
+	19, // 15: academic.SubjectsService.GetAvailableSubjects:input_type -> academic.GetAvailableSubjectsRequest
+	10, // 16: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
+	12, // 17: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
+	14, // 18: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
+	16, // 19: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
+	6,  // 20: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
+	8,  // 21: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
+	20, // 22: academic.SubjectsService.GetAvailableSubjects:output_type -> academic.GetAvailableSubjectsResponse
+	11, // 23: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
+	13, // 24: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
+	15, // 25: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
+	18, // 26: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
+	20, // [20:27] is the sub-list for method output_type
+	13, // [13:20] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_academic_proto_init() }
@@ -1415,7 +1531,7 @@ func file_academic_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_academic_proto_rawDesc), len(file_academic_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

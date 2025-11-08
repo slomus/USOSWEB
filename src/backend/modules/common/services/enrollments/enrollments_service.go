@@ -359,6 +359,13 @@ func (s *EnrollmentsServer) GetMyEnrollments(ctx context.Context, req *pb.GetMyE
 		enrollments = append(enrollments, enrollment)
 	}
 
+	enrollmentsLog.LogInfo(fmt.Sprintf("Returning %d enrollments to client", len(enrollments)))
+	for i, e := range enrollments {
+			if i < 3 {
+					enrollmentsLog.LogDebug(fmt.Sprintf("Enrollment %d: SubjectID=%d Name=%s", i, e.SubjectId, e.SubjectName))
+			}
+	}
+
 	enrollmentsLog.LogInfo(fmt.Sprintf("Successfully returned %d enrollments", len(enrollments)))
 	return &pb.GetMyEnrollmentsResponse{
 		Enrollments: enrollments,

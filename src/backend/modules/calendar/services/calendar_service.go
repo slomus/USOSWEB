@@ -454,7 +454,7 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		LEFT JOIN teaching_staff ts ON ci.teaching_staff_id = ts.teaching_staff_id
 		LEFT JOIN users u ON ts.user_id = u.user_id
 		WHERE sc.album_nr = $1
-		  AND sch.valid_from <= $2
+		  AND sch.valid_from<= $2
 		  AND sch.valid_to >= $3
 		  AND sch.day_of_week BETWEEN 1 AND 5
 		GROUP BY sch.id, sch.class_id, s.name, c.class_type, sch.day_of_week, 
@@ -462,7 +462,7 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		ORDER BY sch.day_of_week, sch.start_time
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, albumNr, weekEnd, weekStart)
+	rows, err := s.db.QueryContext(ctx, query, albumNr, weekStart, weekEnd)
 	if err != nil {
 		calendarLog.LogError("Failed to query week schedule", err)
 		return nil, status.Error(codes.Internal, "failed to fetch schedule")
