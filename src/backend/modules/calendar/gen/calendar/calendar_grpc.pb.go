@@ -19,13 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CalendarService_GetUserEvents_FullMethodName          = "/modules.calendar.api.CalendarService/GetUserEvents"
-	CalendarService_CreateEvent_FullMethodName            = "/modules.calendar.api.CalendarService/CreateEvent"
-	CalendarService_GetClassSchedule_FullMethodName       = "/modules.calendar.api.CalendarService/GetClassSchedule"
-	CalendarService_GetAcademicCalendar_FullMethodName    = "/modules.calendar.api.CalendarService/GetAcademicCalendar"
-	CalendarService_GetCurrentSemesterInfo_FullMethodName = "/modules.calendar.api.CalendarService/GetCurrentSemesterInfo"
-	CalendarService_CreateAcademicEvent_FullMethodName    = "/modules.calendar.api.CalendarService/CreateAcademicEvent"
-	CalendarService_GetHolidays_FullMethodName            = "/modules.calendar.api.CalendarService/GetHolidays"
+	CalendarService_GetUserEvents_FullMethodName                = "/modules.calendar.api.CalendarService/GetUserEvents"
+	CalendarService_CreateEvent_FullMethodName                  = "/modules.calendar.api.CalendarService/CreateEvent"
+	CalendarService_GetClassSchedule_FullMethodName             = "/modules.calendar.api.CalendarService/GetClassSchedule"
+	CalendarService_GetAcademicCalendar_FullMethodName          = "/modules.calendar.api.CalendarService/GetAcademicCalendar"
+	CalendarService_GetCurrentSemesterInfo_FullMethodName       = "/modules.calendar.api.CalendarService/GetCurrentSemesterInfo"
+	CalendarService_CreateAcademicEvent_FullMethodName          = "/modules.calendar.api.CalendarService/CreateAcademicEvent"
+	CalendarService_GetHolidays_FullMethodName                  = "/modules.calendar.api.CalendarService/GetHolidays"
+	CalendarService_GetWeekSchedule_FullMethodName              = "/modules.calendar.api.CalendarService/GetWeekSchedule"
+	CalendarService_GetActiveRegistrationPeriods_FullMethodName = "/modules.calendar.api.CalendarService/GetActiveRegistrationPeriods"
+	CalendarService_GetUpcomingExams_FullMethodName             = "/modules.calendar.api.CalendarService/GetUpcomingExams"
 )
 
 // CalendarServiceClient is the client API for CalendarService service.
@@ -41,6 +44,9 @@ type CalendarServiceClient interface {
 	GetCurrentSemesterInfo(ctx context.Context, in *GetCurrentSemesterInfoRequest, opts ...grpc.CallOption) (*GetCurrentSemesterInfoResponse, error)
 	CreateAcademicEvent(ctx context.Context, in *CreateAcademicEventRequest, opts ...grpc.CallOption) (*CreateAcademicEventResponse, error)
 	GetHolidays(ctx context.Context, in *GetHolidaysRequest, opts ...grpc.CallOption) (*GetHolidaysResponse, error)
+	GetWeekSchedule(ctx context.Context, in *GetWeekScheduleRequest, opts ...grpc.CallOption) (*GetWeekScheduleResponse, error)
+	GetActiveRegistrationPeriods(ctx context.Context, in *GetActiveRegistrationPeriodsRequest, opts ...grpc.CallOption) (*GetActiveRegistrationPeriodsResponse, error)
+	GetUpcomingExams(ctx context.Context, in *GetUpcomingExamsRequest, opts ...grpc.CallOption) (*GetUpcomingExamsResponse, error)
 }
 
 type calendarServiceClient struct {
@@ -121,6 +127,36 @@ func (c *calendarServiceClient) GetHolidays(ctx context.Context, in *GetHolidays
 	return out, nil
 }
 
+func (c *calendarServiceClient) GetWeekSchedule(ctx context.Context, in *GetWeekScheduleRequest, opts ...grpc.CallOption) (*GetWeekScheduleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWeekScheduleResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetWeekSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) GetActiveRegistrationPeriods(ctx context.Context, in *GetActiveRegistrationPeriodsRequest, opts ...grpc.CallOption) (*GetActiveRegistrationPeriodsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetActiveRegistrationPeriodsResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetActiveRegistrationPeriods_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) GetUpcomingExams(ctx context.Context, in *GetUpcomingExamsRequest, opts ...grpc.CallOption) (*GetUpcomingExamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUpcomingExamsResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetUpcomingExams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CalendarServiceServer is the server API for CalendarService service.
 // All implementations must embed UnimplementedCalendarServiceServer
 // for forward compatibility.
@@ -134,6 +170,9 @@ type CalendarServiceServer interface {
 	GetCurrentSemesterInfo(context.Context, *GetCurrentSemesterInfoRequest) (*GetCurrentSemesterInfoResponse, error)
 	CreateAcademicEvent(context.Context, *CreateAcademicEventRequest) (*CreateAcademicEventResponse, error)
 	GetHolidays(context.Context, *GetHolidaysRequest) (*GetHolidaysResponse, error)
+	GetWeekSchedule(context.Context, *GetWeekScheduleRequest) (*GetWeekScheduleResponse, error)
+	GetActiveRegistrationPeriods(context.Context, *GetActiveRegistrationPeriodsRequest) (*GetActiveRegistrationPeriodsResponse, error)
+	GetUpcomingExams(context.Context, *GetUpcomingExamsRequest) (*GetUpcomingExamsResponse, error)
 	mustEmbedUnimplementedCalendarServiceServer()
 }
 
@@ -164,6 +203,15 @@ func (UnimplementedCalendarServiceServer) CreateAcademicEvent(context.Context, *
 }
 func (UnimplementedCalendarServiceServer) GetHolidays(context.Context, *GetHolidaysRequest) (*GetHolidaysResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHolidays not implemented")
+}
+func (UnimplementedCalendarServiceServer) GetWeekSchedule(context.Context, *GetWeekScheduleRequest) (*GetWeekScheduleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWeekSchedule not implemented")
+}
+func (UnimplementedCalendarServiceServer) GetActiveRegistrationPeriods(context.Context, *GetActiveRegistrationPeriodsRequest) (*GetActiveRegistrationPeriodsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetActiveRegistrationPeriods not implemented")
+}
+func (UnimplementedCalendarServiceServer) GetUpcomingExams(context.Context, *GetUpcomingExamsRequest) (*GetUpcomingExamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUpcomingExams not implemented")
 }
 func (UnimplementedCalendarServiceServer) mustEmbedUnimplementedCalendarServiceServer() {}
 func (UnimplementedCalendarServiceServer) testEmbeddedByValue()                         {}
@@ -312,6 +360,60 @@ func _CalendarService_GetHolidays_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CalendarService_GetWeekSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWeekScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).GetWeekSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_GetWeekSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).GetWeekSchedule(ctx, req.(*GetWeekScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_GetActiveRegistrationPeriods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetActiveRegistrationPeriodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).GetActiveRegistrationPeriods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_GetActiveRegistrationPeriods_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).GetActiveRegistrationPeriods(ctx, req.(*GetActiveRegistrationPeriodsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_GetUpcomingExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUpcomingExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).GetUpcomingExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_GetUpcomingExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).GetUpcomingExams(ctx, req.(*GetUpcomingExamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CalendarService_ServiceDesc is the grpc.ServiceDesc for CalendarService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +448,18 @@ var CalendarService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetHolidays",
 			Handler:    _CalendarService_GetHolidays_Handler,
+		},
+		{
+			MethodName: "GetWeekSchedule",
+			Handler:    _CalendarService_GetWeekSchedule_Handler,
+		},
+		{
+			MethodName: "GetActiveRegistrationPeriods",
+			Handler:    _CalendarService_GetActiveRegistrationPeriods_Handler,
+		},
+		{
+			MethodName: "GetUpcomingExams",
+			Handler:    _CalendarService_GetUpcomingExams_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

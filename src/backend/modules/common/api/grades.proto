@@ -21,7 +21,9 @@ message Grade {
   string added_by_name = 21;
 }
 
-message ListGradesRequest { optional int32 album_nr = 10; }
+message ListGradesRequest { 
+  optional int32 album_nr = 10; 
+}
 
 message ListGradesResponse {
   repeated Grade grades = 10;
@@ -43,6 +45,15 @@ message AddGradeResponse {
   string message = 11;
 }
 
+message GetRecentGradesRequest {
+  optional int32 limit = 10; 
+}
+
+message GetRecentGradesResponse {
+  repeated Grade grades = 10;
+  string message = 11;
+}
+
 service GradesService {
   rpc ListGrades(ListGradesRequest) returns (ListGradesResponse) {
     option (google.api.http) = {
@@ -54,6 +65,12 @@ service GradesService {
     option (google.api.http) = {
       post : "/api/grades"
       body : "*"
+    };
+  }
+
+  rpc GetRecentGrades(GetRecentGradesRequest) returns (GetRecentGradesResponse) {
+    option (google.api.http) = {
+      get : "/api/student/grades/recent"
     };
   }
 }

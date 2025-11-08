@@ -140,6 +140,76 @@ message Holiday {
   bool is_free_day = 13;
 }
 
+message ScheduleEntry {
+  int32 schedule_id = 10;
+  int32 class_id = 11;
+  string subject_name = 12;
+  string class_type = 13;
+  int32 day_of_week = 14; // 1=Pon, 2=Wt, ..., 5=Pt
+  string start_time = 15;
+  string end_time = 16;
+  string room = 17;
+  string building = 18;
+  string instructor_name = 19;
+}
+
+message GetWeekScheduleRequest {
+  optional string date = 10; // ISO format YYYY-MM-DD, domyślnie bieżący tydzień
+}
+
+message GetWeekScheduleResponse {
+  bool success = 10;
+  string message = 11;
+  repeated ScheduleEntry schedule = 12;
+  string week_start = 13; // Poniedziałek tego tygodnia
+  string week_end = 14;   // Piątek tego tygodnia
+}
+
+message RegistrationPeriod {
+  int32 calendar_id = 10;
+  string title = 11;
+  string description = 12;
+  string start_date = 13;
+  string end_date = 14;
+  string applies_to = 15; // 'all', 'year_1', subject alias, etc.
+  bool is_active = 16;
+  int32 days_remaining = 17;
+}
+
+message GetActiveRegistrationPeriodsRequest {
+}
+
+message GetActiveRegistrationPeriodsResponse {
+  bool success = 10;
+  string message = 11;
+  repeated RegistrationPeriod periods = 12;
+}
+
+message Exam {
+  int32 exam_id = 10;
+  int32 class_id = 11;
+  string subject_name = 12;
+  string exam_date = 13; // YYYY-MM-DD HH:MM:SS
+  string location = 14;
+  int32 duration_minutes = 15;
+  string description = 16;
+  string exam_type = 17; // final, retake, commission
+  int32 max_students = 18;
+  string class_type = 19;
+}
+
+message GetUpcomingExamsRequest {
+  optional int32 days_ahead = 10; // Domyślnie 30 dni
+}
+
+message GetUpcomingExamsResponse {
+  bool success = 10;
+  string message = 11;
+  repeated Exam exams = 12;
+  int32 total_count = 13;
+}
+
+
 // Calendar Service
 service CalendarService {
   rpc GetUserEvents(GetUserEventsRequest) returns (GetUserEventsResponse) {
@@ -187,6 +257,24 @@ service CalendarService {
   rpc GetHolidays(GetHolidaysRequest) returns (GetHolidaysResponse) {
     option (google.api.http) = {
       get : "/api/calendar/holidays"
+    };
+  }
+
+ rpc GetWeekSchedule(GetWeekScheduleRequest) returns (GetWeekScheduleResponse) {
+    option (google.api.http) = {
+      get : "/api/student/schedule/week"
+    };
+  }
+
+  rpc GetActiveRegistrationPeriods(GetActiveRegistrationPeriodsRequest) returns (GetActiveRegistrationPeriodsResponse) {
+    option (google.api.http) = {
+      get : "/api/registration/periods/active"
+    };
+  }
+
+  rpc GetUpcomingExams(GetUpcomingExamsRequest) returns (GetUpcomingExamsResponse) {
+    option (google.api.http) = {
+      get : "/api/student/exams/upcoming"
     };
   }
 }
