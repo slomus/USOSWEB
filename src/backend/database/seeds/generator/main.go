@@ -234,6 +234,22 @@ func main() {
 		log.Fatalf("Failed to generate relations: %v", err)
 	}
 
+  if err := updateStudentsWithCourseAndModule(db); err != nil {
+    log.Fatalf("Failed to update students: %v", err)
+	}
+
+	if err := generateSchedules(db); err != nil {
+			log.Fatalf("Failed to generate schedules: %v", err)
+	}
+
+	if err := generateClassCancellations(db); err != nil {
+			log.Fatalf("Failed to generate cancellations: %v", err)
+	}
+
+	if err := generateExams(db); err != nil {
+			log.Fatalf("Failed to generate exams: %v", err)
+	}	
+
 	printSummary(db)
 	log.Println(" Database seeding completed successfully")
 }
@@ -1414,13 +1430,394 @@ func generateProductionRelations(db *sql.DB) error {
 	}
 
 
+
+
+
+
+	return nil
+}
+
+
+func updateStudentsWithCourseAndModule(db *sql.DB) error {
+
+	var courseIDs []int
+	rows, err := db.Query("SELECT course_id FROM courses")
+	if err != nil {
+		return fmt.Errorf("failed to fetch courses: %w", err)
+	}
+	for rows.Next() {
+		var id int
+		rows.Scan(&id)
+		courseIDs = append(courseIDs, id)
+	}
+	rows.Close()
+
+	if len(courseIDs) == 0 {
+		return fmt.Errorf("no courses found")
+	}
+
+	moduleByCourse := make(map[int][]int)
+	rows, err = db.Query("SELECT module_id, course_id FROM modules")
+	if err != nil {
+		return fmt.Errorf("failed to fetch modules: %w", err)
+	}
+	for rows.Next() {
+		var moduleID, courseID int
+		rows.Scan(&moduleID, &courseID)
+		moduleByCourse[courseID] = append(moduleByCourse[courseID], moduleID)
+	}
+	rows.Close()
+
+	type Student struct {
+		albumNr int
+		year    int
+	}
+
+	var students []Student
+	rows, err = db.Query(`SELECT album_nr FROM students`)
+	if err != nil {
+			return fmt.Errorf("failed to fetch students: %w", err)
+	}
+	for rows.Next() {
+			var s Student
+			rows.Scan(&s.albumNr)
+			
+			if rand.Float32() < 0.2 {
+					s.year = 1
+			} else {
+					s.year = 2 + rand.Intn(4) 
+			}
+			
+			students = append(students, s)
+	}
+	rows.Close()
+
+
+	for _, student := range students {
+		courseID := courseIDs[rand.Intn(len(courseIDs))]
+		
+		var moduleID *int
+		
+		if student.year >= 2 {
+			if modules, exists := moduleByCourse[courseID]; exists && len(modules) > 0 {
+				selectedModule := modules[rand.Intn(len(modules))]
+				moduleID = &selectedModule
+			}
+		}
+
+		if moduleID != nil {
+			_, err = db.Exec(`
+				UPDATE students 
+				SET course_id = $1, module_id = $2
+				WHERE album_nr = $3
+			`, courseID, *moduleID, student.albumNr)
+		} else {
+			_, err = db.Exec(`
+				UPDATE students 
+				SET course_id = $1, module_id = NULL
+				WHERE album_nr = $2
+			`, courseID, student.albumNr)
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to update student %d: %w", student.albumNr, err)
+		}
+	}
+
+	return nil
+}
+
+func generateSchedules(db *sql.DB) error {
+
+	type Class struct {
+		classID   int
+		classType string
+	}
+
+	var classes []Class
+	rows, err := db.Query("SELECT class_id, class_type FROM classes")
+	if err != nil {
+		return fmt.Errorf("failed to fetch classes: %w", err)
+	}
+	for rows.Next() {
+		var c Class
+		rows.Scan(&c.classID, &c.classType)
+		classes = append(classes, c)
+	}
+	rows.Close()
+
+	log.Printf("Found %d classes", len(classes))
+
+	type TimeBlock struct {
+		startTime string
+		endTime   string
+	}
+
+	lectureBlocks := []TimeBlock{
+		{"08:00", "10:00"},
+		{"10:00", "12:00"},
+		{"12:00", "14:00"},
+	}
+
+	exerciseBlocks := []TimeBlock{
+		{"08:00", "10:00"},
+		{"10:00", "12:00"},
+		{"12:00", "14:00"},
+		{"14:00", "16:00"},
+	}
+
+	labBlocks := []TimeBlock{
+		{"14:00", "17:00"},
+		{"09:00", "12:00"},
+	}
+
+	days := []int{1, 2, 3, 4, 5}
+	
+	rooms := []string{
+		"A-101", "A-102", "A-201", "A-202", "A-301",
+		"B-101", "B-102", "B-201", "B-202",
+		"C-101", "C-102", "C-201", "C-301",
+	}
+
+	for _, class := range classes {
+		var blocks []TimeBlock
+		var numSlots int
+
+		switch class.classType {
+		case "lecture", "wykład":
+			blocks = lectureBlocks
+			numSlots = 1 
+		case "exercise", "ćwiczenia":
+			blocks = exerciseBlocks
+			numSlots = 1 + rand.Intn(2) 
+		case "lab", "laboratorium":
+			blocks = labBlocks
+			numSlots = 1 
+		default:
+			blocks = exerciseBlocks
+			numSlots = 1
+		}
+
+		validFrom := time.Date(2024, 10, 1, 0, 0, 0, 0, time.UTC)  
+		validTo := time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)    
+
+		buildings := []string{"Budynek A", "Budynek B", "Budynek C", "Laboratorium", "Aula"}
+
+		for i := 0; i < numSlots; i++ {
+			dayOfWeek := days[rand.Intn(len(days))]
+			block := blocks[rand.Intn(len(blocks))]
+			room := rooms[rand.Intn(len(rooms))]
+			building := buildings[rand.Intn(len(buildings))]
+
+			_, err := db.Exec(`
+				INSERT INTO schedules (class_id, day_of_week, start_time, end_time, room, building, frequency, valid_from, valid_to)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			`, class.classID, dayOfWeek, block.startTime, block.endTime, room, building, "weekly", validFrom, validTo)
+
+			if err != nil {
+				log.Printf("Warning: failed to insert schedule for class %d: %v", class.classID, err)
+				continue
+			}
+		}
+	}
+
+	log.Printf(" Successfully generated schedules for %d classes", len(classes))
+	return nil
+}
+
+func generateClassCancellations(db *sql.DB) error {
+	log.Println("Generating class cancellations...")
+
+	var scheduleIDs []int
+	rows, err := db.Query("SELECT id FROM schedules")
+	if err != nil {
+		return fmt.Errorf("failed to fetch schedules: %w", err)
+	}
+	for rows.Next() {
+		var id int
+		rows.Scan(&id)
+		scheduleIDs = append(scheduleIDs, id)
+	}
+	rows.Close()
+
+	numCancellations := len(scheduleIDs) * 5 / 100
+	if numCancellations < 1 {
+		numCancellations = 1
+	}
+
+	log.Printf("Generating %d cancellations (5%% of %d schedules)", numCancellations, len(scheduleIDs))
+
+	shuffled := make([]int, len(scheduleIDs))
+	copy(shuffled, scheduleIDs)
+	rand.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	})
+
+	reasons := []string{
+		"Choroba prowadzącego",
+		"Konferencja naukowa",
+		"Święto państwowe",
+		"Awaria sali wykładowej",
+		"Egzamin komisyjny",
+		"Urlop szkoleniowy prowadzącego",
+	}
+
+	for i := 0; i < numCancellations && i < len(shuffled); i++ {
+		scheduleID := shuffled[i]
+		
+		daysOffset := rand.Intn(90) - 60
+		cancelledDate := time.Now().AddDate(0, 0, daysOffset)
+		
+		reason := reasons[rand.Intn(len(reasons))]
+
+		_, err = db.Exec(`
+			INSERT INTO class_cancellations (schedule_id, cancelled_date, reason)
+			VALUES ($1, $2, $3)
+		`, scheduleID, cancelledDate, reason)
+
+		if err != nil {
+			log.Printf("Warning: failed to insert cancellation for schedule %d: %v", scheduleID, err)
+			continue
+		}
+	}
+
+	log.Printf(" Successfully generated %d class cancellations", numCancellations)
+	return nil
+}
+
+func generateExams(db *sql.DB) error {
+	log.Println("Generating exams...")
+
+	type ExamClass struct {
+		classID     int
+		subjectID   int
+		subjectName string
+		classType   string
+	}
+
+	var examClasses []ExamClass
+	rows, err := db.Query(`
+		SELECT c.class_id, c.subject_id, s.name, c.class_type
+		FROM classes c
+		JOIN subjects s ON c.subject_id = s.subject_id
+		WHERE c.credit = 'egzamin'
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to fetch exam classes: %w", err)
+	}
+	for rows.Next() {
+		var ec ExamClass
+		rows.Scan(&ec.classID, &ec.subjectID, &ec.subjectName, &ec.classType)
+		examClasses = append(examClasses, ec)
+	}
+	rows.Close()
+
+
+	if len(examClasses) == 0 {
+		log.Println("No classes with exam credit found, skipping exam generation")
+		return nil
+	}
+
+	examLocations := []string{
+		"Aula Magna",
+		"Sala A-401",
+		"Sala B-301",
+		"Sala C-201",
+		"Laboratorium E-101",
+		"Sala wykładowa A-100",
+		"Sala konferencyjna B-250",
+	}
+
+	
+
+	examDescriptions := map[string]string{
+		"final":      "Egzamin końcowy z przedmiotu",
+		"retake":     "Egzamin poprawkowy",
+		"commission": "Egzamin komisyjny",
+	}
+
+	for _, class := range examClasses {
+		numExams := 1
+		if rand.Float32() < 0.20 { 
+			numExams = 2
+		}
+
+		for i := 0; i < numExams; i++ {
+			var examDateTime time.Time
+			var examType string
+			
+			if i == 0 {
+				examType = "final"
+				
+				if rand.Float32() < 0.5 {
+					month := 1 + rand.Intn(2) 
+					day := 10 + rand.Intn(20)
+					hour := 8 + (rand.Intn(4) * 2) 
+					examDateTime = time.Date(2025, time.Month(month), day, hour, 0, 0, 0, time.UTC)
+				} else {
+					month := 6 + rand.Intn(2) 
+					day := 1 + rand.Intn(28)
+					hour := 8 + (rand.Intn(4) * 2) 
+					examDateTime = time.Date(2025, time.Month(month), day, hour, 0, 0, 0, time.UTC)
+				}
+			} else {
+				examType = "retake"
+				
+				var firstExamDate time.Time
+				err := db.QueryRow(`
+					SELECT exam_date FROM exams WHERE class_id = $1 ORDER BY exam_date LIMIT 1
+				`, class.classID).Scan(&firstExamDate)
+				
+				if err != nil {
+					examDateTime = time.Date(2025, 2, 20, 10, 0, 0, 0, time.UTC)
+				} else {
+					examDateTime = firstExamDate.AddDate(0, 0, 14)
+				}
+			}
+
+			durationMinutes := 90 
+			switch class.classType {
+			case "wykład":
+				durationMinutes = 120 
+			case "laboratorium", "projekt":
+				durationMinutes = 90
+			case "ćwiczenia", "seminarium":
+				durationMinutes = 60
+			default:
+				durationMinutes = 90
+			}
+
+			location := examLocations[rand.Intn(len(examLocations))]
+			description := examDescriptions[examType]
+			
+			var maxStudents int
+			err := db.QueryRow(`SELECT capacity FROM classes WHERE class_id = $1`, class.classID).Scan(&maxStudents)
+			if err != nil || maxStudents == 0 {
+				maxStudents = 50 
+			}
+
+			_, err = db.Exec(`
+				INSERT INTO exams (class_id, exam_date, location, duration_minutes, description, exam_type, max_students)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
+			`, class.classID, examDateTime, location, durationMinutes, description, examType, maxStudents)
+
+			if err != nil {
+				log.Printf("Warning: failed to insert exam for class %d: %v", class.classID, err)
+				continue
+			}
+		}
+	}
+
+	var totalExams int
+	db.QueryRow("SELECT COUNT(*) FROM exams").Scan(&totalExams)
+	log.Printf(" Successfully generated %d exams for classes with credit='egzamin'", totalExams)
 	return nil
 }
 
 func printSummary(db *sql.DB) {
 	tables := []string{"faculties", "buildings", "subjects", "courses", "modules", "classes",
 		"course_subjects", "module_subjects", "users", "students", "teaching_staff", "administrative_staff",
-		"course_instructors", "student_classes", "grades", "messages", "applications", "surveys"}
+		"course_instructors", "student_classes", "grades", "messages", "applications", "surveys", "schedules", "exams", "class_cancellations"}
 
 	for _, table := range tables {
 		var count int

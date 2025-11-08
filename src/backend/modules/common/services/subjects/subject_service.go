@@ -72,7 +72,7 @@ func (s *SubjectsServer) GetSubjects(ctx context.Context, req *pb.GetSubjectsReq
 				(CURRENT_DATE BETWEEN ac.start_date AND ac.end_date) as is_active
 			FROM academic_calendar ac
 			WHERE ac.event_type = 'registration'
-			  AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
+				AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
 		)
 		SELECT 
 			ss.subject_id,
@@ -89,15 +89,19 @@ func (s *SubjectsServer) GetSubjects(ctx context.Context, req *pb.GetSubjectsReq
 		FROM subject_stats ss
 		LEFT JOIN enrollment_check ec ON ss.subject_id = ec.subject_id
 		LEFT JOIN registration_periods rp ON ss.alias = rp.subject_alias
+		WHERE ($2::int IS NULL OR EXISTS (
+			SELECT 1 FROM course_subjects cs 
+			WHERE cs.subject_id = ss.subject_id 
+			AND cs.course_id = $2
+		))
 		ORDER BY ss.name
 	`
-
-	rows, err := s.db.Query(query, albumNr)
-	if err != nil {
-		subjectsLog.LogError("Failed to fetch subjects", err)
-		return nil, status.Error(codes.Internal, "failed to fetch subjects")
+	var courseID *int32
+	if req.CourseId != nil {
+		courseID = req.CourseId
 	}
-	defer rows.Close()
+
+	rows, err := s.db.Query(query, albumNr, courseID)	
 
 	var subjects []*pb.SubjectSummary
 	for rows.Next() {
@@ -137,6 +141,13 @@ func (s *SubjectsServer) GetSubjects(ctx context.Context, req *pb.GetSubjectsReq
 	if err = rows.Err(); err != nil {
 		subjectsLog.LogError("Error occurred during rows iteration", err)
 		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Returning %d subjects to client", len(subjects)))
+	for i, s := range subjects {
+			if i < 3 {
+					subjectsLog.LogDebug(fmt.Sprintf("Subject %d: ID=%d Name=%s", i, s.SubjectId, s.Name))
+			}
 	}
 
 	subjectsLog.LogInfo(fmt.Sprintf("Successfully returned %d subjects", len(subjects)))
@@ -309,10 +320,149 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 		}
 	}
 
+
+
 	subjectsLog.LogInfo(fmt.Sprintf("Successfully returned subject details for subject_id: %d", req.SubjectId))
 	return &pb.GetSubjectDetailsResponse{
 		Subject: &subject,
 		Message: "Subject details retrieved successfully",
+	}, nil
+}
+
+func (s *SubjectsServer) GetAvailableSubjects(ctx context.Context, req *pb.GetAvailableSubjectsRequest) (*pb.GetAvailableSubjectsResponse, error) {
+	subjectsLog.LogInfo("GetAvailableSubjects request received")
+	
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+	
+	var albumNr int
+	var courseID int32
+	var moduleID sql.NullInt32
+	
+	err = s.db.QueryRow(`
+		SELECT album_nr, course_id, module_id 
+		FROM students 
+		WHERE user_id = $1
+	`, userID).Scan(&albumNr, &courseID, &moduleID)
+	
+	if err != nil {
+		subjectsLog.LogError("Failed to get student info", err)
+		return nil, status.Error(codes.Internal, "failed to get student info")
+	}
+	
+	query := `
+		WITH available_subjects AS (
+			SELECT DISTINCT s.subject_id
+			FROM subjects s
+			WHERE EXISTS (
+				SELECT 1 FROM course_subjects cs 
+				WHERE cs.subject_id = s.subject_id 
+				AND cs.course_id = $2
+			)
+			OR ($3::int IS NOT NULL AND EXISTS (
+				SELECT 1 FROM module_subjects ms
+				WHERE ms.subject_id = s.subject_id
+				AND ms.module_id = $3
+			))
+		),
+		subject_stats AS (
+			SELECT 
+				s.subject_id,
+				s.alias,
+				s.name,
+				s.ects,
+				SUM(c.capacity) as total_capacity,
+				SUM(c.current_capacity) as total_enrolled
+			FROM subjects s
+			JOIN available_subjects avs ON s.subject_id = avs.subject_id
+			LEFT JOIN classes c ON s.subject_id = c.subject_id
+			GROUP BY s.subject_id, s.alias, s.name, s.ects
+		),
+		enrollment_check AS (
+			SELECT DISTINCT
+				cl.subject_id,
+				TRUE as is_enrolled
+			FROM student_classes sc
+			JOIN classes cl ON sc.class_id = cl.class_id
+			WHERE sc.album_nr = $1
+		),
+		registration_periods AS (
+			SELECT 
+				ac.applies_to as subject_alias,
+				ac.start_date::text as start_date,
+				ac.end_date::text as end_date,
+				(CURRENT_DATE BETWEEN ac.start_date AND ac.end_date) as is_active
+			FROM academic_calendar ac
+			WHERE ac.event_type = 'registration'
+			  AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
+		)
+		SELECT 
+			ss.subject_id,
+			ss.alias,
+			ss.name,
+			ss.ects,
+			COALESCE(ss.total_capacity, 0),
+			COALESCE(ss.total_enrolled, 0),
+			COALESCE(ss.total_capacity - ss.total_enrolled, 0),
+			COALESCE(ec.is_enrolled, FALSE),
+			rp.start_date,
+			rp.end_date,
+			COALESCE(rp.is_active, FALSE)
+		FROM subject_stats ss
+		LEFT JOIN enrollment_check ec ON ss.subject_id = ec.subject_id
+		LEFT JOIN registration_periods rp ON ss.alias = rp.subject_alias
+		ORDER BY ss.name
+	`
+	
+	rows, err := s.db.Query(query, albumNr, courseID, moduleID)
+
+	var subjects []*pb.SubjectSummary
+		for rows.Next() {
+			var subject pb.SubjectSummary
+			var startDate, endDate sql.NullString
+			var regIsActive bool
+
+			err := rows.Scan(
+				&subject.SubjectId,
+				&subject.Alias,
+				&subject.Name,
+				&subject.Ects,
+				&subject.TotalCapacity,
+				&subject.TotalEnrolled,
+				&subject.AvailableSpots,
+				&subject.IsEnrolled,
+				&startDate,
+				&endDate,
+				&regIsActive,
+			)
+			if err != nil {
+				subjectsLog.LogError("Failed to scan subject row", err)
+				continue
+			}
+
+			if startDate.Valid && endDate.Valid {
+				subject.RegistrationPeriod = &pb.RegistrationPeriod{
+					StartDate: startDate.String,
+					EndDate:   endDate.String,
+					IsActive:  regIsActive,
+				}
+			}
+
+			subjects = append(subjects, &subject)
+		}
+
+		if err = rows.Err(); err != nil {
+			subjectsLog.LogError("Error occurred during rows iteration", err)
+			return nil, status.Error(codes.Internal, "database error")
+		}
+
+	return &pb.GetAvailableSubjectsResponse{
+		Subjects: subjects,
+		Message: fmt.Sprintf("Found %d available subjects", len(subjects)),
+		CourseId: courseID,
+		ModuleId: func() int32 { if moduleID.Valid { return moduleID.Int32 }; return 0 }(),
 	}, nil
 }
 

@@ -1765,7 +1765,7 @@ func sendPasswordResetEmail(email, token string) bool {
 
 	_, err = client.SendEmail(context.Background(), &messagingpb.SendEmailRequest{
 		To:      email,
-		From:    "noreply@usosweb.com",
+	//	From:    "noreply@usosweb.com",
 		Subject: "Password Reset Request",
 		Body:    body,
 	})

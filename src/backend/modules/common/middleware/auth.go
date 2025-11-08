@@ -18,28 +18,27 @@ var log = logger.NewLogger("auth-middleware")
 func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
-
 		log.LogDebug(fmt.Sprintf("Processing request: %s", info.FullMethod))
-
+		
 		if info.FullMethod == "/modules.common.api.AuthService/Login" ||
 			info.FullMethod == "/modules.common.api.AuthService/Register" ||
 			info.FullMethod == "/modules.common.api.AuthService/Logout" ||
 			info.FullMethod == "/modules.common.api.AuthService/ForgotPassword" ||
 			info.FullMethod == "/modules.common.api.AuthService/ResetPassword" {
-
 			log.LogDebug(fmt.Sprintf("Skipping auth for public endpoint: %s", info.FullMethod))
 			return handler(ctx, req)
 		}
-
+		
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			log.LogWarn("Request without metadata - rejecting")
 			return nil, status.Error(codes.Unauthenticated, "missing credentials")
 		}
-
+		
+		md = md.Copy()
+		
 		var token string
 		var tokenType string
-
 		if info.FullMethod == "/modules.common.api.AuthService/RefreshToken" {
 			refreshTokens := md.Get("refresh_token")
 			if len(refreshTokens) == 0 || refreshTokens[0] == "" {
@@ -57,7 +56,7 @@ func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 			token = tokens[0]
 			tokenType = "access"
 		}
-
+		
 		var isBlacklisted bool
 		err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token = $1)", token).Scan(&isBlacklisted)
 		if err != nil {
@@ -66,21 +65,20 @@ func AuthInterceptorWithDB(db *sql.DB) grpc.UnaryServerInterceptor {
 			log.LogWarn(fmt.Sprintf("Attempt to use blacklisted %s token", tokenType))
 			return nil, status.Error(codes.Unauthenticated, "token has been invalidated")
 		}
-
+		
 		claims, err := auth.ValidateToken(token)
 		if err != nil {
 			log.LogError(fmt.Sprintf("Validation of %s token failed", tokenType), err)
 			return nil, status.Error(codes.Unauthenticated, "invalid token")
 		}
-
-		newCtx := context.WithValue(ctx, "user_id", claims.UserID)
-
+		
 		md.Set("user_id", fmt.Sprintf("%d", claims.UserID))
-		newCtx = metadata.NewIncomingContext(newCtx, md)
-
+		newCtx := metadata.NewIncomingContext(ctx, md)
+		newCtx = context.WithValue(newCtx, "user_id", claims.UserID)
+		
 		duration := time.Since(start).Milliseconds()
 		log.LogInfo(fmt.Sprintf("User %d authorization successful in %dms", claims.UserID, duration))
-
+		
 		return handler(newCtx, req)
 	}
 }

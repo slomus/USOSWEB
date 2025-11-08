@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+  "google.golang.org/grpc/metadata"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc/codes"
@@ -379,4 +380,313 @@ func getWeekendsInRange(startDate, endDate string) []string {
 	}
 
 	return weekends
+}
+
+func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekScheduleRequest) (*pb.GetWeekScheduleResponse, error) {
+	calendarLog.LogInfo("GetWeekSchedule request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		calendarLog.LogError("Failed to get user_id from context", err)
+		return &pb.GetWeekScheduleResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var albumNr int32
+	err = s.db.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &pb.GetWeekScheduleResponse{
+				Success: false,
+				Message: "User is not a student",
+			}, status.Error(codes.PermissionDenied, "user is not a student")
+		}
+		calendarLog.LogError("Failed to get album_nr", err)
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	var targetDate time.Time
+	if req.Date != nil && *req.Date != "" {
+		targetDate, err = time.Parse("2006-01-02", *req.Date)
+		if err != nil {
+			return &pb.GetWeekScheduleResponse{
+				Success: false,
+				Message: "Invalid date format. Use YYYY-MM-DD",
+			}, status.Error(codes.InvalidArgument, "invalid date format")
+		}
+	} else {
+		targetDate = time.Now()
+	}
+
+	weekday := int(targetDate.Weekday())
+	if weekday == 0 { 
+		weekday = 7
+	}
+	
+	weekStart := targetDate.AddDate(0, 0, -(weekday - 1)) 
+	weekEnd := weekStart.AddDate(0, 0, 4)                 
+
+	query := `
+		SELECT 
+			sch.id as schedule_id,
+			sch.class_id,
+			s.name as subject_name,
+			c.class_type,
+			sch.day_of_week,
+			sch.start_time,
+			sch.end_time,
+			sch.room,
+			sch.building,
+			COALESCE(
+				STRING_AGG(
+					DISTINCT CONCAT(u.name, ' ', u.surname), 
+					', '
+				),
+				'Nie przypisano'
+			) as instructor_name
+		FROM schedules sch
+		JOIN classes c ON sch.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		JOIN student_classes sc ON c.class_id = sc.class_id
+		LEFT JOIN course_instructors ci ON c.class_id = ci.class_id
+		LEFT JOIN teaching_staff ts ON ci.teaching_staff_id = ts.teaching_staff_id
+		LEFT JOIN users u ON ts.user_id = u.user_id
+		WHERE sc.album_nr = $1
+		  AND sch.valid_from<= $2
+		  AND sch.valid_to >= $3
+		  AND sch.day_of_week BETWEEN 1 AND 5
+		GROUP BY sch.id, sch.class_id, s.name, c.class_type, sch.day_of_week, 
+		         sch.start_time, sch.end_time, sch.room, sch.building
+		ORDER BY sch.day_of_week, sch.start_time
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, albumNr, weekStart, weekEnd)
+	if err != nil {
+		calendarLog.LogError("Failed to query week schedule", err)
+		return nil, status.Error(codes.Internal, "failed to fetch schedule")
+	}
+	defer rows.Close()
+
+	var schedule []*pb.ScheduleEntry
+	for rows.Next() {
+		entry := &pb.ScheduleEntry{}
+		
+		err := rows.Scan(
+			&entry.ScheduleId,
+			&entry.ClassId,
+			&entry.SubjectName,
+			&entry.ClassType,
+			&entry.DayOfWeek,
+			&entry.StartTime,
+			&entry.EndTime,
+			&entry.Room,
+			&entry.Building,
+			&entry.InstructorName,
+		)
+		
+		if err != nil {
+			calendarLog.LogError("Failed to scan schedule entry", err)
+			continue
+		}
+		
+		schedule = append(schedule, entry)
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Successfully returned %d schedule entries for student %d", len(schedule), albumNr))
+	return &pb.GetWeekScheduleResponse{
+		Success:   true,
+		Message:   "Week schedule retrieved successfully",
+		Schedule:  schedule,
+		WeekStart: weekStart.Format("2006-01-02"),
+		WeekEnd:   weekEnd.Format("2006-01-02"),
+	}, nil
+}
+
+func getUserIDFromContext(ctx context.Context) (int64, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, fmt.Errorf("no metadata in context")
+	}
+	
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return 0, fmt.Errorf("no user_id in metadata")
+	}
+	
+	var userID int64
+	_, err := fmt.Sscanf(userIDs[0], "%d", &userID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user_id format: %w", err)
+	}
+	
+	return userID, nil
+}
+
+
+func (s *CalendarServer) GetActiveRegistrationPeriods(ctx context.Context, req *pb.GetActiveRegistrationPeriodsRequest) (*pb.GetActiveRegistrationPeriodsResponse, error) {
+	calendarLog.LogInfo("GetActiveRegistrationPeriods request received")
+
+	query := `
+		SELECT 
+			calendar_id,
+			title,
+			COALESCE(description, '') as description,
+			start_date,
+			end_date,
+			COALESCE(applies_to, 'all') as applies_to,
+			(CURRENT_DATE BETWEEN start_date AND end_date) as is_active,
+			CASE 
+				WHEN CURRENT_DATE <= end_date THEN (end_date - CURRENT_DATE)
+				ELSE 0
+			END as days_remaining
+		FROM academic_calendar
+		WHERE event_type = 'registration'
+		ORDER BY start_date DESC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		calendarLog.LogError("Failed to query registration periods", err)
+		return nil, status.Error(codes.Internal, "failed to fetch registration periods")
+	}
+	defer rows.Close()
+
+	var periods []*pb.RegistrationPeriod
+	for rows.Next() {
+		period := &pb.RegistrationPeriod{}
+		var startDate, endDate time.Time
+		
+		err := rows.Scan(
+			&period.CalendarId,
+			&period.Title,
+			&period.Description,
+			&startDate,
+			&endDate,
+			&period.AppliesTo,
+			&period.IsActive,
+			&period.DaysRemaining,
+		)
+		
+		if err != nil {
+			calendarLog.LogError("Failed to scan registration period", err)
+			continue
+		}
+		
+		period.StartDate = startDate.Format("2006-01-02")
+		period.EndDate = endDate.Format("2006-01-02")
+		periods = append(periods, period)
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Successfully returned %d registration periods", len(periods)))
+	return &pb.GetActiveRegistrationPeriodsResponse{
+		Success: true,
+		Message: fmt.Sprintf("Found %d registration periods", len(periods)),
+		Periods: periods,
+	}, nil
+}
+
+
+func (s *CalendarServer) GetUpcomingExams(ctx context.Context, req *pb.GetUpcomingExamsRequest) (*pb.GetUpcomingExamsResponse, error) {
+	calendarLog.LogInfo("GetUpcomingExams request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		calendarLog.LogError("Failed to get user_id from context", err)
+		return &pb.GetUpcomingExamsResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var albumNr int32
+	err = s.db.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &pb.GetUpcomingExamsResponse{
+				Success: false,
+				Message: "User is not a student",
+			}, status.Error(codes.PermissionDenied, "user is not a student")
+		}
+		calendarLog.LogError("Failed to get album_nr", err)
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	daysAhead := int32(30)
+	if req.DaysAhead != nil && *req.DaysAhead > 0 {
+		daysAhead = *req.DaysAhead
+	}
+
+	now := time.Now()
+	endDate := now.AddDate(0, 0, int(daysAhead))
+
+	query := `
+		SELECT 
+			e.id as exam_id,
+			e.class_id,
+			s.name as subject_name,
+			e.exam_date,
+			COALESCE(e.location, 'Nie podano') as location,
+			COALESCE(e.duration_minutes, 90) as duration_minutes,
+			COALESCE(e.description, '') as description,
+			COALESCE(e.exam_type, 'final') as exam_type,
+			COALESCE(e.max_students, 0) as max_students,
+			c.class_type
+		FROM exams e
+		JOIN classes c ON e.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		JOIN student_classes sc ON c.class_id = sc.class_id
+		WHERE sc.album_nr = $1
+		  AND e.exam_date >= $2
+		  AND e.exam_date <= $3
+		ORDER BY e.exam_date
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, albumNr, now, endDate)
+	if err != nil {
+		calendarLog.LogError("Failed to query upcoming exams", err)
+		return nil, status.Error(codes.Internal, "failed to fetch exams")
+	}
+	defer rows.Close()
+
+	var exams []*pb.Exam
+	for rows.Next() {
+		exam := &pb.Exam{}
+		var examDate time.Time
+		
+		err := rows.Scan(
+			&exam.ExamId,
+			&exam.ClassId,
+			&exam.SubjectName,
+			&examDate,
+			&exam.Location,
+			&exam.DurationMinutes,
+			&exam.Description,
+			&exam.ExamType,
+			&exam.MaxStudents,
+			&exam.ClassType,
+		)
+		
+		if err != nil {
+			calendarLog.LogError("Failed to scan exam", err)
+			continue
+		}
+		
+		exam.ExamDate = examDate.Format("2006-01-02 15:04:05")
+		exams = append(exams, exam)
+	}
+
+	message := fmt.Sprintf("Found %d upcoming exams in the next %d days", len(exams), daysAhead)
+	if len(exams) == 0 {
+		message = fmt.Sprintf("No upcoming exams in the next %d days", daysAhead)
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Successfully returned %d upcoming exams for student %d", len(exams), albumNr))
+	return &pb.GetUpcomingExamsResponse{
+		Success:    true,
+		Message:    message,
+		Exams:      exams,
+		TotalCount: int32(len(exams)),
+	}, nil
 }

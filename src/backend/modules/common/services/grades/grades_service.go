@@ -289,3 +289,109 @@ func getString(ns sql.NullString) string {
 	}
 	return ""
 }
+
+func (s *GradesServer) GetRecentGrades(ctx context.Context, req *pb.GetRecentGradesRequest) (*pb.GetRecentGradesResponse, error) {
+	gradesLog.LogInfo("GetRecentGrades request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		gradesLog.LogError("Failed to get user_id from context", err)
+		return &pb.GetRecentGradesResponse{
+			Grades:  []*pb.Grade{},
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var albumNr int32
+	err = s.db.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			gradesLog.LogWarn(fmt.Sprintf("User %d is not a student", userID))
+			return &pb.GetRecentGradesResponse{
+				Grades:  []*pb.Grade{},
+				Message: "User is not a student",
+			}, status.Error(codes.PermissionDenied, "user is not a student")
+		}
+		gradesLog.LogError("Failed to get album_nr", err)
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	limit := int32(10)
+	if req.Limit != nil && *req.Limit > 0 {
+		limit = *req.Limit
+	}
+
+	query := `
+		SELECT
+			g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+			g.added_by_teaching_staff_id, g.comment, g.created_at,
+			s.name as subject_name,
+			CONCAT(ts.degree, ' ', u.name, ' ', u.surname) as added_by_name
+		FROM grades g
+		LEFT JOIN classes c ON g.class_id = c.class_id
+		LEFT JOIN subjects s ON c.subject_id = s.subject_id
+		LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+		LEFT JOIN users u ON ts.user_id = u.user_id
+		WHERE g.album_nr = $1
+		ORDER BY g.created_at DESC
+		LIMIT $2
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, albumNr, limit)
+	if err != nil {
+		gradesLog.LogError("Failed to query recent grades", err)
+		return nil, status.Error(codes.Internal, "failed to fetch recent grades")
+	}
+	defer rows.Close()
+
+	var result []*pb.Grade
+	for rows.Next() {
+		g := &pb.Grade{}
+		var createdAt time.Time
+		var subjectName, addedByName string
+		var comment sql.NullString
+
+		if err := rows.Scan(
+			&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value,
+			&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &comment,
+			&createdAt, &subjectName, &addedByName); err != nil {
+			gradesLog.LogError("Failed to scan grade row", err)
+			continue
+		}
+		
+		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
+		g.SubjectName = subjectName
+		g.AddedByName = addedByName
+		if comment.Valid {
+			g.Comment = comment.String
+		}
+		
+		result = append(result, g)
+	}
+
+	gradesLog.LogInfo(fmt.Sprintf("Successfully returned %d recent grades for student %d", len(result), albumNr))
+	return &pb.GetRecentGradesResponse{
+		Grades:  result,
+		Message: "Recent grades retrieved successfully",
+	}, nil
+}
+
+func getUserIDFromContext(ctx context.Context) (int64, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, fmt.Errorf("no metadata in context")
+	}
+	
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return 0, fmt.Errorf("no user_id in metadata")
+	}
+	
+	var userID int64
+	_, err := fmt.Sscanf(userIDs[0], "%d", &userID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user_id format: %w", err)
+	}
+	
+	return userID, nil
+}

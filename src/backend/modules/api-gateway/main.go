@@ -308,6 +308,7 @@ func main() {
 		"DELETE /api/enrollments/{subject_id}",
     "GET  /api/enrollments",
     "POST /api/enrollments/check-conflicts",		
+
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))
