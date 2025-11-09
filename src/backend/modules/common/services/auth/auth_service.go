@@ -1196,110 +1196,154 @@ func (s *AuthServer) getUserRoleFromDB(ctx context.Context, userID int64) (UserR
 	return RoleUnknown, nil
 }
 
+
 func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		authLog.LogWarn("GetUsers: Brak metadanych")
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "No metadata",
-			Status:  401,
-		}, nil
-	}
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        authLog.LogWarn("GetUsers: Brak metadanych")
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "No metadata",
+            Status:  401,
+        }, nil
+    }
 
-	tokens := md.Get("authorization")
-	if len(tokens) == 0 {
-		authLog.LogWarn("GetUsers: Brak tokenu autoryzacji")
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "No authorization token",
-			Status:  401,
-		}, nil
-	}
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        authLog.LogWarn("GetUsers: Brak tokenu autoryzacji")
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "No authorization token",
+            Status:  401,
+        }, nil
+    }
 
-	claims, err := auth.ValidateToken(tokens[0])
-	if err != nil {
-		authLog.LogWarn(fmt.Sprintf("GetUsers: Invalid token: %v", err))
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Invalid token",
-			Status:  401,
-		}, nil
-	}
+    claims, err := auth.ValidateToken(tokens[0])
+    if err != nil {
+        authLog.LogWarn(fmt.Sprintf("GetUsers: Invalid token: %v", err))
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Invalid token",
+            Status:  401,
+        }, nil
+    }
 
-	userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
-	if err != nil {
-		authLog.LogError("GetUsers: Error checking user role", err)
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Error while checking credentials",
-			Status:  500,
-		}, nil
-	}
+    userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
+    if err != nil {
+        authLog.LogError("GetUsers: Error checking user role", err)
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Error while checking credentials",
+            Status:  500,
+        }, nil
+    }
 
-	if userRole != RoleAdmin {
-		authLog.LogWarn(fmt.Sprintf("GetUsers: Access denied for user %d with role %s", claims.UserID, userRole))
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Only administrators can access this data",
-			Status:  403,
-		}, nil
-	}
+    if userRole != RoleAdmin && userRole != RoleTeacher {
+        authLog.LogWarn(fmt.Sprintf("GetUsers: Access denied for user %d with role %s", claims.UserID, userRole))
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Access denied",
+            Status:  403,
+        }, nil
+    }
 
-	authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
+    var query string
+    var args []interface{}
 
-	query := `
-        SELECT u.user_id, u.name, u.surname, u.email, u.active,
-               CASE
-                   WHEN s.user_id IS NOT NULL THEN 'student'
-                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
-                   WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
-                   ELSE 'unknown'
-               END as role
-        FROM users u
-        LEFT JOIN students s ON u.user_id = s.user_id
-        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
-        LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
-        ORDER BY u.user_id
-    `
+    if userRole == RoleAdmin {
+        authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
+        query = `
+            SELECT u.user_id, u.name, u.surname, u.email, u.active,
+                   CASE
+                       WHEN s.user_id IS NOT NULL THEN 'student'
+                       WHEN ts.user_id IS NOT NULL THEN 'teacher'
+                       WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
+                       ELSE 'unknown'
+                   END as role,
+                   s.album_nr,
+                   ts.teaching_staff_id,
+                   admin_staff.administrative_staff_id
+            FROM users u
+            LEFT JOIN students s ON u.user_id = s.user_id
+            LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+            LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
+            ORDER BY u.user_id
+        `
+    } else {
+        authLog.LogInfo(fmt.Sprintf("GetUsers: Teacher user %d requesting students list", claims.UserID))
 
-	rows, err := s.db.Query(query)
-	if err != nil {
-		authLog.LogError("GetUsers SQL error", err)
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Error fetching users",
-			Status:  500,
-		}, nil
-	}
-	defer rows.Close()
+        var teachingStaffID int64
+        err = s.db.QueryRow("SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", claims.UserID).Scan(&teachingStaffID)
+        if err != nil {
+            authLog.LogError("GetUsers: Error getting teaching_staff_id", err)
+            return &pb.GetUsersResponse{
+                Users:   nil,
+                Success: false,
+                Message: "Error while checking credentials",
+                Status:  500,
+            }, nil
+        }
 
-	var users []*pb.User
-	for rows.Next() {
-		user := &pb.User{}
-		err := rows.Scan(&user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role)
-		if err != nil {
-			authLog.LogWarn(fmt.Sprintf("Error scanning user row: %v", err))
-			continue
-		}
-		users = append(users, user)
-	}
+        query = `
+            SELECT DISTINCT u.user_id, u.name, u.surname, u.email, u.active, 'student' as role,
+                   s.album_nr, NULL as teaching_staff_id, NULL as administrative_staff_id
+            FROM users u
+            JOIN students s ON u.user_id = s.user_id
+            JOIN student_classes sc ON s.album_nr = sc.album_nr
+            JOIN course_instructors ci ON sc.class_id = ci.class_id
+            WHERE ci.teaching_staff_id = $1
+            ORDER BY u.user_id
+        `
+        args = []interface{}{teachingStaffID}
+    }
 
-	authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to admin user %d", len(users), claims.UserID))
+    var rows *sql.Rows
+    if len(args) > 0 {
+        rows, err = s.db.Query(query, args...)
+    } else {
+        rows, err = s.db.Query(query)
+    }
 
-	return &pb.GetUsersResponse{
-		Users:   users,
-		Success: true,
-		Message: "Users retrieved successfully",
-		Status:  200,
-	}, nil
+    if err != nil {
+        authLog.LogError("GetUsers SQL error", err)
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Error fetching users",
+            Status:  500,
+        }, nil
+    }
+    defer rows.Close()
+
+    var users []*pb.User
+    for rows.Next() {
+        user := &pb.User{}
+        err := rows.Scan(
+            &user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role,
+            &user.AlbumNr, &user.TeachingStaffId, &user.AdministrativeStaffId,
+        )
+        if err != nil {
+            authLog.LogWarn(fmt.Sprintf("Error scanning user row: %v", err))
+            continue
+        }
+        users = append(users, user)
+    }
+
+    authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to %s user %d", len(users), userRole, claims.UserID))
+
+    return &pb.GetUsersResponse{
+        Users:   users,
+        Success: true,
+        Message: "Users retrieved successfully",
+        Status:  200,
+    }, nil
 }
+
 
 // SayHello implementuje AuthHello service
 func (s *AuthServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
