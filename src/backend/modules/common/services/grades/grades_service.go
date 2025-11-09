@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-
+	"strings"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
@@ -52,17 +52,18 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 	_ = teachingStaffID
 
 	query := `
-       SELECT
-    g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
-    g.added_by_teaching_staff_id, g.comment, g.created_at,
-    s.name as subject_name,
-    CONCAT(ts.degree, ' ', u.name, ' ', u.surname) as added_by_name
-FROM grades g
-LEFT JOIN classes c ON g.class_id = c.class_id
-LEFT JOIN subjects s ON c.subject_id = s.subject_id
-LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
-LEFT JOIN users u ON ts.user_id = u.user_id
-WHERE g.album_nr = $1
+		SELECT
+			g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+			g.added_by_teaching_staff_id, g.comment, g.created_at,
+			COALESCE(s.name, 'Unknown Subject') as subject_name,
+			COALESCE(CONCAT(ts.degree, ' ', u.name, ' ', u.surname), 'Unknown Teacher') as added_by_name
+		FROM grades g
+		LEFT JOIN classes c ON g.class_id = c.class_id
+		LEFT JOIN subjects s ON g.subject_id = s.subject_id
+		LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+		LEFT JOIN users u ON ts.user_id = u.user_id
+		WHERE g.album_nr = $1
+		ORDER BY g.created_at DESC
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, albumNr)
@@ -77,10 +78,11 @@ WHERE g.album_nr = $1
 		g := &pb.Grade{}
 		var createdAt time.Time
 		var subjectName, addedByName string
+		var comment sql.NullString
 
 		if err := rows.Scan(
 			&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value,
-			&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &g.Comment,
+			&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &comment,
 			&createdAt, &subjectName, &addedByName); err != nil {
 			gradesLog.LogError("Failed to scan grade row", err)
 			continue
@@ -88,6 +90,9 @@ WHERE g.album_nr = $1
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
 		g.SubjectName = subjectName
 		g.AddedByName = addedByName
+		if comment.Valid {
+			g.Comment = comment.String
+		}
 		result = append(result, g)
 	}
 	return &pb.ListGradesResponse{
@@ -95,7 +100,6 @@ WHERE g.album_nr = $1
 		Message: "Grades retrieved successfully",
 	}, nil
 }
-
 func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*pb.AddGradeResponse, error) {
 	albumNr, role, teachingStaffID, err := s.resolveCallerContextForAdd(ctx, req)
 	if err != nil {
@@ -376,6 +380,271 @@ func (s *GradesServer) GetRecentGrades(ctx context.Context, req *pb.GetRecentGra
 	}, nil
 }
 
+
+func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeRequest) (*pb.UpdateGradeResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "no metadata")
+	}
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return nil, status.Error(codes.Unauthenticated, "no user_id")
+	}
+	var userID int64
+	fmt.Sscanf(userIDs[0], "%d", &userID)
+
+	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role == "student" {
+		return nil, status.Error(codes.PermissionDenied, "students cannot update grades")
+	}
+
+	var classID int32
+	var addedBy int64
+	err = s.db.QueryRowContext(ctx, 
+		"SELECT class_id, added_by_teaching_staff_id FROM grades WHERE grade_id = $1", 
+		req.GradeId).Scan(&classID, &addedBy)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "grade not found")
+	}
+	if err != nil {
+		gradesLog.LogError("Failed to fetch grade", err)
+		return nil, status.Error(codes.Internal, "failed to fetch grade")
+	}
+
+	if role == "teacher" {
+		var teaches bool
+		err = s.db.QueryRowContext(ctx, 
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", 
+			classID, teachingID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
+		}
+	}
+
+	if req.Value != nil {
+		validValues := map[string]bool{"2.0": true, "3.0": true, "3.5": true, "4.0": true, "4.5": true, "5.0": true, "NZAL": true, "ZAL": true}
+		if !validValues[*req.Value] {
+			return nil, status.Error(codes.InvalidArgument, "invalid grade value")
+		}
+	}
+
+	updates := []string{}
+	args := []interface{}{}
+	argPos := 1
+
+	if req.Value != nil {
+		updates = append(updates, fmt.Sprintf("value = $%d", argPos))
+		args = append(args, *req.Value)
+		argPos++
+	}
+	if req.Weight != nil {
+		updates = append(updates, fmt.Sprintf("weight = $%d", argPos))
+		args = append(args, *req.Weight)
+		argPos++
+	}
+	if req.Comment != nil {
+		updates = append(updates, fmt.Sprintf("comment = $%d", argPos))
+		args = append(args, *req.Comment)
+		argPos++
+	}
+
+	if len(updates) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "no fields to update")
+	}
+
+	args = append(args, req.GradeId)
+	updateQuery := fmt.Sprintf("UPDATE grades SET %s WHERE grade_id = $%d", 
+		strings.Join(updates, ", "), argPos)
+
+	_, err = s.db.ExecContext(ctx, updateQuery, args...)
+	if err != nil {
+		gradesLog.LogError("Failed to update grade", err)
+		return nil, status.Error(codes.Internal, "failed to update grade")
+	}
+
+	var g pb.Grade
+	var createdAt time.Time
+	var subjectName, addedByName string
+	var comment sql.NullString
+
+	query := `
+		SELECT g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+			   g.added_by_teaching_staff_id, g.comment, g.created_at,
+			   s.name, CONCAT(ts.degree, ' ', u.name, ' ', u.surname)
+		FROM grades g
+		LEFT JOIN classes c ON g.class_id = c.class_id
+		LEFT JOIN subjects s ON c.subject_id = s.subject_id
+		LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+		LEFT JOIN users u ON ts.user_id = u.user_id
+		WHERE g.grade_id = $1
+	`
+
+	err = s.db.QueryRowContext(ctx, query, req.GradeId).Scan(
+		&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value,
+		&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &comment,
+		&createdAt, &subjectName, &addedByName)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch updated grade")
+	}
+
+	g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
+	g.SubjectName = subjectName
+	g.AddedByName = addedByName
+	if comment.Valid {
+		g.Comment = comment.String
+	}
+
+	gradesLog.LogInfo(fmt.Sprintf("Grade %d updated by %s user %d", req.GradeId, role, userID))
+	return &pb.UpdateGradeResponse{Grade: &g, Message: "Grade updated successfully"}, nil
+}
+
+func (s *GradesServer) DeleteGrade(ctx context.Context, req *pb.DeleteGradeRequest) (*pb.DeleteGradeResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "no metadata")
+	}
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return nil, status.Error(codes.Unauthenticated, "no user_id")
+	}
+	var userID int64
+	fmt.Sscanf(userIDs[0], "%d", &userID)
+
+	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role == "student" {
+		return nil, status.Error(codes.PermissionDenied, "students cannot delete grades")
+	}
+
+	var classID int32
+	err = s.db.QueryRowContext(ctx, 
+		"SELECT class_id FROM grades WHERE grade_id = $1", 
+		req.GradeId).Scan(&classID)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "grade not found")
+	}
+	if err != nil {
+		gradesLog.LogError("Failed to fetch grade", err)
+		return nil, status.Error(codes.Internal, "failed to fetch grade")
+	}
+
+	if role == "teacher" {
+		var teaches bool
+		err = s.db.QueryRowContext(ctx, 
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", 
+			classID, teachingID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
+		}
+	}
+
+	result, err := s.db.ExecContext(ctx, "DELETE FROM grades WHERE grade_id = $1", req.GradeId)
+	if err != nil {
+		gradesLog.LogError("Failed to delete grade", err)
+		return nil, status.Error(codes.Internal, "failed to delete grade")
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, status.Error(codes.NotFound, "grade not found")
+	}
+
+	gradesLog.LogInfo(fmt.Sprintf("Grade %d deleted by %s user %d", req.GradeId, role, userID))
+	return &pb.DeleteGradeResponse{Success: true, Message: "Grade deleted successfully"}, nil
+}
+
+func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacherClassesRequest) (*pb.GetTeacherClassesResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "no metadata")
+	}
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return nil, status.Error(codes.Unauthenticated, "no user_id")
+	}
+	var userID int64
+	fmt.Sscanf(userIDs[0], "%d", &userID)
+
+	// Sprawdź rolę
+	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role != "teacher" && role != "admin" {
+		return nil, status.Error(codes.PermissionDenied, "only teachers can access this endpoint")
+	}
+
+	if teachingID == 0 {
+		return nil, status.Error(codes.PermissionDenied, "user is not a teacher")
+	}
+
+	query := `
+		SELECT 
+			c.class_id,
+			c.subject_id,
+			s.name as subject_name,
+			s.alias as subject_alias,
+			c.class_type,
+			c.group_nr,
+			c.current_capacity,
+			c.capacity,
+			c.classroom,
+			b.name as building_name
+		FROM course_instructors ci
+		JOIN classes c ON ci.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		JOIN buildings b ON c.building_id = b.building_id
+		WHERE ci.teaching_staff_id = $1
+		ORDER BY s.name, c.class_type, c.group_nr
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, teachingID)
+	if err != nil {
+		gradesLog.LogError("Failed to query teacher classes", err)
+		return nil, status.Error(codes.Internal, "failed to fetch classes")
+	}
+	defer rows.Close()
+
+	var classes []*pb.TeacherClass
+	for rows.Next() {
+		tc := &pb.TeacherClass{}
+		err := rows.Scan(
+			&tc.ClassId,
+			&tc.SubjectId,
+			&tc.SubjectName,
+			&tc.SubjectAlias,
+			&tc.ClassType,
+			&tc.GroupNr,
+			&tc.CurrentCapacity,
+			&tc.Capacity,
+			&tc.Classroom,
+			&tc.BuildingName,
+		)
+		if err != nil {
+			gradesLog.LogError("Failed to scan teacher class row", err)
+			continue
+		}
+		// Ustaw wartości domyślne dla brakujących pól
+		tc.Semester = "zimowy"
+		tc.AcademicYear = "2024/2025"
+		
+		classes = append(classes, tc)
+	}
+
+	gradesLog.LogInfo(fmt.Sprintf("Successfully returned %d classes for teacher user %d", len(classes), userID))
+	return &pb.GetTeacherClassesResponse{
+		Classes: classes,
+		Message: "Teacher classes retrieved successfully",
+	}, nil
+}
 func getUserIDFromContext(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

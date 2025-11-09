@@ -54,6 +54,52 @@ message GetRecentGradesResponse {
   string message = 11;
 }
 
+message UpdateGradeRequest {
+  int32 grade_id = 10;
+  optional string value = 11;
+  optional int32 weight = 12;
+  optional string comment = 13;
+}
+
+message UpdateGradeResponse {
+  Grade grade = 10;
+  string message = 11;
+}
+
+message DeleteGradeRequest {
+  int32 grade_id = 10;
+}
+
+message DeleteGradeResponse {
+  bool success = 10;
+  string message = 11;
+}
+
+
+message TeacherClass {
+  int32 class_id = 10;
+  int32 subject_id = 11;
+  string subject_name = 12;
+  string subject_alias = 13;
+  string class_type = 14;
+  int32 group_nr = 15;
+  int32 current_capacity = 16;
+  int32 capacity = 17;
+  string semester = 18;
+  string academic_year = 19;
+  int32 classroom = 20;
+  string building_name = 21;
+}
+
+message GetTeacherClassesRequest {
+}
+
+message GetTeacherClassesResponse {
+  repeated TeacherClass classes = 10;
+  string message = 11;
+}
+
+
 service GradesService {
   rpc ListGrades(ListGradesRequest) returns (ListGradesResponse) {
     option (google.api.http) = {
@@ -71,6 +117,25 @@ service GradesService {
   rpc GetRecentGrades(GetRecentGradesRequest) returns (GetRecentGradesResponse) {
     option (google.api.http) = {
       get : "/api/student/grades/recent"
+    };
+  }
+
+  rpc UpdateGrade(UpdateGradeRequest) returns (UpdateGradeResponse) {
+    option (google.api.http) = {
+      put : "/api/grades/{grade_id}"
+      body : "*"
+    };
+  }
+
+  rpc DeleteGrade(DeleteGradeRequest) returns (DeleteGradeResponse) {
+    option (google.api.http) = {
+      delete : "/api/grades/{grade_id}"
+    };
+  }
+
+  rpc GetTeacherClasses(GetTeacherClassesRequest) returns (GetTeacherClassesResponse) {
+    option (google.api.http) = {
+      get : "/api/teacher/classes"
     };
   }
 }

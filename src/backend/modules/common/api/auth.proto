@@ -106,6 +106,11 @@ message HelloRequest {}
 
 message HelloResponse { string message = 10; }
 
+message UserSubject {
+  int32 class_id = 1;
+  string subject_name = 2;
+}
+
 message User {
   int64 user_id = 10;
   string name = 11;
@@ -113,6 +118,9 @@ message User {
   string email = 13;
   bool active = 14;
   string role = 15; // "student", "teacher", "admin", "unknown"
+  optional int64 album_nr = 17;
+  optional int64 teaching_staff_id = 18;
+  optional int64 administrative_staff_id = 19;
 }
 
 message GetUsersRequest {}

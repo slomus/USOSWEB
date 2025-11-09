@@ -19,9 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GradesService_ListGrades_FullMethodName      = "/grades.GradesService/ListGrades"
-	GradesService_AddGrade_FullMethodName        = "/grades.GradesService/AddGrade"
-	GradesService_GetRecentGrades_FullMethodName = "/grades.GradesService/GetRecentGrades"
+	GradesService_ListGrades_FullMethodName        = "/grades.GradesService/ListGrades"
+	GradesService_AddGrade_FullMethodName          = "/grades.GradesService/AddGrade"
+	GradesService_GetRecentGrades_FullMethodName   = "/grades.GradesService/GetRecentGrades"
+	GradesService_UpdateGrade_FullMethodName       = "/grades.GradesService/UpdateGrade"
+	GradesService_DeleteGrade_FullMethodName       = "/grades.GradesService/DeleteGrade"
+	GradesService_GetTeacherClasses_FullMethodName = "/grades.GradesService/GetTeacherClasses"
 )
 
 // GradesServiceClient is the client API for GradesService service.
@@ -31,6 +34,9 @@ type GradesServiceClient interface {
 	ListGrades(ctx context.Context, in *ListGradesRequest, opts ...grpc.CallOption) (*ListGradesResponse, error)
 	AddGrade(ctx context.Context, in *AddGradeRequest, opts ...grpc.CallOption) (*AddGradeResponse, error)
 	GetRecentGrades(ctx context.Context, in *GetRecentGradesRequest, opts ...grpc.CallOption) (*GetRecentGradesResponse, error)
+	UpdateGrade(ctx context.Context, in *UpdateGradeRequest, opts ...grpc.CallOption) (*UpdateGradeResponse, error)
+	DeleteGrade(ctx context.Context, in *DeleteGradeRequest, opts ...grpc.CallOption) (*DeleteGradeResponse, error)
+	GetTeacherClasses(ctx context.Context, in *GetTeacherClassesRequest, opts ...grpc.CallOption) (*GetTeacherClassesResponse, error)
 }
 
 type gradesServiceClient struct {
@@ -71,6 +77,36 @@ func (c *gradesServiceClient) GetRecentGrades(ctx context.Context, in *GetRecent
 	return out, nil
 }
 
+func (c *gradesServiceClient) UpdateGrade(ctx context.Context, in *UpdateGradeRequest, opts ...grpc.CallOption) (*UpdateGradeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateGradeResponse)
+	err := c.cc.Invoke(ctx, GradesService_UpdateGrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gradesServiceClient) DeleteGrade(ctx context.Context, in *DeleteGradeRequest, opts ...grpc.CallOption) (*DeleteGradeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteGradeResponse)
+	err := c.cc.Invoke(ctx, GradesService_DeleteGrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gradesServiceClient) GetTeacherClasses(ctx context.Context, in *GetTeacherClassesRequest, opts ...grpc.CallOption) (*GetTeacherClassesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTeacherClassesResponse)
+	err := c.cc.Invoke(ctx, GradesService_GetTeacherClasses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GradesServiceServer is the server API for GradesService service.
 // All implementations must embed UnimplementedGradesServiceServer
 // for forward compatibility.
@@ -78,6 +114,9 @@ type GradesServiceServer interface {
 	ListGrades(context.Context, *ListGradesRequest) (*ListGradesResponse, error)
 	AddGrade(context.Context, *AddGradeRequest) (*AddGradeResponse, error)
 	GetRecentGrades(context.Context, *GetRecentGradesRequest) (*GetRecentGradesResponse, error)
+	UpdateGrade(context.Context, *UpdateGradeRequest) (*UpdateGradeResponse, error)
+	DeleteGrade(context.Context, *DeleteGradeRequest) (*DeleteGradeResponse, error)
+	GetTeacherClasses(context.Context, *GetTeacherClassesRequest) (*GetTeacherClassesResponse, error)
 	mustEmbedUnimplementedGradesServiceServer()
 }
 
@@ -96,6 +135,15 @@ func (UnimplementedGradesServiceServer) AddGrade(context.Context, *AddGradeReque
 }
 func (UnimplementedGradesServiceServer) GetRecentGrades(context.Context, *GetRecentGradesRequest) (*GetRecentGradesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecentGrades not implemented")
+}
+func (UnimplementedGradesServiceServer) UpdateGrade(context.Context, *UpdateGradeRequest) (*UpdateGradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGrade not implemented")
+}
+func (UnimplementedGradesServiceServer) DeleteGrade(context.Context, *DeleteGradeRequest) (*DeleteGradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteGrade not implemented")
+}
+func (UnimplementedGradesServiceServer) GetTeacherClasses(context.Context, *GetTeacherClassesRequest) (*GetTeacherClassesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTeacherClasses not implemented")
 }
 func (UnimplementedGradesServiceServer) mustEmbedUnimplementedGradesServiceServer() {}
 func (UnimplementedGradesServiceServer) testEmbeddedByValue()                       {}
@@ -172,6 +220,60 @@ func _GradesService_GetRecentGrades_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GradesService_UpdateGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GradesServiceServer).UpdateGrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GradesService_UpdateGrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GradesServiceServer).UpdateGrade(ctx, req.(*UpdateGradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GradesService_DeleteGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteGradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GradesServiceServer).DeleteGrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GradesService_DeleteGrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GradesServiceServer).DeleteGrade(ctx, req.(*DeleteGradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GradesService_GetTeacherClasses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTeacherClassesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GradesServiceServer).GetTeacherClasses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GradesService_GetTeacherClasses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GradesServiceServer).GetTeacherClasses(ctx, req.(*GetTeacherClassesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GradesService_ServiceDesc is the grpc.ServiceDesc for GradesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +292,18 @@ var GradesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRecentGrades",
 			Handler:    _GradesService_GetRecentGrades_Handler,
+		},
+		{
+			MethodName: "UpdateGrade",
+			Handler:    _GradesService_UpdateGrade_Handler,
+		},
+		{
+			MethodName: "DeleteGrade",
+			Handler:    _GradesService_DeleteGrade_Handler,
+		},
+		{
+			MethodName: "GetTeacherClasses",
+			Handler:    _GradesService_GetTeacherClasses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
