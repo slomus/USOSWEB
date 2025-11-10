@@ -48,25 +48,53 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 		return nil, err
 	}
 
-	_ = role
 	_ = teachingStaffID
 
-	query := `
-		SELECT
-			g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
-			g.added_by_teaching_staff_id, g.comment, g.created_at,
-			COALESCE(s.name, 'Unknown Subject') as subject_name,
-			COALESCE(CONCAT(ts.degree, ' ', u.name, ' ', u.surname), 'Unknown Teacher') as added_by_name
-		FROM grades g
-		LEFT JOIN classes c ON g.class_id = c.class_id
-		LEFT JOIN subjects s ON g.subject_id = s.subject_id
-		LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
-		LEFT JOIN users u ON ts.user_id = u.user_id
-		WHERE g.album_nr = $1
-		ORDER BY g.created_at DESC
-	`
+	var query string
+	var args []interface{}
 
-	rows, err := s.db.QueryContext(ctx, query, albumNr)
+	if role == "admin" && req.AllStudents != nil && *req.AllStudents {
+		query = `
+			SELECT
+				g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+				g.added_by_teaching_staff_id, g.comment, g.created_at,
+				COALESCE(s.name, 'Unknown Subject') as subject_name,
+				COALESCE(CONCAT(ts.degree, ' ', u.name, ' ', u.surname), 'Unknown Teacher') as added_by_name,
+				COALESCE(CONCAT(u2.name, ' ', u2.surname), 'Unknown Student') as student_name,
+				c.class_type
+			FROM grades g
+			LEFT JOIN classes c ON g.class_id = c.class_id
+			LEFT JOIN subjects s ON g.subject_id = s.subject_id
+			LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+			LEFT JOIN users u ON ts.user_id = u.user_id
+			LEFT JOIN students st ON g.album_nr = st.album_nr
+			LEFT JOIN users u2 ON st.user_id = u2.user_id
+			ORDER BY g.created_at DESC
+		`
+		args = []interface{}{}
+	} else {
+		query = `
+			SELECT
+				g.grade_id, g.album_nr, g.class_id, g.subject_id, g.value, g.weight, g.attempt,
+				g.added_by_teaching_staff_id, g.comment, g.created_at,
+				COALESCE(s.name, 'Unknown Subject') as subject_name,
+				COALESCE(CONCAT(ts.degree, ' ', u.name, ' ', u.surname), 'Unknown Teacher') as added_by_name,
+				COALESCE(CONCAT(u2.name, ' ', u2.surname), 'Unknown Student') as student_name,
+				c.class_type
+			FROM grades g
+			LEFT JOIN classes c ON g.class_id = c.class_id
+			LEFT JOIN subjects s ON g.subject_id = s.subject_id
+			LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+			LEFT JOIN users u ON ts.user_id = u.user_id
+			LEFT JOIN students st ON g.album_nr = st.album_nr
+			LEFT JOIN users u2 ON st.user_id = u2.user_id
+			WHERE g.album_nr = $1
+			ORDER BY g.created_at DESC
+		`
+		args = []interface{}{albumNr}
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		gradesLog.LogError("Failed to query grades", err)
 		return nil, status.Error(codes.Internal, "failed to fetch grades")
@@ -77,19 +105,21 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 	for rows.Next() {
 		g := &pb.Grade{}
 		var createdAt time.Time
-		var subjectName, addedByName string
+		var subjectName, addedByName, studentName, classType string
 		var comment sql.NullString
 
 		if err := rows.Scan(
 			&g.GradeId, &g.AlbumNr, &g.ClassId, &g.SubjectId, &g.Value,
 			&g.Weight, &g.Attempt, &g.AddedByTeachingStaffId, &comment,
-			&createdAt, &subjectName, &addedByName); err != nil {
+			&createdAt, &subjectName, &addedByName, &studentName, &classType); err != nil {
 			gradesLog.LogError("Failed to scan grade row", err)
 			continue
 		}
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
 		g.SubjectName = subjectName
 		g.AddedByName = addedByName
+		g.StudentName = studentName
+		g.ClassType = classType
 		if comment.Valid {
 			g.Comment = comment.String
 		}
@@ -100,26 +130,39 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 		Message: "Grades retrieved successfully",
 	}, nil
 }
+
 func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*pb.AddGradeResponse, error) {
 	albumNr, role, teachingStaffID, err := s.resolveCallerContextForAdd(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate value
+	if role == "admin" && req.AsTeachingStaffId != nil {
+		var exists bool
+		err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM teaching_staff WHERE teaching_staff_id = $1)", *req.AsTeachingStaffId).Scan(&exists)
+		if err != nil || !exists {
+			return nil, status.Error(codes.InvalidArgument, "invalid as_teaching_staff_id")
+		}
+		teachingStaffID = int64(*req.AsTeachingStaffId)
+		
+		var teaches bool
+		err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", req.ClassId, teachingStaffID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.InvalidArgument, "selected teacher does not teach this class")
+		}
+	}
+
 	validValues := map[string]bool{"2.0": true, "3.0": true, "3.5": true, "4.0": true, "4.5": true, "5.0": true, "NZAL": true, "ZAL": true}
 	if !validValues[req.Value] {
 		return nil, status.Error(codes.InvalidArgument, "invalid grade value")
 	}
 
-	// Validate student attends the class
 	var attends bool
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM student_classes WHERE class_id = $1 AND album_nr = $2)", req.ClassId, albumNr).Scan(&attends)
 	if err != nil || !attends {
 		return nil, status.Error(codes.FailedPrecondition, "student is not assigned to the class")
 	}
 
-	// Validate class belongs to subject_id
 	var classSubjectId int
 	err = s.db.QueryRowContext(ctx, "SELECT subject_id FROM classes WHERE class_id = $1", req.ClassId).Scan(&classSubjectId)
 	if err != nil {
@@ -129,7 +172,6 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "class does not belong to provided subject")
 	}
 
-	// If teacher, verify they teach this class
 	if role == "teacher" {
 		var teaches bool
 		err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", req.ClassId, teachingStaffID).Scan(&teaches)
@@ -138,7 +180,6 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 		}
 	}
 
-	// Insert grade
 	weight := int32(1)
 	if req.Weight != nil {
 		weight = *req.Weight
@@ -166,8 +207,7 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 
 	err = s.db.QueryRowContext(ctx, insertQuery, albumNr, req.ClassId, req.SubjectId, req.Value, weight, attempt, teachingStaffID, comment).Scan(&gradeID, &createdAt)
 	if err != nil {
-		// unique(album_nr, class_id, attempt) violation
-		if stringsContains(err.Error(), "unique") || stringsContains(err.Error(), "duplicate") {
+		if strings.Contains(strings.ToLower(err.Error()), "unique") || strings.Contains(strings.ToLower(err.Error()), "duplicate") {
 			return nil, status.Error(codes.AlreadyExists, "grade attempt already exists for this class and student")
 		}
 		gradesLog.LogError("Failed to insert grade", err)
@@ -189,9 +229,7 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 
 	return &pb.AddGradeResponse{Grade: g, Message: "Grade added"}, nil
 }
-
 func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGradesRequest) (albumNr int32, role string, teachingStaffID int64, err error) {
-	// Determine caller role via DB using user_id from metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return 0, "", 0, status.Error(codes.Unauthenticated, "no metadata")
@@ -211,17 +249,25 @@ func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGra
 
 	switch role {
 	case "student":
-		// Student can see only own grades regardless of provided album_nr
 		return int32(albumFromDB), role, teachingID, nil
-	case "teacher", "admin":
+	case "teacher":
 		if req.AlbumNr == nil || *req.AlbumNr == 0 {
-			return 0, "", 0, status.Error(codes.InvalidArgument, "album_nr is required for staff/admin")
+			return 0, "", 0, status.Error(codes.InvalidArgument, "album_nr is required for teacher")
+		}
+		return *req.AlbumNr, role, teachingID, nil
+	case "admin":
+		if req.AllStudents != nil && *req.AllStudents {
+			return 0, role, teachingID, nil // 0 = wszystkie
+		}
+		if req.AlbumNr == nil || *req.AlbumNr == 0 {
+			return 0, "", 0, status.Error(codes.InvalidArgument, "album_nr is required when all_students is not set")
 		}
 		return *req.AlbumNr, role, teachingID, nil
 	default:
 		return 0, "", 0, status.Error(codes.PermissionDenied, "unknown role")
 	}
 }
+
 
 func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.AddGradeRequest) (albumNr int32, role string, teachingStaffID int64, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -248,18 +294,16 @@ func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.A
 		return req.AlbumNr, role, teachingID, nil
 	}
 
-	// admin
 	if role == "admin" {
-		if teachingID == 0 {
-			// Admins do not have teaching_staff_id; forbid unless there's a policy to impersonate a teacher
-			return 0, "", 0, status.Error(codes.PermissionDenied, "admin cannot add grade without teaching context")
+		if req.AsTeachingStaffId == nil {
+			return 0, "", 0, status.Error(codes.InvalidArgument, "admin must provide as_teaching_staff_id")
 		}
+		return req.AlbumNr, role, 0, nil 
 	}
+	
 	return req.AlbumNr, role, teachingID, nil
 }
-
 func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int64) (role string, albumNr int64, teachingStaffID int64, err error) {
-	// Query role similar to AuthServer.GetUserData
 	query := `
         SELECT
             CASE

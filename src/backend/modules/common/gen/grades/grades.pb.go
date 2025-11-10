@@ -37,6 +37,8 @@ type Grade struct {
 	CreatedAt              string                 `protobuf:"bytes,19,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	SubjectName            string                 `protobuf:"bytes,20,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
 	AddedByName            string                 `protobuf:"bytes,21,opt,name=added_by_name,json=addedByName,proto3" json:"added_by_name,omitempty"`
+	StudentName            string                 `protobuf:"bytes,22,opt,name=student_name,json=studentName,proto3" json:"student_name,omitempty"`
+	ClassType              string                 `protobuf:"bytes,23,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -155,9 +157,24 @@ func (x *Grade) GetAddedByName() string {
 	return ""
 }
 
+func (x *Grade) GetStudentName() string {
+	if x != nil {
+		return x.StudentName
+	}
+	return ""
+}
+
+func (x *Grade) GetClassType() string {
+	if x != nil {
+		return x.ClassType
+	}
+	return ""
+}
+
 type ListGradesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AlbumNr       *int32                 `protobuf:"varint,10,opt,name=album_nr,json=albumNr,proto3,oneof" json:"album_nr,omitempty"`
+	AllStudents   *bool                  `protobuf:"varint,11,opt,name=all_students,json=allStudents,proto3,oneof" json:"all_students,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,6 +214,13 @@ func (x *ListGradesRequest) GetAlbumNr() int32 {
 		return *x.AlbumNr
 	}
 	return 0
+}
+
+func (x *ListGradesRequest) GetAllStudents() bool {
+	if x != nil && x.AllStudents != nil {
+		return *x.AllStudents
+	}
+	return false
 }
 
 type ListGradesResponse struct {
@@ -252,16 +276,17 @@ func (x *ListGradesResponse) GetMessage() string {
 }
 
 type AddGradeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AlbumNr       int32                  `protobuf:"varint,10,opt,name=album_nr,json=albumNr,proto3" json:"album_nr,omitempty"`
-	ClassId       int32                  `protobuf:"varint,11,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
-	SubjectId     int32                  `protobuf:"varint,12,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
-	Value         string                 `protobuf:"bytes,13,opt,name=value,proto3" json:"value,omitempty"`
-	Weight        *int32                 `protobuf:"varint,14,opt,name=weight,proto3,oneof" json:"weight,omitempty"`
-	Attempt       *int32                 `protobuf:"varint,15,opt,name=attempt,proto3,oneof" json:"attempt,omitempty"`
-	Comment       *string                `protobuf:"bytes,16,opt,name=comment,proto3,oneof" json:"comment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	AlbumNr           int32                  `protobuf:"varint,10,opt,name=album_nr,json=albumNr,proto3" json:"album_nr,omitempty"`
+	ClassId           int32                  `protobuf:"varint,11,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	SubjectId         int32                  `protobuf:"varint,12,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	Value             string                 `protobuf:"bytes,13,opt,name=value,proto3" json:"value,omitempty"`
+	Weight            *int32                 `protobuf:"varint,14,opt,name=weight,proto3,oneof" json:"weight,omitempty"`
+	Attempt           *int32                 `protobuf:"varint,15,opt,name=attempt,proto3,oneof" json:"attempt,omitempty"`
+	Comment           *string                `protobuf:"bytes,16,opt,name=comment,proto3,oneof" json:"comment,omitempty"`
+	AsTeachingStaffId *int32                 `protobuf:"varint,17,opt,name=as_teaching_staff_id,json=asTeachingStaffId,proto3,oneof" json:"as_teaching_staff_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *AddGradeRequest) Reset() {
@@ -341,6 +366,13 @@ func (x *AddGradeRequest) GetComment() string {
 		return *x.Comment
 	}
 	return ""
+}
+
+func (x *AddGradeRequest) GetAsTeachingStaffId() int32 {
+	if x != nil && x.AsTeachingStaffId != nil {
+		return *x.AsTeachingStaffId
+	}
+	return 0
 }
 
 type AddGradeResponse struct {
@@ -931,7 +963,7 @@ var File_grades_proto protoreflect.FileDescriptor
 
 const file_grades_proto_rawDesc = "" +
 	"\n" +
-	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xfb\x02\n" +
+	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbd\x03\n" +
 	"\x05Grade\x12\x19\n" +
 	"\bgrade_id\x18\n" +
 	" \x01(\x05R\agradeId\x12\x19\n" +
@@ -947,15 +979,20 @@ const file_grades_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x13 \x01(\tR\tcreatedAt\x12!\n" +
 	"\fsubject_name\x18\x14 \x01(\tR\vsubjectName\x12\"\n" +
-	"\radded_by_name\x18\x15 \x01(\tR\vaddedByName\"@\n" +
+	"\radded_by_name\x18\x15 \x01(\tR\vaddedByName\x12!\n" +
+	"\fstudent_name\x18\x16 \x01(\tR\vstudentName\x12\x1d\n" +
+	"\n" +
+	"class_type\x18\x17 \x01(\tR\tclassType\"y\n" +
 	"\x11ListGradesRequest\x12\x1e\n" +
 	"\balbum_nr\x18\n" +
-	" \x01(\x05H\x00R\aalbumNr\x88\x01\x01B\v\n" +
-	"\t_album_nr\"U\n" +
+	" \x01(\x05H\x00R\aalbumNr\x88\x01\x01\x12&\n" +
+	"\fall_students\x18\v \x01(\bH\x01R\vallStudents\x88\x01\x01B\v\n" +
+	"\t_album_nrB\x0f\n" +
+	"\r_all_students\"U\n" +
 	"\x12ListGradesResponse\x12%\n" +
 	"\x06grades\x18\n" +
 	" \x03(\v2\r.grades.GradeR\x06grades\x12\x18\n" +
-	"\amessage\x18\v \x01(\tR\amessage\"\xfa\x01\n" +
+	"\amessage\x18\v \x01(\tR\amessage\"\xc9\x02\n" +
 	"\x0fAddGradeRequest\x12\x19\n" +
 	"\balbum_nr\x18\n" +
 	" \x01(\x05R\aalbumNr\x12\x19\n" +
@@ -965,12 +1002,14 @@ const file_grades_proto_rawDesc = "" +
 	"\x05value\x18\r \x01(\tR\x05value\x12\x1b\n" +
 	"\x06weight\x18\x0e \x01(\x05H\x00R\x06weight\x88\x01\x01\x12\x1d\n" +
 	"\aattempt\x18\x0f \x01(\x05H\x01R\aattempt\x88\x01\x01\x12\x1d\n" +
-	"\acomment\x18\x10 \x01(\tH\x02R\acomment\x88\x01\x01B\t\n" +
+	"\acomment\x18\x10 \x01(\tH\x02R\acomment\x88\x01\x01\x124\n" +
+	"\x14as_teaching_staff_id\x18\x11 \x01(\x05H\x03R\x11asTeachingStaffId\x88\x01\x01B\t\n" +
 	"\a_weightB\n" +
 	"\n" +
 	"\b_attemptB\n" +
 	"\n" +
-	"\b_comment\"Q\n" +
+	"\b_commentB\x17\n" +
+	"\x15_as_teaching_staff_id\"Q\n" +
 	"\x10AddGradeResponse\x12#\n" +
 	"\x05grade\x18\n" +
 	" \x01(\v2\r.grades.GradeR\x05grade\x12\x18\n" +
