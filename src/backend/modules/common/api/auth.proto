@@ -215,6 +215,14 @@ message UserSearchResult {
   string role = 17; // "student", "teacher", "admin"
 }
 
+message DeleteUserRequest {
+  int64 user_id = 1;
+}
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 // Serwis
 
 service AuthService {
@@ -301,6 +309,12 @@ service AuthService {
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse) {
     option (google.api.http) = {
       get : "/api/auth/search"
+    };
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete: "/api/auth/user/{user_id}"
     };
   }
 }

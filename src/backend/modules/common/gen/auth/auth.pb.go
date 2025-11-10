@@ -2150,6 +2150,102 @@ func (x *UserSearchResult) GetRole() string {
 	return ""
 }
 
+type DeleteUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteUserRequest) Reset() {
+	*x = DeleteUserRequest{}
+	mi := &file_auth_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteUserRequest) ProtoMessage() {}
+
+func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteUserRequest.ProtoReflect.Descriptor instead.
+func (*DeleteUserRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *DeleteUserRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type DeleteUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteUserResponse) Reset() {
+	*x = DeleteUserResponse{}
+	mi := &file_auth_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteUserResponse) ProtoMessage() {}
+
+func (x *DeleteUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteUserResponse.ProtoReflect.Descriptor instead.
+func (*DeleteUserResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *DeleteUserResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteUserResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -2361,7 +2457,12 @@ const file_auth_proto_rawDesc = "" +
 	"\x05pesel\x18\x0e \x01(\tR\x05pesel\x12\x19\n" +
 	"\bphone_nr\x18\x0f \x01(\tR\aphoneNr\x12\x16\n" +
 	"\x06active\x18\x10 \x01(\bR\x06active\x12\x12\n" +
-	"\x04role\x18\x11 \x01(\tR\x04role2\xec\f\n" +
+	"\x04role\x18\x11 \x01(\tR\x04role\",\n" +
+	"\x11DeleteUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"H\n" +
+	"\x12DeleteUserResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xeb\r\n" +
 	"\vAuthService\x12h\n" +
 	"\x05Login\x12 .modules.common.api.LoginRequest\x1a!.modules.common.api.LoginResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/auth/login\x12l\n" +
 	"\x06Logout\x12!.modules.common.api.LogoutRequest\x1a\".modules.common.api.LogoutResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/auth/logout\x12t\n" +
@@ -2375,7 +2476,9 @@ const file_auth_proto_rawDesc = "" +
 	"\vGetUserRole\x12&.modules.common.api.GetUserRoleRequest\x1a'.modules.common.api.GetUserRoleResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/auth/role\x12\x8c\x01\n" +
 	"\x0fGetUserEditData\x12*.modules.common.api.GetUserEditDataRequest\x1a+.modules.common.api.GetUserEditDataResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/auth/edit/{user_id}\x12\x8c\x01\n" +
 	"\x0eUpdateUserData\x12).modules.common.api.UpdateUserDataRequest\x1a*.modules.common.api.UpdateUserDataResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/api/auth/edit/{user_id}\x12x\n" +
-	"\vSearchUsers\x12&.modules.common.api.SearchUsersRequest\x1a'.modules.common.api.SearchUsersResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/auth/search2p\n" +
+	"\vSearchUsers\x12&.modules.common.api.SearchUsersRequest\x1a'.modules.common.api.SearchUsersResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/auth/search\x12}\n" +
+	"\n" +
+	"DeleteUser\x12%.modules.common.api.DeleteUserRequest\x1a&.modules.common.api.DeleteUserResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/auth/user/{user_id}2p\n" +
 	"\tAuthHello\x12c\n" +
 	"\bSayHello\x12 .modules.common.api.HelloRequest\x1a!.modules.common.api.HelloResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/api/helloB<Z:github.com/slomus/USOSWEB/src/backend/common/gen/auth;authb\x06proto3"
@@ -2392,7 +2495,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_auth_proto_goTypes = []any{
 	(*LoginRequest)(nil),            // 0: modules.common.api.LoginRequest
 	(*LoginResponse)(nil),           // 1: modules.common.api.LoginResponse
@@ -2426,6 +2529,8 @@ var file_auth_proto_goTypes = []any{
 	(*SearchUsersRequest)(nil),      // 29: modules.common.api.SearchUsersRequest
 	(*SearchUsersResponse)(nil),     // 30: modules.common.api.SearchUsersResponse
 	(*UserSearchResult)(nil),        // 31: modules.common.api.UserSearchResult
+	(*DeleteUserRequest)(nil),       // 32: modules.common.api.DeleteUserRequest
+	(*DeleteUserResponse)(nil),      // 33: modules.common.api.DeleteUserResponse
 }
 var file_auth_proto_depIdxs = []int32{
 	6,  // 0: modules.common.api.RegisterResponse.user_data:type_name -> modules.common.api.UserData
@@ -2446,23 +2551,25 @@ var file_auth_proto_depIdxs = []int32{
 	25, // 15: modules.common.api.AuthService.GetUserEditData:input_type -> modules.common.api.GetUserEditDataRequest
 	27, // 16: modules.common.api.AuthService.UpdateUserData:input_type -> modules.common.api.UpdateUserDataRequest
 	29, // 17: modules.common.api.AuthService.SearchUsers:input_type -> modules.common.api.SearchUsersRequest
-	15, // 18: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
-	1,  // 19: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
-	3,  // 20: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
-	5,  // 21: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
-	8,  // 22: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
-	10, // 23: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
-	12, // 24: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
-	14, // 25: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
-	20, // 26: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
-	22, // 27: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
-	24, // 28: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
-	26, // 29: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
-	28, // 30: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
-	30, // 31: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
-	16, // 32: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
-	19, // [19:33] is the sub-list for method output_type
-	5,  // [5:19] is the sub-list for method input_type
+	32, // 18: modules.common.api.AuthService.DeleteUser:input_type -> modules.common.api.DeleteUserRequest
+	15, // 19: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
+	1,  // 20: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
+	3,  // 21: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
+	5,  // 22: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
+	8,  // 23: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
+	10, // 24: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
+	12, // 25: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
+	14, // 26: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
+	20, // 27: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
+	22, // 28: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
+	24, // 29: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
+	26, // 30: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
+	28, // 31: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
+	30, // 32: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
+	33, // 33: modules.common.api.AuthService.DeleteUser:output_type -> modules.common.api.DeleteUserResponse
+	16, // 34: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
+	20, // [20:35] is the sub-list for method output_type
+	5,  // [5:20] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -2482,7 +2589,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

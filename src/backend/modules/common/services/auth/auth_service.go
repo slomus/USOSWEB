@@ -1817,6 +1817,152 @@ func sendPasswordResetEmail(email, token string) bool {
 	return err == nil
 }
 
+func (s *AuthServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        authLog.LogWarn("DeleteUser: Brak metadanych")
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "No metadata",
+        }, nil
+    }
+
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        authLog.LogWarn("DeleteUser: Brak tokenu autoryzacji")
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "No authorization token",
+        }, nil
+    }
+
+    claims, err := auth.ValidateToken(tokens[0])
+    if err != nil {
+        authLog.LogWarn(fmt.Sprintf("DeleteUser: Invalid token: %v", err))
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Invalid token",
+        }, nil
+    }
+
+    userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
+    if err != nil {
+        authLog.LogError("DeleteUser: Error checking user role", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Error while checking credentials",
+        }, nil
+    }
+
+    if userRole != RoleAdmin {
+        authLog.LogWarn(fmt.Sprintf("DeleteUser: Access denied for user %d with role %s", claims.UserID, userRole))
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Access denied",
+        }, nil
+    }
+
+    tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+			authLog.LogError("DeleteUser: Failed to begin transaction", err)
+			return &pb.DeleteUserResponse{
+					Success: false,
+					Message: "Internal server error",
+			}, nil
+	}
+
+	userID := req.GetUserId()
+
+	var albumNr int64
+err = tx.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+if err != nil && err != sql.ErrNoRows {
+    tx.Rollback()
+}
+
+if err != sql.ErrNoRows {
+    _, err = tx.ExecContext(ctx, "DELETE FROM grades WHERE album_nr = $1", albumNr)
+    if err != nil {
+        tx.Rollback()
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM student_classes WHERE album_nr = $1", albumNr)
+    if err != nil {
+        tx.Rollback()
+    }
+}
+
+tablesToDelete := []struct {
+    sql  string
+    args []interface{}
+}{
+    {"DELETE FROM students WHERE user_id = $1", []interface{}{userID}},
+    {"DELETE FROM teaching_staff WHERE user_id = $1", []interface{}{userID}},
+    {"DELETE FROM administrative_staff WHERE user_id = $1", []interface{}{userID}},
+    {"DELETE FROM class_cancellations WHERE cancelled_by = $1", []interface{}{userID}},
+    {"DELETE FROM message_recipients WHERE recipient_id = $1", []interface{}{userID}},
+    {"DELETE FROM messages WHERE sender_id = $1", []interface{}{userID}},
+    {"DELETE FROM password_reset_tokens WHERE user_id = $1", []interface{}{userID}},
+}
+
+for _, table := range tablesToDelete {
+    _, err = tx.ExecContext(ctx, table.sql, table.args...)
+    if err != nil {
+        tx.Rollback()
+    }
+}
+
+res, err := tx.ExecContext(ctx, "DELETE FROM users WHERE user_id = $1", userID)
+
+
+
+
+
+
+	if err != nil {
+			tx.Rollback()
+			authLog.LogError("DeleteUser: Error deleting user", err)
+			return &pb.DeleteUserResponse{
+					Success: false,
+					Message: "Error deleting user",
+			}, nil
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+			tx.Rollback()
+			authLog.LogError("DeleteUser: Error getting rows affected", err)
+			return &pb.DeleteUserResponse{
+					Success: false,
+					Message: "Internal server error",
+			}, nil
+	}
+
+	if rowsAffected == 0 {
+			tx.Rollback()
+			return &pb.DeleteUserResponse{
+					Success: false,
+					Message: "User not found",
+			}, nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+			authLog.LogError("DeleteUser: Error committing transaction", err)
+			return &pb.DeleteUserResponse{
+					Success: false,
+					Message: "Internal server error",
+			}, nil
+	}
+
+	authLog.LogInfo(fmt.Sprintf("DeleteUser: User %d and related data deleted successfully", userID))
+
+	return &pb.DeleteUserResponse{
+			Success: true,
+			Message: "User deleted successfully",
+	}, nil
+}
+
+
 func (s *AuthServer) invalidateUserCache(ctx context.Context, userID int64) {
 	if s.cache == nil {
 		return
