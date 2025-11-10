@@ -1323,6 +1323,374 @@ func (x *GetAvailableSubjectsResponse) GetModuleId() int32 {
 	return 0
 }
 
+type CreateSubjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Alias         string                 `protobuf:"bytes,1,opt,name=alias,proto3" json:"alias,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Ects          float32                `protobuf:"fixed32,3,opt,name=ects,proto3" json:"ects,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Syllabus      string                 `protobuf:"bytes,5,opt,name=syllabus,proto3" json:"syllabus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSubjectRequest) Reset() {
+	*x = CreateSubjectRequest{}
+	mi := &file_academic_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSubjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSubjectRequest) ProtoMessage() {}
+
+func (x *CreateSubjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSubjectRequest.ProtoReflect.Descriptor instead.
+func (*CreateSubjectRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *CreateSubjectRequest) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+func (x *CreateSubjectRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateSubjectRequest) GetEcts() float32 {
+	if x != nil {
+		return x.Ects
+	}
+	return 0
+}
+
+func (x *CreateSubjectRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateSubjectRequest) GetSyllabus() string {
+	if x != nil {
+		return x.Syllabus
+	}
+	return ""
+}
+
+type CreateSubjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	SubjectId     int32                  `protobuf:"varint,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSubjectResponse) Reset() {
+	*x = CreateSubjectResponse{}
+	mi := &file_academic_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSubjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSubjectResponse) ProtoMessage() {}
+
+func (x *CreateSubjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSubjectResponse.ProtoReflect.Descriptor instead.
+func (*CreateSubjectResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *CreateSubjectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CreateSubjectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *CreateSubjectResponse) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+type UpdateSubjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId     int32                  `protobuf:"varint,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	Alias         string                 `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Ects          float32                `protobuf:"fixed32,4,opt,name=ects,proto3" json:"ects,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Syllabus      string                 `protobuf:"bytes,6,opt,name=syllabus,proto3" json:"syllabus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSubjectRequest) Reset() {
+	*x = UpdateSubjectRequest{}
+	mi := &file_academic_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSubjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSubjectRequest) ProtoMessage() {}
+
+func (x *UpdateSubjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSubjectRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSubjectRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *UpdateSubjectRequest) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+func (x *UpdateSubjectRequest) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+func (x *UpdateSubjectRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateSubjectRequest) GetEcts() float32 {
+	if x != nil {
+		return x.Ects
+	}
+	return 0
+}
+
+func (x *UpdateSubjectRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateSubjectRequest) GetSyllabus() string {
+	if x != nil {
+		return x.Syllabus
+	}
+	return ""
+}
+
+type UpdateSubjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSubjectResponse) Reset() {
+	*x = UpdateSubjectResponse{}
+	mi := &file_academic_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSubjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSubjectResponse) ProtoMessage() {}
+
+func (x *UpdateSubjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSubjectResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSubjectResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *UpdateSubjectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *UpdateSubjectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DeleteSubjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId     int32                  `protobuf:"varint,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSubjectRequest) Reset() {
+	*x = DeleteSubjectRequest{}
+	mi := &file_academic_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSubjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSubjectRequest) ProtoMessage() {}
+
+func (x *DeleteSubjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSubjectRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSubjectRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *DeleteSubjectRequest) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+type DeleteSubjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSubjectResponse) Reset() {
+	*x = DeleteSubjectResponse{}
+	mi := &file_academic_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSubjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSubjectResponse) ProtoMessage() {}
+
+func (x *DeleteSubjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSubjectResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSubjectResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *DeleteSubjectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteSubjectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_academic_proto protoreflect.FileDescriptor
 
 const file_academic_proto_rawDesc = "" +
@@ -1436,11 +1804,42 @@ const file_academic_proto_rawDesc = "" +
 	"\bsubjects\x18\x01 \x03(\v2\x18.academic.SubjectSummaryR\bsubjects\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1b\n" +
 	"\tcourse_id\x18\x03 \x01(\x05R\bcourseId\x12\x1b\n" +
-	"\tmodule_id\x18\x04 \x01(\x05R\bmoduleId2\x88\x03\n" +
+	"\tmodule_id\x18\x04 \x01(\x05R\bmoduleId\"\x92\x01\n" +
+	"\x14CreateSubjectRequest\x12\x14\n" +
+	"\x05alias\x18\x01 \x01(\tR\x05alias\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04ects\x18\x03 \x01(\x02R\x04ects\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bsyllabus\x18\x05 \x01(\tR\bsyllabus\"j\n" +
+	"\x15CreateSubjectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x03 \x01(\x05R\tsubjectId\"\xb1\x01\n" +
+	"\x14UpdateSubjectRequest\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x01 \x01(\x05R\tsubjectId\x12\x14\n" +
+	"\x05alias\x18\x02 \x01(\tR\x05alias\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04ects\x18\x04 \x01(\x02R\x04ects\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bsyllabus\x18\x06 \x01(\tR\bsyllabus\"K\n" +
+	"\x15UpdateSubjectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"5\n" +
+	"\x14DeleteSubjectRequest\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x01 \x01(\x05R\tsubjectId\"K\n" +
+	"\x15DeleteSubjectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xf5\x05\n" +
 	"\x0fSubjectsService\x12a\n" +
 	"\vGetSubjects\x12\x1c.academic.GetSubjectsRequest\x1a\x1d.academic.GetSubjectsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/subjects\x12\x80\x01\n" +
 	"\x11GetSubjectDetails\x12\".academic.GetSubjectDetailsRequest\x1a#.academic.GetSubjectDetailsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/subjects/{subject_id}\x12\x8e\x01\n" +
-	"\x14GetAvailableSubjects\x12%.academic.GetAvailableSubjectsRequest\x1a&.academic.GetAvailableSubjectsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/student/subjects/available2\x92\x04\n" +
+	"\x14GetAvailableSubjects\x12%.academic.GetAvailableSubjectsRequest\x1a&.academic.GetAvailableSubjectsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/student/subjects/available\x12p\n" +
+	"\rCreateSubject\x12\x1e.academic.CreateSubjectRequest\x1a\x1f.academic.CreateSubjectResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/admin/subjects\x12}\n" +
+	"\rUpdateSubject\x12\x1e.academic.UpdateSubjectRequest\x1a\x1f.academic.UpdateSubjectResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/admin/subjects/{subject_id}\x12z\n" +
+	"\rDeleteSubject\x12\x1e.academic.DeleteSubjectRequest\x1a\x1f.academic.DeleteSubjectResponse\"(\x82\xd3\xe4\x93\x02\"* /api/admin/subjects/{subject_id}2\x92\x04\n" +
 	"\x12EnrollmentsService\x12m\n" +
 	"\rEnrollSubject\x12\x1e.academic.EnrollSubjectRequest\x1a\x1f.academic.EnrollSubjectResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/enrollments\x12}\n" +
 	"\x0fUnenrollSubject\x12 .academic.UnenrollSubjectRequest\x1a!.academic.UnenrollSubjectResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/enrollments/{subject_id}\x12s\n" +
@@ -1459,7 +1858,7 @@ func file_academic_proto_rawDescGZIP() []byte {
 	return file_academic_proto_rawDescData
 }
 
-var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_academic_proto_goTypes = []any{
 	(*TimeSlot)(nil),                       // 0: academic.TimeSlot
 	(*ClassInfo)(nil),                      // 1: academic.ClassInfo
@@ -1482,7 +1881,13 @@ var file_academic_proto_goTypes = []any{
 	(*CheckScheduleConflictsResponse)(nil), // 18: academic.CheckScheduleConflictsResponse
 	(*GetAvailableSubjectsRequest)(nil),    // 19: academic.GetAvailableSubjectsRequest
 	(*GetAvailableSubjectsResponse)(nil),   // 20: academic.GetAvailableSubjectsResponse
-	(*timestamppb.Timestamp)(nil),          // 21: google.protobuf.Timestamp
+	(*CreateSubjectRequest)(nil),           // 21: academic.CreateSubjectRequest
+	(*CreateSubjectResponse)(nil),          // 22: academic.CreateSubjectResponse
+	(*UpdateSubjectRequest)(nil),           // 23: academic.UpdateSubjectRequest
+	(*UpdateSubjectResponse)(nil),          // 24: academic.UpdateSubjectResponse
+	(*DeleteSubjectRequest)(nil),           // 25: academic.DeleteSubjectRequest
+	(*DeleteSubjectResponse)(nil),          // 26: academic.DeleteSubjectResponse
+	(*timestamppb.Timestamp)(nil),          // 27: google.protobuf.Timestamp
 }
 var file_academic_proto_depIdxs = []int32{
 	0,  // 0: academic.ClassInfo.schedule:type_name -> academic.TimeSlot
@@ -1492,7 +1897,7 @@ var file_academic_proto_depIdxs = []int32{
 	3,  // 4: academic.GetSubjectsResponse.subjects:type_name -> academic.SubjectSummary
 	4,  // 5: academic.GetSubjectDetailsResponse.subject:type_name -> academic.SubjectDetails
 	1,  // 6: academic.Enrollment.enrolled_classes:type_name -> academic.ClassInfo
-	21, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
+	27, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
 	9,  // 8: academic.EnrollSubjectResponse.enrollment:type_name -> academic.Enrollment
 	9,  // 9: academic.GetMyEnrollmentsResponse.enrollments:type_name -> academic.Enrollment
 	0,  // 10: academic.ScheduleConflict.conflicting_time:type_name -> academic.TimeSlot
@@ -1501,19 +1906,25 @@ var file_academic_proto_depIdxs = []int32{
 	5,  // 13: academic.SubjectsService.GetSubjects:input_type -> academic.GetSubjectsRequest
 	7,  // 14: academic.SubjectsService.GetSubjectDetails:input_type -> academic.GetSubjectDetailsRequest
 	19, // 15: academic.SubjectsService.GetAvailableSubjects:input_type -> academic.GetAvailableSubjectsRequest
-	10, // 16: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
-	12, // 17: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
-	14, // 18: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
-	16, // 19: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
-	6,  // 20: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
-	8,  // 21: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
-	20, // 22: academic.SubjectsService.GetAvailableSubjects:output_type -> academic.GetAvailableSubjectsResponse
-	11, // 23: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
-	13, // 24: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
-	15, // 25: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
-	18, // 26: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
-	20, // [20:27] is the sub-list for method output_type
-	13, // [13:20] is the sub-list for method input_type
+	21, // 16: academic.SubjectsService.CreateSubject:input_type -> academic.CreateSubjectRequest
+	23, // 17: academic.SubjectsService.UpdateSubject:input_type -> academic.UpdateSubjectRequest
+	25, // 18: academic.SubjectsService.DeleteSubject:input_type -> academic.DeleteSubjectRequest
+	10, // 19: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
+	12, // 20: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
+	14, // 21: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
+	16, // 22: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
+	6,  // 23: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
+	8,  // 24: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
+	20, // 25: academic.SubjectsService.GetAvailableSubjects:output_type -> academic.GetAvailableSubjectsResponse
+	22, // 26: academic.SubjectsService.CreateSubject:output_type -> academic.CreateSubjectResponse
+	24, // 27: academic.SubjectsService.UpdateSubject:output_type -> academic.UpdateSubjectResponse
+	26, // 28: academic.SubjectsService.DeleteSubject:output_type -> academic.DeleteSubjectResponse
+	11, // 29: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
+	13, // 30: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
+	15, // 31: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
+	18, // 32: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
+	23, // [23:33] is the sub-list for method output_type
+	13, // [13:23] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
 	13, // [13:13] is the sub-list for extension extendee
 	0,  // [0:13] is the sub-list for field type_name
@@ -1531,7 +1942,7 @@ func file_academic_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_academic_proto_rawDesc), len(file_academic_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
