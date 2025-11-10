@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
+	"strings"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc/codes"
@@ -485,4 +485,222 @@ func getUserIDFromContext(ctx context.Context) (int64, error) {
 	}
 
 	return userID, nil
+}
+
+
+func (s *SubjectsServer) CreateSubject(ctx context.Context, req *pb.CreateSubjectRequest) (*pb.CreateSubjectResponse, error) {
+	subjectsLog.LogInfo("CreateSubject request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return &pb.CreateSubjectResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var isAdmin bool
+	err = s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM administrative_staff WHERE user_id = $1
+		)
+	`, userID).Scan(&isAdmin)
+
+	if err != nil || !isAdmin {
+		subjectsLog.LogWarn(fmt.Sprintf("Non-admin user %d tried to create subject", userID))
+		return &pb.CreateSubjectResponse{
+			Success: false,
+			Message: "Only administrators can create subjects",
+		}, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
+	if req.Alias == "" || req.Name == "" {
+		return &pb.CreateSubjectResponse{
+			Success: false,
+			Message: "Alias and name are required",
+		}, status.Error(codes.InvalidArgument, "missing required fields")
+	}
+
+	if req.Ects <= 0 {
+		return &pb.CreateSubjectResponse{
+			Success: false,
+			Message: "ECTS must be greater than 0",
+		}, status.Error(codes.InvalidArgument, "invalid ECTS value")
+	}
+
+	var subjectID int32
+	err = s.db.QueryRow(`
+		INSERT INTO subjects (alias, name, ects, description, syllabus)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING subject_id
+	`, req.Alias, req.Name, req.Ects, req.Description, req.Syllabus).Scan(&subjectID)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			subjectsLog.LogError("Subject with this alias or name already exists", err)
+			return &pb.CreateSubjectResponse{
+				Success: false,
+				Message: "Subject with this alias or name already exists",
+			}, status.Error(codes.AlreadyExists, "duplicate subject")
+		}
+		subjectsLog.LogError("Failed to create subject", err)
+		return &pb.CreateSubjectResponse{
+			Success: false,
+			Message: "Failed to create subject",
+		}, status.Error(codes.Internal, "database error")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Successfully created subject with ID: %d", subjectID))
+	return &pb.CreateSubjectResponse{
+		Success:   true,
+		Message:   "Subject created successfully",
+		SubjectId: subjectID,
+	}, nil
+}
+
+func (s *SubjectsServer) UpdateSubject(ctx context.Context, req *pb.UpdateSubjectRequest) (*pb.UpdateSubjectResponse, error) {
+	subjectsLog.LogInfo(fmt.Sprintf("UpdateSubject request received for subject_id: %d", req.SubjectId))
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var isAdmin bool
+	err = s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM administrative_staff WHERE user_id = $1
+		)
+	`, userID).Scan(&isAdmin)
+
+	if err != nil || !isAdmin {
+		subjectsLog.LogWarn(fmt.Sprintf("Non-admin user %d tried to update subject", userID))
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "Only administrators can update subjects",
+		}, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
+	var exists bool
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM subjects WHERE subject_id = $1)", req.SubjectId).Scan(&exists)
+	if err != nil || !exists {
+		subjectsLog.LogWarn(fmt.Sprintf("Subject not found: %d", req.SubjectId))
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "Subject not found",
+		}, status.Error(codes.NotFound, "subject not found")
+	}
+
+	if req.Alias == "" || req.Name == "" {
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "Alias and name are required",
+		}, status.Error(codes.InvalidArgument, "missing required fields")
+	}
+
+	if req.Ects <= 0 {
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "ECTS must be greater than 0",
+		}, status.Error(codes.InvalidArgument, "invalid ECTS value")
+	}
+
+	_, err = s.db.Exec(`
+		UPDATE subjects 
+		SET alias = $1, name = $2, ects = $3, description = $4, syllabus = $5
+		WHERE subject_id = $6
+	`, req.Alias, req.Name, req.Ects, req.Description, req.Syllabus, req.SubjectId)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			subjectsLog.LogError("Subject with this alias or name already exists", err)
+			return &pb.UpdateSubjectResponse{
+				Success: false,
+				Message: "Subject with this alias or name already exists",
+			}, status.Error(codes.AlreadyExists, "duplicate subject")
+		}
+		subjectsLog.LogError("Failed to update subject", err)
+		return &pb.UpdateSubjectResponse{
+			Success: false,
+			Message: "Failed to update subject",
+		}, status.Error(codes.Internal, "database error")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Successfully updated subject with ID: %d", req.SubjectId))
+	return &pb.UpdateSubjectResponse{
+		Success: true,
+		Message: "Subject updated successfully",
+	}, nil
+}
+
+func (s *SubjectsServer) DeleteSubject(ctx context.Context, req *pb.DeleteSubjectRequest) (*pb.DeleteSubjectResponse, error) {
+	subjectsLog.LogInfo(fmt.Sprintf("DeleteSubject request received for subject_id: %d", req.SubjectId))
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var isAdmin bool
+	err = s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM administrative_staff WHERE user_id = $1
+		)
+	`, userID).Scan(&isAdmin)
+
+	if err != nil || !isAdmin {
+		subjectsLog.LogWarn(fmt.Sprintf("Non-admin user %d tried to delete subject", userID))
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Only administrators can delete subjects",
+		}, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
+	var exists bool
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM subjects WHERE subject_id = $1)", req.SubjectId).Scan(&exists)
+	if err != nil || !exists {
+		subjectsLog.LogWarn(fmt.Sprintf("Subject not found: %d", req.SubjectId))
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Subject not found",
+		}, status.Error(codes.NotFound, "subject not found")
+	}
+
+	var hasClasses bool
+	err = s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM classes WHERE subject_id = $1)", req.SubjectId).Scan(&hasClasses)
+	if err != nil {
+		subjectsLog.LogError("Failed to check subject usage", err)
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Failed to check subject usage",
+		}, status.Error(codes.Internal, "database error")
+	}
+
+	if hasClasses {
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Cannot delete subject with existing classes",
+		}, status.Error(codes.FailedPrecondition, "subject has classes")
+	}
+
+	_, err = s.db.Exec("DELETE FROM subjects WHERE subject_id = $1", req.SubjectId)
+	if err != nil {
+		subjectsLog.LogError("Failed to delete subject", err)
+		return &pb.DeleteSubjectResponse{
+			Success: false,
+			Message: "Failed to delete subject",
+		}, status.Error(codes.Internal, "database error")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Successfully deleted subject with ID: %d", req.SubjectId))
+	return &pb.DeleteSubjectResponse{
+		Success: true,
+		Message: "Subject deleted successfully",
+	}, nil
 }

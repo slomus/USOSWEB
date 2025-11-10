@@ -19,10 +19,13 @@ message Grade {
   string created_at = 19;
   string subject_name = 20;
   string added_by_name = 21;
+  string student_name = 22; 
+  string class_type = 23; 
 }
 
 message ListGradesRequest { 
   optional int32 album_nr = 10; 
+  optional bool all_students = 11;
 }
 
 message ListGradesResponse {
@@ -38,6 +41,7 @@ message AddGradeRequest {
   optional int32 weight = 14;
   optional int32 attempt = 15;
   optional string comment = 16;
+  optional int32 as_teaching_staff_id = 17;
 }
 
 message AddGradeResponse {
