@@ -1189,6 +1189,7 @@ func generateProductionRelations(db *sql.DB) error {
 			{"2022/2023", 2022},
 			{"2023/2024", 2023},
 			{"2024/2025", 2024},
+			{"2025/2026", 2025},
 	}
 
 	for _, ay := range academicYears {
@@ -1598,8 +1599,12 @@ func generateSchedules(db *sql.DB) error {
 			numSlots = 1
 		}
 
-		validFrom := time.Date(2024, 10, 1, 0, 0, 0, 0, time.UTC)  
-		validTo := time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)    
+		currentYear := time.Now().Year()
+		if time.Now().Month() < 10 {
+				currentYear-- 
+		}
+		validFrom := time.Date(currentYear, 10, 1, 0, 0, 0, 0, time.UTC)
+		validTo := time.Date(currentYear+1, 6, 30, 0, 0, 0, 0, time.UTC)   
 
 		buildings := []string{"Budynek A", "Budynek B", "Budynek C", "Laboratorium", "Aula"}
 

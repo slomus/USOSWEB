@@ -40,17 +40,16 @@ func (s *CalendarServer) GetAcademicCalendar(ctx context.Context, req *pb.GetAca
 	argCount := 2
 
 	if req.StartDate != nil && *req.StartDate != "" {
-		conditions = append(conditions, fmt.Sprintf("start_date >= $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("(end_date IS NULL OR end_date >= $%d)", argCount))
 		args = append(args, *req.StartDate)
 		argCount++
 	}
 
 	if req.EndDate != nil && *req.EndDate != "" {
-		conditions = append(conditions, fmt.Sprintf("(end_date <= $%d OR end_date IS NULL)", argCount))
+		conditions = append(conditions, fmt.Sprintf("start_date <= $%d", argCount))
 		args = append(args, *req.EndDate)
 		argCount++
 	}
-
 	if req.EventType != nil && *req.EventType != "" {
 		conditions = append(conditions, fmt.Sprintf("event_type = $%d", argCount))
 		args = append(args, *req.EventType)
@@ -71,7 +70,7 @@ func (s *CalendarServer) GetAcademicCalendar(ctx context.Context, req *pb.GetAca
 			event_type,
 			title,
 			COALESCE(description, '') as description,
-			start_date,
+		  start_date::text,
 			COALESCE(end_date::text, '') as end_date,
 			academic_year,
 			COALESCE(applies_to, 'all') as applies_to
@@ -166,7 +165,7 @@ func (s *CalendarServer) GetHolidays(ctx context.Context, req *pb.GetHolidaysReq
 
 	query := `
 		SELECT
-			start_date,
+	  start_date::text,
 			title,
 			event_type,
 			CASE
@@ -232,6 +231,31 @@ func (s *CalendarServer) GetHolidays(ctx context.Context, req *pb.GetHolidaysReq
 func (s *CalendarServer) CreateAcademicEvent(ctx context.Context, req *pb.CreateAcademicEventRequest) (*pb.CreateAcademicEventResponse, error) {
 	calendarLog.LogInfo("CreateAcademicEvent request received")
 
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		calendarLog.LogError("Failed to get user_id from context", err)
+		return &pb.CreateAcademicEventResponse{
+			Success: false,
+			Message: "Unauthorized",
+		}, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var isAdmin bool
+	err = s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM administrative_staff WHERE user_id = $1
+		)
+	`, userID).Scan(&isAdmin)
+	
+	if err != nil || !isAdmin {
+		calendarLog.LogWarn(fmt.Sprintf("Non-admin user %d tried to create academic event", userID))
+		return &pb.CreateAcademicEventResponse{
+			Success: false,
+			Message: "Only administrators can create academic events",
+		}, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
 	var endDate interface{}
 	if req.EndDate != "" {
 		endDate = req.EndDate
@@ -248,7 +272,7 @@ func (s *CalendarServer) CreateAcademicEvent(ctx context.Context, req *pb.Create
 	`
 
 	var eventID int64
-	err := s.db.QueryRow(
+	err = s.db.QueryRow(
 		query,
 		req.EventType,
 		req.Title,
@@ -303,10 +327,10 @@ func (s *CalendarServer) getCurrentSemesterInfoInternal(academicYear string) (*p
 		currentSemester = "summer"
 	}
 
-	var semesterStart, semesterEnd, examStart, examEnd time.Time
+	var semesterStart, semesterEnd, examStart, examEnd  string
 
 	query := `
-		SELECT start_date
+	  SELECT start_date::text
 		FROM academic_calendar
 		WHERE event_type = 'semester_start'
 		  AND applies_to = $1
@@ -314,28 +338,28 @@ func (s *CalendarServer) getCurrentSemesterInfoInternal(academicYear string) (*p
 		LIMIT 1
 	`
 
-	err := s.db.QueryRow(query, currentSemester, academicYear).Scan(&semesterStart)
+	err := s.db.QueryRow(query,  academicYear).Scan(&semesterStart)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 
 	weekNumber := int32(0)
-	if !semesterStart.IsZero() {
-		weeksSinceStart := int32(now.Sub(semesterStart).Hours() / 24 / 7)
+	if semesterStart != "" {
+		startTime, _ := time.Parse("2006-01-02", semesterStart)
+		weeksSinceStart := int32(now.Sub(startTime).Hours() / 24 / 7)
 		weekNumber = weeksSinceStart + 1
 		if weekNumber < 1 {
 			weekNumber = 1
 		}
 	}
-
 	var holidays []string
 	holidayQuery := `
 		SELECT title
 		FROM academic_calendar
 		WHERE event_type = 'holiday'
-		  AND start_date > CURRENT_DATE
-		  AND start_date <= CURRENT_DATE + INTERVAL '30 days'
-		ORDER BY start_date
+	  AND start_date::text > CURRENT_DATE
+	  AND start_date::text <= CURRENT_DATE + INTERVAL '30 days'
+	  ORDER BY start_date::text
 		LIMIT 5
 	`
 	rows, _ := s.db.Query(holidayQuery)
@@ -352,10 +376,10 @@ func (s *CalendarServer) getCurrentSemesterInfoInternal(academicYear string) (*p
 		Year:             academicYear,
 		CurrentSemester:  currentSemester,
 		CurrentWeek:      weekNumber,
-		SemesterStart:    semesterStart.Format("2006-01-02"),
-		SemesterEnd:      semesterEnd.Format("2006-01-02"),
-		ExamSessionStart: examStart.Format("2006-01-02"),
-		ExamSessionEnd:   examEnd.Format("2006-01-02"),
+		SemesterStart:    semesterStart,
+		SemesterEnd:      semesterEnd,
+		ExamSessionStart: examStart,
+		ExamSessionEnd:   examEnd,
 		Holidays:         holidays,
 	}, nil
 }
@@ -435,8 +459,8 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 			s.name as subject_name,
 			c.class_type,
 			sch.day_of_week,
-			sch.start_time,
-			sch.end_time,
+	    sch.start_time::text,
+	    sch.end_time::text,
 			sch.room,
 			sch.building,
 			COALESCE(
