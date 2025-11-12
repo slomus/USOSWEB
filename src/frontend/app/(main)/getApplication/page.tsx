@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type ApplicationCategory = {
   categoryId: number;
@@ -24,54 +26,111 @@ export default function ApplicationsPage() {
   const [categories, setCategories] = useState<ApplicationCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<ApplicationCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<ApplicationCategory | null>(null);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [formData, setFormData] = useState<ApplicationFormData>({
     categoryId: 0,
     title: "",
     content: "",
-    albumNr: "1"
+    albumNr: "1",
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string>("");
 
   const InfoIcon = () => (
-    <svg className="h-5 w-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className="h-5 w-5 text-[var(--color-accent)]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 
   const ArrowRightIcon = () => (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
     </svg>
   );
 
   const CalendarIcon = () => (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
   );
 
   const CloseIcon = () => (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <svg
+      className="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12"
+      />
     </svg>
   );
 
   const CheckIcon = () => (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 
-  const getApplicationStatus = (category: ApplicationCategory): ApplicationStatus => {
+  const getApplicationStatus = (
+    category: ApplicationCategory
+  ): ApplicationStatus => {
     const now = new Date();
-    const startDate = category.applicationStartDate ? new Date(category.applicationStartDate) : null;
-    const endDate = category.applicationEndDate ? new Date(category.applicationEndDate) : null;
+    const startDate = category.applicationStartDate
+      ? new Date(category.applicationStartDate)
+      : null;
+    const endDate = category.applicationEndDate
+      ? new Date(category.applicationEndDate)
+      : null;
 
     if (!startDate || !endDate) return "planowana";
-    
+
     if (now < startDate) return "planowana";
     if (now > endDate) return "zakończona";
     return "aktywna";
@@ -79,10 +138,14 @@ export default function ApplicationsPage() {
 
   const getStatusColor = (status: ApplicationStatus) => {
     switch (status) {
-      case "aktywna": return "text-[var(--color-accent)] bg-[var(--color-accent)]/10";
-      case "zakończona": return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
-      case "planowana": return "text-[var(--color-accent2)] bg-[var(--color-accent2)]/10";
-      default: return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
+      case "aktywna":
+        return "text-[var(--color-accent)] bg-[var(--color-accent)]/10";
+      case "zakończona":
+        return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
+      case "planowana":
+        return "text-[var(--color-accent2)] bg-[var(--color-accent2)]/10";
+      default:
+        return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
     }
   };
 
@@ -90,11 +153,11 @@ export default function ApplicationsPage() {
     if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString("pl-PL", {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -102,7 +165,7 @@ export default function ApplicationsPage() {
     const now = new Date();
     const currentYear = now.getFullYear();
     const month = now.getMonth();
-    
+
     if (month >= 9) {
       return `${currentYear}/${currentYear + 1}`;
     } else {
@@ -115,7 +178,7 @@ export default function ApplicationsPage() {
       categoryId: 0,
       title: "",
       content: "",
-      albumNr: "1"
+      albumNr: "1",
     });
     setShowApplicationForm(false);
     setSelectedCategory(null);
@@ -124,19 +187,19 @@ export default function ApplicationsPage() {
 
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || formData.title.trim().length < 3) {
       alert("Tytuł musi mieć co najmniej 3 znaki");
       return;
     }
-    
+
     if (!formData.content.trim() || formData.content.trim().length < 10) {
       alert("Treść musi mieć co najmniej 10 znaków");
       return;
     }
 
     setSubmitting(true);
-    
+
     try {
       const response = await fetch("http://localhost:8083/api/applications", {
         method: "POST",
@@ -148,7 +211,7 @@ export default function ApplicationsPage() {
           category_id: formData.categoryId,
           title: formData.title.trim(),
           content: formData.content.trim(),
-          album_nr: formData.albumNr
+          album_nr: formData.albumNr,
         }),
       });
 
@@ -158,19 +221,33 @@ export default function ApplicationsPage() {
       }
 
       const result = await response.json();
-      
+
       console.log("Backend response:", result);
       console.log("Response status:", response.status);
-      
-      setSubmitSuccess(`Wniosek został pomyślnie wypełniony i złożony! ${result.application_id || result.id || result.applicationId ? `Numer wniosku: ${result.application_id || result.id || result.applicationId}` : ''}`);
-      
-      setTimeout(() => {
-        resetForm();
-      }, 5000);
-      
-    } catch (err: any) {
-      console.error("Błąd podczas składania wniosku:", err);
-      alert(`Nie udało się złożyć wniosku: ${err.message}`);
+
+      toast.success(
+        `Wniosek złożony! Numer: ${
+          result.application_id || result.id || result.applicationId || ""
+        }`,
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
+
+      resetForm();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(`Błąd składania wniosku: ${err.message}`, {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      } else {
+        toast.error("Wystąpił nieznany błąd", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -181,15 +258,18 @@ export default function ApplicationsPage() {
       try {
         setLoading(true);
         setError("");
-        
-        const res = await fetch("http://localhost:8083/api/application-categories", {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        
+
+        const res = await fetch(
+          "http://localhost:8083/api/application-categories",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
         if (!res.ok) {
           if (res.status === 404) {
             throw new Error("Endpoint kategorii wniosków nie jest dostępny");
@@ -202,10 +282,16 @@ export default function ApplicationsPage() {
 
         const data = await res.json();
         setCategories(data.items || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Błąd podczas pobierania kategorii wniosków:", err);
-        if (err.name === 'TypeError' || err.message.includes('fetch')) {
-          setError("Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony.");
+        if (err instanceof Error) {
+          if (err.name === "TypeError" || err.message.includes("fetch")) {
+            setError(
+              "Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony."
+            );
+          } else {
+            setError("Nie udało się pobrać kategorii wniosków");
+          }
         } else {
           setError("Nie udało się pobrać kategorii wniosków");
         }
@@ -222,26 +308,35 @@ export default function ApplicationsPage() {
     setError("");
     setCategories([]);
     setLoading(true);
-    
+
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:8083/api/application-categories", {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        
+        const res = await fetch(
+          "http://localhost:8083/api/application-categories",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
         if (!res.ok) {
           throw new Error(`Błąd HTTP: ${res.status}`);
         }
 
         const data = await res.json();
         setCategories(data.items || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Błąd podczas pobierania kategorii wniosków:", err);
-        setError("Nie udało się pobrać kategorii wniosków");
+
+        if (err instanceof Error) {
+          setError(`Błąd: ${err.message}`);
+        } else {
+          setError("Nie udało się pobrać kategorii wniosków");
+        }
+
         setCategories([]);
       } finally {
         setLoading(false);
@@ -251,7 +346,10 @@ export default function ApplicationsPage() {
     fetchCategories();
   };
 
-  const handleApplicationAction = (category: ApplicationCategory, action: "info" | "apply") => {
+  const handleApplicationAction = (
+    category: ApplicationCategory,
+    action: "info" | "apply"
+  ) => {
     if (action === "info") {
       setSelectedCategory(category);
     } else if (action === "apply") {
@@ -261,11 +359,17 @@ export default function ApplicationsPage() {
         return;
       }
       if (status === "planowana") {
-        alert("Termin składania wniosków dla tej kategorii jeszcze się nie rozpoczął.");
+        alert(
+          "Termin składania wniosków dla tej kategorii jeszcze się nie rozpoczął."
+        );
         return;
       }
-      
-      setFormData(prev => ({ ...prev, categoryId: category.categoryId, albumNr: "1" }));
+
+      setFormData((prev) => ({
+        ...prev,
+        categoryId: category.categoryId,
+        albumNr: "1",
+      }));
       setSelectedCategory(category);
       setShowApplicationForm(true);
     }
@@ -276,7 +380,9 @@ export default function ApplicationsPage() {
       <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent)] mb-4 mx-auto"></div>
-          <p className="text-lg text-[var(--color-text-secondary)]">Ładowanie kategorii wniosków...</p>
+          <p className="text-lg text-[var(--color-text-secondary)]">
+            Ładowanie kategorii wniosków...
+          </p>
         </div>
       </div>
     );
@@ -302,7 +408,9 @@ export default function ApplicationsPage() {
           <div className="mb-6 bg-[var(--color-bg-secondary)] border border-[var(--color-accent2)] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-[var(--color-accent2)] mb-1">Uwaga</h3>
+                <h3 className="font-semibold text-[var(--color-accent2)] mb-1">
+                  Uwaga
+                </h3>
                 <p className="text-[var(--color-text-secondary)]">{error}</p>
               </div>
               <button
@@ -326,13 +434,16 @@ export default function ApplicationsPage() {
                   </div>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-lg font-semibold text-green-800 mb-1">Sukces!</h3>
+                  <h3 className="text-lg font-semibold text-green-800 mb-1">
+                    Sukces!
+                  </h3>
                   <p className="text-green-700">{submitSuccess}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSubmitSuccess("")}
                 className="text-green-600 hover:text-green-800 transition-colors"
+                title="Zamknij"
               >
                 <CloseIcon />
               </button>
@@ -343,21 +454,39 @@ export default function ApplicationsPage() {
         {/* Statystyki */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">Aktywne wnioski</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
+              Aktywne wnioski
+            </h3>
             <p className="text-3xl font-bold">
-              {categories.filter(cat => getApplicationStatus(cat) === "aktywna").length}
+              {
+                categories.filter(
+                  (cat) => getApplicationStatus(cat) === "aktywna"
+                ).length
+              }
             </p>
           </div>
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">Planowane</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
+              Planowane
+            </h3>
             <p className="text-3xl font-bold">
-              {categories.filter(cat => getApplicationStatus(cat) === "planowana").length}
+              {
+                categories.filter(
+                  (cat) => getApplicationStatus(cat) === "planowana"
+                ).length
+              }
             </p>
           </div>
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">Zakończone</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
+              Zakończone
+            </h3>
             <p className="text-3xl font-bold">
-              {categories.filter(cat => getApplicationStatus(cat) === "zakończona").length}
+              {
+                categories.filter(
+                  (cat) => getApplicationStatus(cat) === "zakończona"
+                ).length
+              }
             </p>
           </div>
         </div>
@@ -365,12 +494,16 @@ export default function ApplicationsPage() {
         {/* Tabela wniosków */}
         <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
           <div className="bg-[var(--color-accent)] text-white px-6 py-4">
-            <h2 className="text-xl font-semibold">Dostępne kategorie wniosków</h2>
+            <h2 className="text-xl font-semibold">
+              Dostępne kategorie wniosków
+            </h2>
           </div>
 
           {categories.length === 0 && !loading ? (
             <div className="px-6 py-12 text-center">
-              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">Brak dostępnych wniosków</h3>
+              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
+                Brak dostępnych wniosków
+              </h3>
               <p className="text-[var(--color-text-secondary)]">
                 Obecnie nie ma dostępnych kategorii wniosków dla Twojego konta.
               </p>
@@ -381,17 +514,28 @@ export default function ApplicationsPage() {
                 <thead className="bg-[var(--color-accent)]/10">
                   <tr>
                     <th className="text-left py-4 px-6 font-semibold">Nazwa</th>
-                    <th className="text-center py-4 px-4 font-semibold">Status</th>
-                    <th className="text-left py-4 px-4 font-semibold">Organizator</th>
-                    <th className="text-center py-4 px-4 font-semibold">Termin</th>
-                    <th className="text-center py-4 px-6 font-semibold">Akcje</th>
+                    <th className="text-center py-4 px-4 font-semibold">
+                      Status
+                    </th>
+                    <th className="text-left py-4 px-4 font-semibold">
+                      Organizator
+                    </th>
+                    <th className="text-center py-4 px-4 font-semibold">
+                      Termin
+                    </th>
+                    <th className="text-center py-4 px-6 font-semibold">
+                      Akcje
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-accent)]/20">
                   {categories.map((category) => {
                     const status = getApplicationStatus(category);
                     return (
-                      <tr key={category.categoryId} className="hover:bg-[var(--color-bg)] transition-colors">
+                      <tr
+                        key={category.categoryId}
+                        className="hover:bg-[var(--color-bg)] transition-colors"
+                      >
                         <td className="py-4 px-6">
                           <div className="flex items-start space-x-3">
                             <div className="flex-shrink-0 mt-1">
@@ -402,7 +546,9 @@ export default function ApplicationsPage() {
                               </div>
                             </div>
                             <div>
-                              <div className="font-medium text-[var(--color-text)]">{category.name}</div>
+                              <div className="font-medium text-[var(--color-text)]">
+                                {category.name}
+                              </div>
                               <div className="text-sm text-[var(--color-text-secondary)] mt-1">
                                 {category.description}
                               </div>
@@ -410,44 +556,64 @@ export default function ApplicationsPage() {
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                              status
+                            )}`}
+                          >
                             {status}
                           </span>
                         </td>
                         <td className="py-4 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">Uniwersytet Kazimierza Wielkiego w Bydgoszczy</div>
+                            <div className="font-medium">
+                              Uniwersytet Kazimierza Wielkiego w Bydgoszczy
+                            </div>
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
                           <div className="flex items-center justify-center space-x-1 text-sm text-[var(--color-text-secondary)]">
                             <CalendarIcon />
-                            <span>Rok akademicki {getCurrentAcademicYear()}</span>
+                            <span>
+                              Rok akademicki {getCurrentAcademicYear()}
+                            </span>
                           </div>
-                          {category.applicationStartDate && category.applicationEndDate && (
-                            <div className="text-xs text-[var(--color-text-secondary)] mt-1">
-                              {formatDate(category.applicationStartDate)} - {formatDate(category.applicationEndDate)}
-                            </div>
-                          )}
+                          {category.applicationStartDate &&
+                            category.applicationEndDate && (
+                              <div className="text-xs text-[var(--color-text-secondary)] mt-1">
+                                {formatDate(category.applicationStartDate)} -{" "}
+                                {formatDate(category.applicationEndDate)}
+                              </div>
+                            )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-center space-x-2">
                             <button
-                              onClick={() => handleApplicationAction(category, "info")}
+                              onClick={() =>
+                                handleApplicationAction(category, "info")
+                              }
                               className="flex items-center space-x-1 text-[var(--color-accent)] hover:text-[var(--color-accent2)] transition-colors text-sm"
                             >
                               <span>informacje</span>
                               <ArrowRightIcon />
                             </button>
-                            <span className="text-[var(--color-text-secondary)]">→</span>
+                            <span className="text-[var(--color-text-secondary)]">
+                              →
+                            </span>
                             <button
-                              onClick={() => handleApplicationAction(category, "apply")}
+                              onClick={() =>
+                                handleApplicationAction(category, "apply")
+                              }
                               className={`flex items-center space-x-1 transition-colors text-sm ${
-                                status === "zakończona" || status === "planowana"
+                                status === "zakończona" ||
+                                status === "planowana"
                                   ? "text-[var(--color-text-secondary)] cursor-not-allowed"
                                   : "text-[var(--color-accent)] hover:text-[var(--color-accent2)]"
                               }`}
-                              disabled={status === "zakończona" || status === "planowana"}
+                              disabled={
+                                status === "zakończona" ||
+                                status === "planowana"
+                              }
                             >
                               <span>wypełnij wniosek</span>
                               <ArrowRightIcon />
@@ -474,19 +640,25 @@ export default function ApplicationsPage() {
             <p className="text-[var(--color-text-secondary)] mb-4">
               {selectedCategory.description}
             </p>
-            {selectedCategory.applicationStartDate && selectedCategory.applicationEndDate && (
-              <div className="mb-4">
-                <h4 className="font-semibold mb-2">Terminy:</h4>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Początek: {formatDate(selectedCategory.applicationStartDate)}
-                </p>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Koniec: {formatDate(selectedCategory.applicationEndDate)}
-                </p>
-              </div>
-            )}
+            {selectedCategory.applicationStartDate &&
+              selectedCategory.applicationEndDate && (
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-2">Terminy:</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Początek:{" "}
+                    {formatDate(selectedCategory.applicationStartDate)}
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Koniec: {formatDate(selectedCategory.applicationEndDate)}
+                  </p>
+                </div>
+              )}
             <div className="mb-4">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getApplicationStatus(selectedCategory))}`}>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                  getApplicationStatus(selectedCategory)
+                )}`}
+              >
                 Status: {getApplicationStatus(selectedCategory)}
               </span>
             </div>
@@ -498,7 +670,9 @@ export default function ApplicationsPage() {
                 Zamknij
               </button>
               <button
-                onClick={() => handleApplicationAction(selectedCategory, "apply")}
+                onClick={() =>
+                  handleApplicationAction(selectedCategory, "apply")
+                }
                 className={`px-4 py-2 rounded transition-colors ${
                   getApplicationStatus(selectedCategory) === "aktywna"
                     ? "bg-[var(--color-accent)] hover:bg-[var(--color-accent2)] text-white"
@@ -524,6 +698,7 @@ export default function ApplicationsPage() {
               <button
                 onClick={resetForm}
                 className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
+                title="Zamknij"
               >
                 <CloseIcon />
               </button>
@@ -531,14 +706,19 @@ export default function ApplicationsPage() {
 
             <form onSubmit={handleSubmitApplication} className="space-y-6">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-[var(--color-text)] mb-2"
+                >
                   Tytuł wniosku *
                 </label>
                 <input
                   type="text"
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
+                  }
                   className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                   placeholder="Wprowadź tytuł wniosku (min. 3 znaki)"
                   required
@@ -547,13 +727,21 @@ export default function ApplicationsPage() {
               </div>
 
               <div>
-                <label htmlFor="content" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label
+                  htmlFor="content"
+                  className="block text-sm font-medium text-[var(--color-text)] mb-2"
+                >
                   Treść wniosku *
                 </label>
                 <textarea
                   id="content"
                   value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
+                  }
                   rows={8}
                   className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-vertical"
                   placeholder="Wprowadź treść wniosku (min. 10 znaków)"
@@ -563,12 +751,15 @@ export default function ApplicationsPage() {
               </div>
 
               <div className="bg-[var(--color-bg)] p-4 rounded-md border border-[var(--color-accent)]/30">
-                <h4 className="font-semibold text-[var(--color-text)] mb-2">Informacje o kategorii:</h4>
+                <h4 className="font-semibold text-[var(--color-text)] mb-2">
+                  Informacje o kategorii:
+                </h4>
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   {selectedCategory.description}
                 </p>
                 <p className="text-xs text-[var(--color-text-secondary)] mt-2">
-                  Termin: {formatDate(selectedCategory.applicationStartDate)} - {formatDate(selectedCategory.applicationEndDate)}
+                  Termin: {formatDate(selectedCategory.applicationStartDate)} -{" "}
+                  {formatDate(selectedCategory.applicationEndDate)}
                 </p>
               </div>
 
