@@ -15,7 +15,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Kierunek", href: "/field" },
     { label: "Rejestracja na przedmioty", href: "#" },
     { label: "Egzaminy i zaliczenia", href: "examsPasses" },
-    { label: "Zarządzanie kontem", href: "#" },
+    { label: "Zarządzanie kontem", href: "/accountManagement" },
     { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },
   ];
