@@ -232,6 +232,27 @@ func local_request_MessagingService_SuggestEmail_0(ctx context.Context, marshale
 	return msg, metadata, err
 }
 
+func request_MessagingService_ListFolders_0(ctx context.Context, marshaler runtime.Marshaler, client MessagingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListFoldersRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.ListFolders(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_MessagingService_ListFolders_0(ctx context.Context, marshaler runtime.Marshaler, server MessagingServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListFoldersRequest
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.ListFolders(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterMessagingServiceHandlerServer registers the http handlers for service MessagingService to "mux".
 // UnaryRPC     :call MessagingServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -377,6 +398,26 @@ func RegisterMessagingServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			return
 		}
 		forward_MessagingService_SuggestEmail_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_MessagingService_ListFolders_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/modules.messaging.api.MessagingService/ListFolders", runtime.WithHTTPPathPattern("/api/messaging/list-folders"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_MessagingService_ListFolders_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MessagingService_ListFolders_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -537,6 +578,23 @@ func RegisterMessagingServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		}
 		forward_MessagingService_SuggestEmail_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_MessagingService_ListFolders_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/modules.messaging.api.MessagingService/ListFolders", runtime.WithHTTPPathPattern("/api/messaging/list-folders"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MessagingService_ListFolders_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MessagingService_ListFolders_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -548,6 +606,7 @@ var (
 	pattern_MessagingService_SetEmailRead_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "messaging", "set_email_read"}, ""))
 	pattern_MessagingService_SetEmailUnread_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "messaging", "set_email_unread"}, ""))
 	pattern_MessagingService_SuggestEmail_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "messaging", "suggest-email"}, ""))
+	pattern_MessagingService_ListFolders_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "messaging", "list-folders"}, ""))
 )
 
 var (
@@ -558,4 +617,5 @@ var (
 	forward_MessagingService_SetEmailRead_0   = runtime.ForwardResponseMessage
 	forward_MessagingService_SetEmailUnread_0 = runtime.ForwardResponseMessage
 	forward_MessagingService_SuggestEmail_0   = runtime.ForwardResponseMessage
+	forward_MessagingService_ListFolders_0    = runtime.ForwardResponseMessage
 )

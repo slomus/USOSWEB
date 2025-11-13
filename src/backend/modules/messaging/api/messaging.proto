@@ -11,7 +11,6 @@ message SendEmailRequest {
   string to = 10;
   string subject = 11;
   string body = 12;
-  string from = 13;
 }
 
 message SendEmailResponse {
@@ -22,6 +21,7 @@ message SendEmailResponse {
 // IMAP single email fetch
 message GetEmailRequest {
   string email_uid = 10;
+  string folder = 11; // optional, default INBOX
 }
 
 message GetEmailResponse {
@@ -40,6 +40,7 @@ message GetEmailResponse {
 message GetAllEmailsRequest {
   int32 limit = 10;
   int32 offset = 11;
+  string folder = 12; // optional, default INBOX
 }
 
 message EmailSummary {
@@ -58,9 +59,22 @@ message GetAllEmailsResponse {
   int32 total_count = 13;
 }
 
+// IMAP folders (mailboxes)
+message ListFoldersRequest {
+}
+
+message FolderItem {
+  string name = 10;         // IMAP mailbox name (e.g., INBOX, Sent, Drafts)
+}
+
+message ListFoldersResponse {
+  repeated FolderItem folders = 10;
+}
+
 // IMAP delete
 message DeleteEmailRequest {
   string email_uid = 10;
+  string folder = 11;  // optional, default: INBOX
 }
 
 message DeleteEmailResponse {
@@ -71,6 +85,7 @@ message DeleteEmailResponse {
 // IMAP mark read
 message SetEmailReadRequest {
   string email_uid = 10;
+  string folder = 11;  // optional, default: INBOX
 }
 
 message SetEmailReadResponse {
@@ -81,6 +96,7 @@ message SetEmailReadResponse {
 //IMAP mark unread
 message SetEmailUnReadRequest {
   string email_uid = 10;
+  string folder = 11;  // optional, default: INBOX
 }
 
 message SetEmailUnReadResponse {
@@ -158,6 +174,13 @@ service MessagingService {
   rpc SuggestEmail(SuggestEmailRequest) returns (SuggestEmailResponse) {
     option (google.api.http) = {
       get : "/api/messaging/suggest-email"
+    };
+  }
+
+  // List available mail folders
+  rpc ListFolders(ListFoldersRequest) returns (ListFoldersResponse) {
+    option (google.api.http) = {
+      get : "/api/messaging/list-folders"
     };
   }
 }

@@ -44,7 +44,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Strona główna", href: "/StudentMainPage" },
     { label: "Plan zajęć", href: "#" },
     { label: "Wiadomości", href: "/messages" },
-    { label: "Kalendarz", href: "#" },
+    { label: "Kalendarz", href: "/calendar" },
     { label: "Oceny", href: "/marks" },
     { label: "Wnioski", href: "/getApplication" },
     { label: "Kierunek", href: "/field" },
