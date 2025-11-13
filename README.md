@@ -95,11 +95,45 @@ PostgreSQL
 
 ---
 
+## 🌱 Szybkie seedowanie bazy danych
+
+### Dwie komendy - gotowa baza!
+
+```bash
+# 1. Uruchom serwisy
+docker compose up -d --build
+
+# 2. Zaseeduj bazę
+make seed-all
+```
+
+**Windows:**
+```cmd
+docker compose up -d --build
+scripts\seed-all.bat
+```
+
+### Co zostanie wgrane?
+- ✅ Podstawowe dane (wydziały, budynki)
+- ✅ 9 użytkowników testowych (studenci, wykładowcy, admini)
+- ✅ Relacje (wiadomości, oceny, podania)
+- ✅ Opcjonalnie: 91 dodatkowych użytkowników + duże dane
+
+**Dane logowania:**
+- `admin@system.com` / `SystemAdmin123!`
+- `michal.grzonkowski@student.edu.pl` / `Michal123!`
+- `jan.kowalski@student.edu.pl` / `Jan123!`
+
+📖 **[Dokumentacja seedowania →](src/backend/database/seeds/README.md)**
+
+---
+
 ## 📚 Dokumentacja
 
 - **[Instrukcje Unix/Linux/macOS](README-UNIX.md)**
 - **[Instrukcje Windows](README-WINDOWS.md)**
 - **[Szczegóły deploymentu](DEPLOYMENT.md)**
+- **[Seedowanie bazy danych](src/backend/database/seeds/README.md)**
 
 ---
 
