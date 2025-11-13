@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Dokumentacja
+*.md
+!README.md
+
+# Logi
+logs/
+*.log
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Output logstash
+logstash-output/
+
+# Volumes i dane
+postgres_data/
+redis_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts (nie ignoruj, bo są potrzebne)
+# gen/
+
