@@ -9,7 +9,7 @@ else
     SHELL_EXT = .sh
 endif
 
-.PHONY: build up down postgres-up postgres-down gateway-up gateway-down calendar-up calendar-down common-up common-down messaging-up messaging-down frontend-up frontend-down migrate migrate-create db-build db-reset db-seed k8s-deploy k8s-clean k8s-status k8s-logs help-windows
+.PHONY: build up down postgres-up postgres-down gateway-up gateway-down calendar-up calendar-down common-up common-down messaging-up messaging-down frontend-up frontend-down migrate migrate-create db-build db-reset db-seed seed-all k8s-deploy k8s-clean k8s-status k8s-logs help-windows
 
 build:
 	docker-compose build
@@ -138,6 +138,9 @@ endif
 	@echo "  make build           - Build all services"
 	@echo "  make up              - Start all services"
 	@echo "  make down            - Stop all services"
+	@echo ""
+	@echo "Database commands:"
+	@echo "  make seed-all        - 🚀 Pełne seedowanie bazy (JEDNA KOMENDA!)"
 	@echo "  make db-build        - Build and seed database"
 	@echo "  make db-reset        - Reset database"
 	@echo ""
@@ -163,10 +166,6 @@ db-reset:
 	docker volume rm $(docker volume ls -q | grep postgres) 2>/dev/null || true
 	$(MAKE) setup-db
 
-db-seed:
-	docker-compose --profile seeder build --no-cache seeder
-	docker-compose --profile seeder run --rm seeder
-
 db-users:
 	docker-compose --profile init run --rm init-users
 
@@ -180,3 +179,11 @@ db-status:
 db-backup:
 	@mkdir -p backups
 	docker-compose exec postgres pg_dump -U postgres mydb > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Pełne seedowanie bazy - JEDNA KOMENDA!
+seed-all:
+	@if command -v bash >/dev/null 2>&1; then \
+		chmod +x ./scripts/seed-all.sh && ./scripts/seed-all.sh; \
+	else \
+		echo "Bash niedostępny. Na Windows uruchom scripts/seed-all.bat"; \
+	fi

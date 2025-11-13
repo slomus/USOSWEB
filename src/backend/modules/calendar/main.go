@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"google.golang.org/grpc/metadata"
+	"context"
+	"github.com/golang-jwt/jwt/v5"
+  "github.com/slomus/USOSWEB/src/backend/configs"
 
 	_ "github.com/lib/pq"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
@@ -14,6 +18,32 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        return handler(ctx, req)
+    }
+
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        return handler(ctx, req)
+    }
+
+    token, err := jwt.Parse(tokens[0], func(token *jwt.Token) (interface{}, error) {
+        return []byte(configs.Envs.JWTSecretKey), nil
+    })
+
+    if err == nil && token.Valid {
+        if claims, ok := token.Claims.(jwt.MapClaims); ok {
+            if userID, ok := claims["user_id"].(float64); ok {
+                md = metadata.Join(md, metadata.Pairs("user_id", fmt.Sprintf("%d", int64(userID))))
+                ctx = metadata.NewIncomingContext(ctx, md)
+            }
+        }
+    }
+
+    return handler(ctx, req)
+}
 var log = logger.NewLogger("calendar-main")
 
 func main() {
@@ -54,7 +84,9 @@ func main() {
 		panic(err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+			grpc.UnaryInterceptor(authInterceptor),
+	)
 
 	calendarServer := calendar.NewCalendarServer(db)
 	pb.RegisterCalendarServiceServer(grpcServer, calendarServer)
@@ -75,3 +107,5 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
+

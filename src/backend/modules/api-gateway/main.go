@@ -15,6 +15,7 @@ import (
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
+	academicPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -247,6 +248,24 @@ func main() {
 	//Course Service
 	appLog.LogInfo("Registering cou endpoints")
 
+	// SubjectsService
+  appLog.LogInfo("Registering SubjectsService endpoints")
+  err = academicPb.RegisterSubjectsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+  if err != nil {
+      appLog.LogError("Failed to register SubjectsService gateway", err)
+      panic(err)
+  }
+  appLog.LogInfo("SubjectsService endpoints registered successfully")
+
+  // EnrollmentsService
+  appLog.LogInfo("Registering EnrollmentsService endpoints")
+  err = academicPb.RegisterEnrollmentsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+  if err != nil {
+      appLog.LogError("Failed to register EnrollmentsService gateway", err)
+      panic(err)
+  }
+  appLog.LogInfo("EnrollmentsService endpoints registered successfully")
+
 	handler := loggingMiddleware(allowCORS(mux))
 	appLog.LogInfo("API Gateway configured with endpoints:")
 	endpoints := []string{
@@ -283,6 +302,13 @@ func main() {
 		"POST /api/applications",
 		"GET  /api/grades",
 		"POST /api/grades",
+		"GET  /api/subjects",
+    "GET  /api/subjects/{id}",
+    "POST /api/enrollments",
+		"DELETE /api/enrollments/{subject_id}",
+    "GET  /api/enrollments",
+    "POST /api/enrollments/check-conflicts",		
+
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))

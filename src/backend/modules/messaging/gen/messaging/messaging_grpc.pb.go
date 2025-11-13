@@ -26,6 +26,7 @@ const (
 	MessagingService_SetEmailRead_FullMethodName   = "/modules.messaging.api.MessagingService/SetEmailRead"
 	MessagingService_SetEmailUnread_FullMethodName = "/modules.messaging.api.MessagingService/SetEmailUnread"
 	MessagingService_SuggestEmail_FullMethodName   = "/modules.messaging.api.MessagingService/SuggestEmail"
+	MessagingService_ListFolders_FullMethodName    = "/modules.messaging.api.MessagingService/ListFolders"
 )
 
 // MessagingServiceClient is the client API for MessagingService service.
@@ -45,6 +46,8 @@ type MessagingServiceClient interface {
 	SetEmailUnread(ctx context.Context, in *SetEmailUnReadRequest, opts ...grpc.CallOption) (*SetEmailUnReadResponse, error)
 	// Suggestions
 	SuggestEmail(ctx context.Context, in *SuggestEmailRequest, opts ...grpc.CallOption) (*SuggestEmailResponse, error)
+	// List available mail folders
+	ListFolders(ctx context.Context, in *ListFoldersRequest, opts ...grpc.CallOption) (*ListFoldersResponse, error)
 }
 
 type messagingServiceClient struct {
@@ -125,6 +128,16 @@ func (c *messagingServiceClient) SuggestEmail(ctx context.Context, in *SuggestEm
 	return out, nil
 }
 
+func (c *messagingServiceClient) ListFolders(ctx context.Context, in *ListFoldersRequest, opts ...grpc.CallOption) (*ListFoldersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFoldersResponse)
+	err := c.cc.Invoke(ctx, MessagingService_ListFolders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessagingServiceServer is the server API for MessagingService service.
 // All implementations must embed UnimplementedMessagingServiceServer
 // for forward compatibility.
@@ -142,6 +155,8 @@ type MessagingServiceServer interface {
 	SetEmailUnread(context.Context, *SetEmailUnReadRequest) (*SetEmailUnReadResponse, error)
 	// Suggestions
 	SuggestEmail(context.Context, *SuggestEmailRequest) (*SuggestEmailResponse, error)
+	// List available mail folders
+	ListFolders(context.Context, *ListFoldersRequest) (*ListFoldersResponse, error)
 	mustEmbedUnimplementedMessagingServiceServer()
 }
 
@@ -172,6 +187,9 @@ func (UnimplementedMessagingServiceServer) SetEmailUnread(context.Context, *SetE
 }
 func (UnimplementedMessagingServiceServer) SuggestEmail(context.Context, *SuggestEmailRequest) (*SuggestEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SuggestEmail not implemented")
+}
+func (UnimplementedMessagingServiceServer) ListFolders(context.Context, *ListFoldersRequest) (*ListFoldersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFolders not implemented")
 }
 func (UnimplementedMessagingServiceServer) mustEmbedUnimplementedMessagingServiceServer() {}
 func (UnimplementedMessagingServiceServer) testEmbeddedByValue()                          {}
@@ -320,6 +338,24 @@ func _MessagingService_SuggestEmail_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessagingService_ListFolders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFoldersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagingServiceServer).ListFolders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessagingService_ListFolders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagingServiceServer).ListFolders(ctx, req.(*ListFoldersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessagingService_ServiceDesc is the grpc.ServiceDesc for MessagingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -354,6 +390,10 @@ var MessagingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SuggestEmail",
 			Handler:    _MessagingService_SuggestEmail_Handler,
+		},
+		{
+			MethodName: "ListFolders",
+			Handler:    _MessagingService_ListFolders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1196,110 +1196,154 @@ func (s *AuthServer) getUserRoleFromDB(ctx context.Context, userID int64) (UserR
 	return RoleUnknown, nil
 }
 
+
 func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		authLog.LogWarn("GetUsers: Brak metadanych")
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "No metadata",
-			Status:  401,
-		}, nil
-	}
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        authLog.LogWarn("GetUsers: Brak metadanych")
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "No metadata",
+            Status:  401,
+        }, nil
+    }
 
-	tokens := md.Get("authorization")
-	if len(tokens) == 0 {
-		authLog.LogWarn("GetUsers: Brak tokenu autoryzacji")
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "No authorization token",
-			Status:  401,
-		}, nil
-	}
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        authLog.LogWarn("GetUsers: Brak tokenu autoryzacji")
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "No authorization token",
+            Status:  401,
+        }, nil
+    }
 
-	claims, err := auth.ValidateToken(tokens[0])
-	if err != nil {
-		authLog.LogWarn(fmt.Sprintf("GetUsers: Invalid token: %v", err))
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Invalid token",
-			Status:  401,
-		}, nil
-	}
+    claims, err := auth.ValidateToken(tokens[0])
+    if err != nil {
+        authLog.LogWarn(fmt.Sprintf("GetUsers: Invalid token: %v", err))
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Invalid token",
+            Status:  401,
+        }, nil
+    }
 
-	userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
-	if err != nil {
-		authLog.LogError("GetUsers: Error checking user role", err)
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Error while checking credentials",
-			Status:  500,
-		}, nil
-	}
+    userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
+    if err != nil {
+        authLog.LogError("GetUsers: Error checking user role", err)
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Error while checking credentials",
+            Status:  500,
+        }, nil
+    }
 
-	if userRole != RoleAdmin {
-		authLog.LogWarn(fmt.Sprintf("GetUsers: Access denied for user %d with role %s", claims.UserID, userRole))
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Only administrators can access this data",
-			Status:  403,
-		}, nil
-	}
+    if userRole != RoleAdmin && userRole != RoleTeacher {
+        authLog.LogWarn(fmt.Sprintf("GetUsers: Access denied for user %d with role %s", claims.UserID, userRole))
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Access denied",
+            Status:  403,
+        }, nil
+    }
 
-	authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
+    var query string
+    var args []interface{}
 
-	query := `
-        SELECT u.user_id, u.name, u.surname, u.email, u.active,
-               CASE
-                   WHEN s.user_id IS NOT NULL THEN 'student'
-                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
-                   WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
-                   ELSE 'unknown'
-               END as role
-        FROM users u
-        LEFT JOIN students s ON u.user_id = s.user_id
-        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
-        LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
-        ORDER BY u.user_id
-    `
+    if userRole == RoleAdmin {
+        authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
+        query = `
+            SELECT u.user_id, u.name, u.surname, u.email, u.active,
+                   CASE
+                       WHEN s.user_id IS NOT NULL THEN 'student'
+                       WHEN ts.user_id IS NOT NULL THEN 'teacher'
+                       WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
+                       ELSE 'unknown'
+                   END as role,
+                   s.album_nr,
+                   ts.teaching_staff_id,
+                   admin_staff.administrative_staff_id
+            FROM users u
+            LEFT JOIN students s ON u.user_id = s.user_id
+            LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+            LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
+            ORDER BY u.user_id
+        `
+    } else {
+        authLog.LogInfo(fmt.Sprintf("GetUsers: Teacher user %d requesting students list", claims.UserID))
 
-	rows, err := s.db.Query(query)
-	if err != nil {
-		authLog.LogError("GetUsers SQL error", err)
-		return &pb.GetUsersResponse{
-			Users:   nil,
-			Success: false,
-			Message: "Error fetching users",
-			Status:  500,
-		}, nil
-	}
-	defer rows.Close()
+        var teachingStaffID int64
+        err = s.db.QueryRow("SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", claims.UserID).Scan(&teachingStaffID)
+        if err != nil {
+            authLog.LogError("GetUsers: Error getting teaching_staff_id", err)
+            return &pb.GetUsersResponse{
+                Users:   nil,
+                Success: false,
+                Message: "Error while checking credentials",
+                Status:  500,
+            }, nil
+        }
 
-	var users []*pb.User
-	for rows.Next() {
-		user := &pb.User{}
-		err := rows.Scan(&user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role)
-		if err != nil {
-			authLog.LogWarn(fmt.Sprintf("Error scanning user row: %v", err))
-			continue
-		}
-		users = append(users, user)
-	}
+        query = `
+            SELECT DISTINCT u.user_id, u.name, u.surname, u.email, u.active, 'student' as role,
+                   s.album_nr, NULL as teaching_staff_id, NULL as administrative_staff_id
+            FROM users u
+            JOIN students s ON u.user_id = s.user_id
+            JOIN student_classes sc ON s.album_nr = sc.album_nr
+            JOIN course_instructors ci ON sc.class_id = ci.class_id
+            WHERE ci.teaching_staff_id = $1
+            ORDER BY u.user_id
+        `
+        args = []interface{}{teachingStaffID}
+    }
 
-	authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to admin user %d", len(users), claims.UserID))
+    var rows *sql.Rows
+    if len(args) > 0 {
+        rows, err = s.db.Query(query, args...)
+    } else {
+        rows, err = s.db.Query(query)
+    }
 
-	return &pb.GetUsersResponse{
-		Users:   users,
-		Success: true,
-		Message: "Users retrieved successfully",
-		Status:  200,
-	}, nil
+    if err != nil {
+        authLog.LogError("GetUsers SQL error", err)
+        return &pb.GetUsersResponse{
+            Users:   nil,
+            Success: false,
+            Message: "Error fetching users",
+            Status:  500,
+        }, nil
+    }
+    defer rows.Close()
+
+    var users []*pb.User
+    for rows.Next() {
+        user := &pb.User{}
+        err := rows.Scan(
+            &user.UserId, &user.Name, &user.Surname, &user.Email, &user.Active, &user.Role,
+            &user.AlbumNr, &user.TeachingStaffId, &user.AdministrativeStaffId,
+        )
+        if err != nil {
+            authLog.LogWarn(fmt.Sprintf("Error scanning user row: %v", err))
+            continue
+        }
+        users = append(users, user)
+    }
+
+    authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to %s user %d", len(users), userRole, claims.UserID))
+
+    return &pb.GetUsersResponse{
+        Users:   users,
+        Success: true,
+        Message: "Users retrieved successfully",
+        Status:  200,
+    }, nil
 }
+
 
 // SayHello implementuje AuthHello service
 func (s *AuthServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
@@ -1765,12 +1809,254 @@ func sendPasswordResetEmail(email, token string) bool {
 
 	_, err = client.SendEmail(context.Background(), &messagingpb.SendEmailRequest{
 		To:      email,
-		From:    "noreply@usosweb.com",
+	//	From:    "noreply@usosweb.com",
 		Subject: "Password Reset Request",
 		Body:    body,
 	})
 
 	return err == nil
+}
+
+func (s *AuthServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        authLog.LogWarn("DeleteUser: Brak metadanych")
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "No metadata",
+        }, nil
+    }
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        authLog.LogWarn("DeleteUser: Brak tokenu autoryzacji")
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "No authorization token",
+        }, nil
+    }
+    claims, err := auth.ValidateToken(tokens[0])
+    if err != nil {
+        authLog.LogWarn(fmt.Sprintf("DeleteUser: Invalid token: %v", err))
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Invalid token",
+        }, nil
+    }
+    userRole, err := s.getUserRoleFromDB(ctx, claims.UserID)
+    if err != nil {
+        authLog.LogError("DeleteUser: Error checking user role", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Error while checking credentials",
+        }, nil
+    }
+    if userRole != RoleAdmin {
+        authLog.LogWarn(fmt.Sprintf("DeleteUser: Access denied for user %d with role %s", claims.UserID, userRole))
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Access denied",
+        }, nil
+    }
+
+    tx, err := s.db.BeginTx(ctx, nil)
+    if err != nil {
+        authLog.LogError("DeleteUser: Failed to begin transaction", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    userID := req.GetUserId()
+
+    var albumNr int64
+    err = tx.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+    if err != nil && err != sql.ErrNoRows {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to check student", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    if err != sql.ErrNoRows {
+        _, err = tx.ExecContext(ctx, "DELETE FROM applications WHERE album_nr = $1", albumNr)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete applications", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+
+        _, err = tx.ExecContext(ctx, "DELETE FROM grades WHERE album_nr = $1", albumNr)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete grades", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+
+        _, err = tx.ExecContext(ctx, "DELETE FROM student_classes WHERE album_nr = $1", albumNr)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete student_classes", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+
+        _, err = tx.ExecContext(ctx, "DELETE FROM students WHERE user_id = $1", userID)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete student", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+    }
+
+    var teachingStaffID int64
+    err = tx.QueryRowContext(ctx, "SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", userID).Scan(&teachingStaffID)
+    if err != nil && err != sql.ErrNoRows {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to check teaching staff", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    if err != sql.ErrNoRows {
+        _, err = tx.ExecContext(ctx, "DELETE FROM grades WHERE added_by_teaching_staff_id = $1", teachingStaffID)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete grades by teacher", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+
+        _, err = tx.ExecContext(ctx, "DELETE FROM course_instructors WHERE teaching_staff_id = $1", teachingStaffID)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete course_instructors", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+
+        _, err = tx.ExecContext(ctx, "DELETE FROM teaching_staff WHERE user_id = $1", userID)
+        if err != nil {
+            tx.Rollback()
+            authLog.LogError("DeleteUser: Failed to delete teaching_staff", err)
+            return &pb.DeleteUserResponse{
+                Success: false,
+                Message: "Internal server error",
+            }, nil
+        }
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM administrative_staff WHERE user_id = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to delete administrative_staff", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM class_cancellations WHERE cancelled_by = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to delete class_cancellations", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM message_recipients WHERE recipient_id = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to delete message_recipients", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM messages WHERE sender_id = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to delete messages", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    _, err = tx.ExecContext(ctx, "DELETE FROM password_reset_tokens WHERE user_id = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Failed to delete password_reset_tokens", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    res, err := tx.ExecContext(ctx, "DELETE FROM users WHERE user_id = $1", userID)
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Error deleting user", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Error deleting user",
+        }, nil
+    }
+
+    rowsAffected, err := res.RowsAffected()
+    if err != nil {
+        tx.Rollback()
+        authLog.LogError("DeleteUser: Error getting rows affected", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    if rowsAffected == 0 {
+        tx.Rollback()
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "User not found",
+        }, nil
+    }
+
+    err = tx.Commit()
+    if err != nil {
+        authLog.LogError("DeleteUser: Error committing transaction", err)
+        return &pb.DeleteUserResponse{
+            Success: false,
+            Message: "Internal server error",
+        }, nil
+    }
+
+    authLog.LogInfo(fmt.Sprintf("DeleteUser: User %d and related data deleted successfully", userID))
+    return &pb.DeleteUserResponse{
+        Success: true,
+        Message: "User deleted successfully",
+    }, nil
 }
 
 func (s *AuthServer) invalidateUserCache(ctx context.Context, userID int64) {

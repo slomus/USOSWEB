@@ -1311,6 +1311,666 @@ func (x *Holiday) GetIsFreeDay() bool {
 	return false
 }
 
+type ScheduleEntry struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ScheduleId     int32                  `protobuf:"varint,10,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
+	ClassId        int32                  `protobuf:"varint,11,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	SubjectName    string                 `protobuf:"bytes,12,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	ClassType      string                 `protobuf:"bytes,13,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	DayOfWeek      int32                  `protobuf:"varint,14,opt,name=day_of_week,json=dayOfWeek,proto3" json:"day_of_week,omitempty"` // 1=Pon, 2=Wt, ..., 5=Pt
+	StartTime      string                 `protobuf:"bytes,15,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime        string                 `protobuf:"bytes,16,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Room           string                 `protobuf:"bytes,17,opt,name=room,proto3" json:"room,omitempty"`
+	Building       string                 `protobuf:"bytes,18,opt,name=building,proto3" json:"building,omitempty"`
+	InstructorName string                 `protobuf:"bytes,19,opt,name=instructor_name,json=instructorName,proto3" json:"instructor_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ScheduleEntry) Reset() {
+	*x = ScheduleEntry{}
+	mi := &file_calendar_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScheduleEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScheduleEntry) ProtoMessage() {}
+
+func (x *ScheduleEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScheduleEntry.ProtoReflect.Descriptor instead.
+func (*ScheduleEntry) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ScheduleEntry) GetScheduleId() int32 {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return 0
+}
+
+func (x *ScheduleEntry) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *ScheduleEntry) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetClassType() string {
+	if x != nil {
+		return x.ClassType
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetDayOfWeek() int32 {
+	if x != nil {
+		return x.DayOfWeek
+	}
+	return 0
+}
+
+func (x *ScheduleEntry) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetRoom() string {
+	if x != nil {
+		return x.Room
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetBuilding() string {
+	if x != nil {
+		return x.Building
+	}
+	return ""
+}
+
+func (x *ScheduleEntry) GetInstructorName() string {
+	if x != nil {
+		return x.InstructorName
+	}
+	return ""
+}
+
+type GetWeekScheduleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          *string                `protobuf:"bytes,10,opt,name=date,proto3,oneof" json:"date,omitempty"` // ISO format YYYY-MM-DD, domyślnie bieżący tydzień
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWeekScheduleRequest) Reset() {
+	*x = GetWeekScheduleRequest{}
+	mi := &file_calendar_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWeekScheduleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWeekScheduleRequest) ProtoMessage() {}
+
+func (x *GetWeekScheduleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWeekScheduleRequest.ProtoReflect.Descriptor instead.
+func (*GetWeekScheduleRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetWeekScheduleRequest) GetDate() string {
+	if x != nil && x.Date != nil {
+		return *x.Date
+	}
+	return ""
+}
+
+type GetWeekScheduleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	Schedule      []*ScheduleEntry       `protobuf:"bytes,12,rep,name=schedule,proto3" json:"schedule,omitempty"`
+	WeekStart     string                 `protobuf:"bytes,13,opt,name=week_start,json=weekStart,proto3" json:"week_start,omitempty"` // Poniedziałek tego tygodnia
+	WeekEnd       string                 `protobuf:"bytes,14,opt,name=week_end,json=weekEnd,proto3" json:"week_end,omitempty"`       // Piątek tego tygodnia
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWeekScheduleResponse) Reset() {
+	*x = GetWeekScheduleResponse{}
+	mi := &file_calendar_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWeekScheduleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWeekScheduleResponse) ProtoMessage() {}
+
+func (x *GetWeekScheduleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWeekScheduleResponse.ProtoReflect.Descriptor instead.
+func (*GetWeekScheduleResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetWeekScheduleResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetWeekScheduleResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetWeekScheduleResponse) GetSchedule() []*ScheduleEntry {
+	if x != nil {
+		return x.Schedule
+	}
+	return nil
+}
+
+func (x *GetWeekScheduleResponse) GetWeekStart() string {
+	if x != nil {
+		return x.WeekStart
+	}
+	return ""
+}
+
+func (x *GetWeekScheduleResponse) GetWeekEnd() string {
+	if x != nil {
+		return x.WeekEnd
+	}
+	return ""
+}
+
+type RegistrationPeriod struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CalendarId    int32                  `protobuf:"varint,10,opt,name=calendar_id,json=calendarId,proto3" json:"calendar_id,omitempty"`
+	Title         string                 `protobuf:"bytes,11,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,12,opt,name=description,proto3" json:"description,omitempty"`
+	StartDate     string                 `protobuf:"bytes,13,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
+	EndDate       string                 `protobuf:"bytes,14,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`
+	AppliesTo     string                 `protobuf:"bytes,15,opt,name=applies_to,json=appliesTo,proto3" json:"applies_to,omitempty"` // 'all', 'year_1', subject alias, etc.
+	IsActive      bool                   `protobuf:"varint,16,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	DaysRemaining int32                  `protobuf:"varint,17,opt,name=days_remaining,json=daysRemaining,proto3" json:"days_remaining,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegistrationPeriod) Reset() {
+	*x = RegistrationPeriod{}
+	mi := &file_calendar_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegistrationPeriod) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegistrationPeriod) ProtoMessage() {}
+
+func (x *RegistrationPeriod) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegistrationPeriod.ProtoReflect.Descriptor instead.
+func (*RegistrationPeriod) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RegistrationPeriod) GetCalendarId() int32 {
+	if x != nil {
+		return x.CalendarId
+	}
+	return 0
+}
+
+func (x *RegistrationPeriod) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *RegistrationPeriod) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *RegistrationPeriod) GetStartDate() string {
+	if x != nil {
+		return x.StartDate
+	}
+	return ""
+}
+
+func (x *RegistrationPeriod) GetEndDate() string {
+	if x != nil {
+		return x.EndDate
+	}
+	return ""
+}
+
+func (x *RegistrationPeriod) GetAppliesTo() string {
+	if x != nil {
+		return x.AppliesTo
+	}
+	return ""
+}
+
+func (x *RegistrationPeriod) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *RegistrationPeriod) GetDaysRemaining() int32 {
+	if x != nil {
+		return x.DaysRemaining
+	}
+	return 0
+}
+
+type GetActiveRegistrationPeriodsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetActiveRegistrationPeriodsRequest) Reset() {
+	*x = GetActiveRegistrationPeriodsRequest{}
+	mi := &file_calendar_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetActiveRegistrationPeriodsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetActiveRegistrationPeriodsRequest) ProtoMessage() {}
+
+func (x *GetActiveRegistrationPeriodsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetActiveRegistrationPeriodsRequest.ProtoReflect.Descriptor instead.
+func (*GetActiveRegistrationPeriodsRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{22}
+}
+
+type GetActiveRegistrationPeriodsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	Periods       []*RegistrationPeriod  `protobuf:"bytes,12,rep,name=periods,proto3" json:"periods,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetActiveRegistrationPeriodsResponse) Reset() {
+	*x = GetActiveRegistrationPeriodsResponse{}
+	mi := &file_calendar_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetActiveRegistrationPeriodsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetActiveRegistrationPeriodsResponse) ProtoMessage() {}
+
+func (x *GetActiveRegistrationPeriodsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetActiveRegistrationPeriodsResponse.ProtoReflect.Descriptor instead.
+func (*GetActiveRegistrationPeriodsResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetActiveRegistrationPeriodsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetActiveRegistrationPeriodsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetActiveRegistrationPeriodsResponse) GetPeriods() []*RegistrationPeriod {
+	if x != nil {
+		return x.Periods
+	}
+	return nil
+}
+
+type Exam struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ExamId          int32                  `protobuf:"varint,10,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ClassId         int32                  `protobuf:"varint,11,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	SubjectName     string                 `protobuf:"bytes,12,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	ExamDate        string                 `protobuf:"bytes,13,opt,name=exam_date,json=examDate,proto3" json:"exam_date,omitempty"` // YYYY-MM-DD HH:MM:SS
+	Location        string                 `protobuf:"bytes,14,opt,name=location,proto3" json:"location,omitempty"`
+	DurationMinutes int32                  `protobuf:"varint,15,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
+	Description     string                 `protobuf:"bytes,16,opt,name=description,proto3" json:"description,omitempty"`
+	ExamType        string                 `protobuf:"bytes,17,opt,name=exam_type,json=examType,proto3" json:"exam_type,omitempty"` // final, retake, commission
+	MaxStudents     int32                  `protobuf:"varint,18,opt,name=max_students,json=maxStudents,proto3" json:"max_students,omitempty"`
+	ClassType       string                 `protobuf:"bytes,19,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Exam) Reset() {
+	*x = Exam{}
+	mi := &file_calendar_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Exam) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Exam) ProtoMessage() {}
+
+func (x *Exam) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Exam.ProtoReflect.Descriptor instead.
+func (*Exam) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *Exam) GetExamId() int32 {
+	if x != nil {
+		return x.ExamId
+	}
+	return 0
+}
+
+func (x *Exam) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *Exam) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *Exam) GetExamDate() string {
+	if x != nil {
+		return x.ExamDate
+	}
+	return ""
+}
+
+func (x *Exam) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+func (x *Exam) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.DurationMinutes
+	}
+	return 0
+}
+
+func (x *Exam) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Exam) GetExamType() string {
+	if x != nil {
+		return x.ExamType
+	}
+	return ""
+}
+
+func (x *Exam) GetMaxStudents() int32 {
+	if x != nil {
+		return x.MaxStudents
+	}
+	return 0
+}
+
+func (x *Exam) GetClassType() string {
+	if x != nil {
+		return x.ClassType
+	}
+	return ""
+}
+
+type GetUpcomingExamsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DaysAhead     *int32                 `protobuf:"varint,10,opt,name=days_ahead,json=daysAhead,proto3,oneof" json:"days_ahead,omitempty"` // Domyślnie 30 dni
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUpcomingExamsRequest) Reset() {
+	*x = GetUpcomingExamsRequest{}
+	mi := &file_calendar_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUpcomingExamsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUpcomingExamsRequest) ProtoMessage() {}
+
+func (x *GetUpcomingExamsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUpcomingExamsRequest.ProtoReflect.Descriptor instead.
+func (*GetUpcomingExamsRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *GetUpcomingExamsRequest) GetDaysAhead() int32 {
+	if x != nil && x.DaysAhead != nil {
+		return *x.DaysAhead
+	}
+	return 0
+}
+
+type GetUpcomingExamsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	Exams         []*Exam                `protobuf:"bytes,12,rep,name=exams,proto3" json:"exams,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,13,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUpcomingExamsResponse) Reset() {
+	*x = GetUpcomingExamsResponse{}
+	mi := &file_calendar_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUpcomingExamsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUpcomingExamsResponse) ProtoMessage() {}
+
+func (x *GetUpcomingExamsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUpcomingExamsResponse.ProtoReflect.Descriptor instead.
+func (*GetUpcomingExamsResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *GetUpcomingExamsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetUpcomingExamsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GetUpcomingExamsResponse) GetExams() []*Exam {
+	if x != nil {
+		return x.Exams
+	}
+	return nil
+}
+
+func (x *GetUpcomingExamsResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
 var File_calendar_proto protoreflect.FileDescriptor
 
 const file_calendar_proto_rawDesc = "" +
@@ -1446,7 +2106,78 @@ const file_calendar_proto_rawDesc = "" +
 	" \x01(\tR\x04date\x12\x12\n" +
 	"\x04name\x18\v \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\f \x01(\tR\x04type\x12\x1e\n" +
-	"\vis_free_day\x18\r \x01(\bR\tisFreeDay2\xc4\b\n" +
+	"\vis_free_day\x18\r \x01(\bR\tisFreeDay\"\xc0\x02\n" +
+	"\rScheduleEntry\x12\x1f\n" +
+	"\vschedule_id\x18\n" +
+	" \x01(\x05R\n" +
+	"scheduleId\x12\x19\n" +
+	"\bclass_id\x18\v \x01(\x05R\aclassId\x12!\n" +
+	"\fsubject_name\x18\f \x01(\tR\vsubjectName\x12\x1d\n" +
+	"\n" +
+	"class_type\x18\r \x01(\tR\tclassType\x12\x1e\n" +
+	"\vday_of_week\x18\x0e \x01(\x05R\tdayOfWeek\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x0f \x01(\tR\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x10 \x01(\tR\aendTime\x12\x12\n" +
+	"\x04room\x18\x11 \x01(\tR\x04room\x12\x1a\n" +
+	"\bbuilding\x18\x12 \x01(\tR\bbuilding\x12'\n" +
+	"\x0finstructor_name\x18\x13 \x01(\tR\x0einstructorName\":\n" +
+	"\x16GetWeekScheduleRequest\x12\x17\n" +
+	"\x04date\x18\n" +
+	" \x01(\tH\x00R\x04date\x88\x01\x01B\a\n" +
+	"\x05_date\"\xc8\x01\n" +
+	"\x17GetWeekScheduleResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x12?\n" +
+	"\bschedule\x18\f \x03(\v2#.modules.calendar.api.ScheduleEntryR\bschedule\x12\x1d\n" +
+	"\n" +
+	"week_start\x18\r \x01(\tR\tweekStart\x12\x19\n" +
+	"\bweek_end\x18\x0e \x01(\tR\aweekEnd\"\x8a\x02\n" +
+	"\x12RegistrationPeriod\x12\x1f\n" +
+	"\vcalendar_id\x18\n" +
+	" \x01(\x05R\n" +
+	"calendarId\x12\x14\n" +
+	"\x05title\x18\v \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\f \x01(\tR\vdescription\x12\x1d\n" +
+	"\n" +
+	"start_date\x18\r \x01(\tR\tstartDate\x12\x19\n" +
+	"\bend_date\x18\x0e \x01(\tR\aendDate\x12\x1d\n" +
+	"\n" +
+	"applies_to\x18\x0f \x01(\tR\tappliesTo\x12\x1b\n" +
+	"\tis_active\x18\x10 \x01(\bR\bisActive\x12%\n" +
+	"\x0edays_remaining\x18\x11 \x01(\x05R\rdaysRemaining\"%\n" +
+	"#GetActiveRegistrationPeriodsRequest\"\x9e\x01\n" +
+	"$GetActiveRegistrationPeriodsResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x12B\n" +
+	"\aperiods\x18\f \x03(\v2(.modules.calendar.api.RegistrationPeriodR\aperiods\"\xc2\x02\n" +
+	"\x04Exam\x12\x17\n" +
+	"\aexam_id\x18\n" +
+	" \x01(\x05R\x06examId\x12\x19\n" +
+	"\bclass_id\x18\v \x01(\x05R\aclassId\x12!\n" +
+	"\fsubject_name\x18\f \x01(\tR\vsubjectName\x12\x1b\n" +
+	"\texam_date\x18\r \x01(\tR\bexamDate\x12\x1a\n" +
+	"\blocation\x18\x0e \x01(\tR\blocation\x12)\n" +
+	"\x10duration_minutes\x18\x0f \x01(\x05R\x0fdurationMinutes\x12 \n" +
+	"\vdescription\x18\x10 \x01(\tR\vdescription\x12\x1b\n" +
+	"\texam_type\x18\x11 \x01(\tR\bexamType\x12!\n" +
+	"\fmax_students\x18\x12 \x01(\x05R\vmaxStudents\x12\x1d\n" +
+	"\n" +
+	"class_type\x18\x13 \x01(\tR\tclassType\"L\n" +
+	"\x17GetUpcomingExamsRequest\x12\"\n" +
+	"\n" +
+	"days_ahead\x18\n" +
+	" \x01(\x05H\x00R\tdaysAhead\x88\x01\x01B\r\n" +
+	"\v_days_ahead\"\xa1\x01\n" +
+	"\x18GetUpcomingExamsResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x120\n" +
+	"\x05exams\x18\f \x03(\v2\x1a.modules.calendar.api.ExamR\x05exams\x12\x1f\n" +
+	"\vtotal_count\x18\r \x01(\x05R\n" +
+	"totalCount2\xb4\f\n" +
 	"\x0fCalendarService\x12\x95\x01\n" +
 	"\rGetUserEvents\x12*.modules.calendar.api.GetUserEventsRequest\x1a+.modules.calendar.api.GetUserEventsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/calendar/user/{user_id}/events\x12\x83\x01\n" +
 	"\vCreateEvent\x12(.modules.calendar.api.CreateEventRequest\x1a).modules.calendar.api.CreateEventResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/calendar/events\x12\xa2\x01\n" +
@@ -1454,7 +2185,10 @@ const file_calendar_proto_rawDesc = "" +
 	"\x13GetAcademicCalendar\x120.modules.calendar.api.GetAcademicCalendarRequest\x1a1.modules.calendar.api.GetAcademicCalendarResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/calendar/academic\x12\xab\x01\n" +
 	"\x16GetCurrentSemesterInfo\x123.modules.calendar.api.GetCurrentSemesterInfoRequest\x1a4.modules.calendar.api.GetCurrentSemesterInfoResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/calendar/semester/current\x12\x9d\x01\n" +
 	"\x13CreateAcademicEvent\x120.modules.calendar.api.CreateAcademicEventRequest\x1a1.modules.calendar.api.CreateAcademicEventResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/calendar/academic\x12\x82\x01\n" +
-	"\vGetHolidays\x12(.modules.calendar.api.GetHolidaysRequest\x1a).modules.calendar.api.GetHolidaysResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/calendar/holidaysBNZLgithub.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar;calendarb\x06proto3"
+	"\vGetHolidays\x12(.modules.calendar.api.GetHolidaysRequest\x1a).modules.calendar.api.GetHolidaysResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/calendar/holidays\x12\x92\x01\n" +
+	"\x0fGetWeekSchedule\x12,.modules.calendar.api.GetWeekScheduleRequest\x1a-.modules.calendar.api.GetWeekScheduleResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/student/schedule/week\x12\xbf\x01\n" +
+	"\x1cGetActiveRegistrationPeriods\x129.modules.calendar.api.GetActiveRegistrationPeriodsRequest\x1a:.modules.calendar.api.GetActiveRegistrationPeriodsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/registration/periods/active\x12\x96\x01\n" +
+	"\x10GetUpcomingExams\x12-.modules.calendar.api.GetUpcomingExamsRequest\x1a..modules.calendar.api.GetUpcomingExamsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/student/exams/upcomingBNZLgithub.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar;calendarb\x06proto3"
 
 var (
 	file_calendar_proto_rawDescOnce sync.Once
@@ -1468,26 +2202,35 @@ func file_calendar_proto_rawDescGZIP() []byte {
 	return file_calendar_proto_rawDescData
 }
 
-var file_calendar_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_calendar_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_calendar_proto_goTypes = []any{
-	(*CalendarEvent)(nil),                  // 0: modules.calendar.api.CalendarEvent
-	(*GetUserEventsRequest)(nil),           // 1: modules.calendar.api.GetUserEventsRequest
-	(*GetUserEventsResponse)(nil),          // 2: modules.calendar.api.GetUserEventsResponse
-	(*CreateEventRequest)(nil),             // 3: modules.calendar.api.CreateEventRequest
-	(*CreateEventResponse)(nil),            // 4: modules.calendar.api.CreateEventResponse
-	(*GetClassScheduleRequest)(nil),        // 5: modules.calendar.api.GetClassScheduleRequest
-	(*GetClassScheduleResponse)(nil),       // 6: modules.calendar.api.GetClassScheduleResponse
-	(*AcademicCalendarEvent)(nil),          // 7: modules.calendar.api.AcademicCalendarEvent
-	(*GetAcademicCalendarRequest)(nil),     // 8: modules.calendar.api.GetAcademicCalendarRequest
-	(*GetAcademicCalendarResponse)(nil),    // 9: modules.calendar.api.GetAcademicCalendarResponse
-	(*AcademicYearInfo)(nil),               // 10: modules.calendar.api.AcademicYearInfo
-	(*GetCurrentSemesterInfoRequest)(nil),  // 11: modules.calendar.api.GetCurrentSemesterInfoRequest
-	(*GetCurrentSemesterInfoResponse)(nil), // 12: modules.calendar.api.GetCurrentSemesterInfoResponse
-	(*CreateAcademicEventRequest)(nil),     // 13: modules.calendar.api.CreateAcademicEventRequest
-	(*CreateAcademicEventResponse)(nil),    // 14: modules.calendar.api.CreateAcademicEventResponse
-	(*GetHolidaysRequest)(nil),             // 15: modules.calendar.api.GetHolidaysRequest
-	(*GetHolidaysResponse)(nil),            // 16: modules.calendar.api.GetHolidaysResponse
-	(*Holiday)(nil),                        // 17: modules.calendar.api.Holiday
+	(*CalendarEvent)(nil),                        // 0: modules.calendar.api.CalendarEvent
+	(*GetUserEventsRequest)(nil),                 // 1: modules.calendar.api.GetUserEventsRequest
+	(*GetUserEventsResponse)(nil),                // 2: modules.calendar.api.GetUserEventsResponse
+	(*CreateEventRequest)(nil),                   // 3: modules.calendar.api.CreateEventRequest
+	(*CreateEventResponse)(nil),                  // 4: modules.calendar.api.CreateEventResponse
+	(*GetClassScheduleRequest)(nil),              // 5: modules.calendar.api.GetClassScheduleRequest
+	(*GetClassScheduleResponse)(nil),             // 6: modules.calendar.api.GetClassScheduleResponse
+	(*AcademicCalendarEvent)(nil),                // 7: modules.calendar.api.AcademicCalendarEvent
+	(*GetAcademicCalendarRequest)(nil),           // 8: modules.calendar.api.GetAcademicCalendarRequest
+	(*GetAcademicCalendarResponse)(nil),          // 9: modules.calendar.api.GetAcademicCalendarResponse
+	(*AcademicYearInfo)(nil),                     // 10: modules.calendar.api.AcademicYearInfo
+	(*GetCurrentSemesterInfoRequest)(nil),        // 11: modules.calendar.api.GetCurrentSemesterInfoRequest
+	(*GetCurrentSemesterInfoResponse)(nil),       // 12: modules.calendar.api.GetCurrentSemesterInfoResponse
+	(*CreateAcademicEventRequest)(nil),           // 13: modules.calendar.api.CreateAcademicEventRequest
+	(*CreateAcademicEventResponse)(nil),          // 14: modules.calendar.api.CreateAcademicEventResponse
+	(*GetHolidaysRequest)(nil),                   // 15: modules.calendar.api.GetHolidaysRequest
+	(*GetHolidaysResponse)(nil),                  // 16: modules.calendar.api.GetHolidaysResponse
+	(*Holiday)(nil),                              // 17: modules.calendar.api.Holiday
+	(*ScheduleEntry)(nil),                        // 18: modules.calendar.api.ScheduleEntry
+	(*GetWeekScheduleRequest)(nil),               // 19: modules.calendar.api.GetWeekScheduleRequest
+	(*GetWeekScheduleResponse)(nil),              // 20: modules.calendar.api.GetWeekScheduleResponse
+	(*RegistrationPeriod)(nil),                   // 21: modules.calendar.api.RegistrationPeriod
+	(*GetActiveRegistrationPeriodsRequest)(nil),  // 22: modules.calendar.api.GetActiveRegistrationPeriodsRequest
+	(*GetActiveRegistrationPeriodsResponse)(nil), // 23: modules.calendar.api.GetActiveRegistrationPeriodsResponse
+	(*Exam)(nil),                                 // 24: modules.calendar.api.Exam
+	(*GetUpcomingExamsRequest)(nil),              // 25: modules.calendar.api.GetUpcomingExamsRequest
+	(*GetUpcomingExamsResponse)(nil),             // 26: modules.calendar.api.GetUpcomingExamsResponse
 }
 var file_calendar_proto_depIdxs = []int32{
 	0,  // 0: modules.calendar.api.GetUserEventsResponse.events:type_name -> modules.calendar.api.CalendarEvent
@@ -1498,25 +2241,34 @@ var file_calendar_proto_depIdxs = []int32{
 	10, // 5: modules.calendar.api.GetCurrentSemesterInfoResponse.semester_info:type_name -> modules.calendar.api.AcademicYearInfo
 	7,  // 6: modules.calendar.api.CreateAcademicEventResponse.event:type_name -> modules.calendar.api.AcademicCalendarEvent
 	17, // 7: modules.calendar.api.GetHolidaysResponse.holidays:type_name -> modules.calendar.api.Holiday
-	1,  // 8: modules.calendar.api.CalendarService.GetUserEvents:input_type -> modules.calendar.api.GetUserEventsRequest
-	3,  // 9: modules.calendar.api.CalendarService.CreateEvent:input_type -> modules.calendar.api.CreateEventRequest
-	5,  // 10: modules.calendar.api.CalendarService.GetClassSchedule:input_type -> modules.calendar.api.GetClassScheduleRequest
-	8,  // 11: modules.calendar.api.CalendarService.GetAcademicCalendar:input_type -> modules.calendar.api.GetAcademicCalendarRequest
-	11, // 12: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:input_type -> modules.calendar.api.GetCurrentSemesterInfoRequest
-	13, // 13: modules.calendar.api.CalendarService.CreateAcademicEvent:input_type -> modules.calendar.api.CreateAcademicEventRequest
-	15, // 14: modules.calendar.api.CalendarService.GetHolidays:input_type -> modules.calendar.api.GetHolidaysRequest
-	2,  // 15: modules.calendar.api.CalendarService.GetUserEvents:output_type -> modules.calendar.api.GetUserEventsResponse
-	4,  // 16: modules.calendar.api.CalendarService.CreateEvent:output_type -> modules.calendar.api.CreateEventResponse
-	6,  // 17: modules.calendar.api.CalendarService.GetClassSchedule:output_type -> modules.calendar.api.GetClassScheduleResponse
-	9,  // 18: modules.calendar.api.CalendarService.GetAcademicCalendar:output_type -> modules.calendar.api.GetAcademicCalendarResponse
-	12, // 19: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:output_type -> modules.calendar.api.GetCurrentSemesterInfoResponse
-	14, // 20: modules.calendar.api.CalendarService.CreateAcademicEvent:output_type -> modules.calendar.api.CreateAcademicEventResponse
-	16, // 21: modules.calendar.api.CalendarService.GetHolidays:output_type -> modules.calendar.api.GetHolidaysResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	18, // 8: modules.calendar.api.GetWeekScheduleResponse.schedule:type_name -> modules.calendar.api.ScheduleEntry
+	21, // 9: modules.calendar.api.GetActiveRegistrationPeriodsResponse.periods:type_name -> modules.calendar.api.RegistrationPeriod
+	24, // 10: modules.calendar.api.GetUpcomingExamsResponse.exams:type_name -> modules.calendar.api.Exam
+	1,  // 11: modules.calendar.api.CalendarService.GetUserEvents:input_type -> modules.calendar.api.GetUserEventsRequest
+	3,  // 12: modules.calendar.api.CalendarService.CreateEvent:input_type -> modules.calendar.api.CreateEventRequest
+	5,  // 13: modules.calendar.api.CalendarService.GetClassSchedule:input_type -> modules.calendar.api.GetClassScheduleRequest
+	8,  // 14: modules.calendar.api.CalendarService.GetAcademicCalendar:input_type -> modules.calendar.api.GetAcademicCalendarRequest
+	11, // 15: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:input_type -> modules.calendar.api.GetCurrentSemesterInfoRequest
+	13, // 16: modules.calendar.api.CalendarService.CreateAcademicEvent:input_type -> modules.calendar.api.CreateAcademicEventRequest
+	15, // 17: modules.calendar.api.CalendarService.GetHolidays:input_type -> modules.calendar.api.GetHolidaysRequest
+	19, // 18: modules.calendar.api.CalendarService.GetWeekSchedule:input_type -> modules.calendar.api.GetWeekScheduleRequest
+	22, // 19: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:input_type -> modules.calendar.api.GetActiveRegistrationPeriodsRequest
+	25, // 20: modules.calendar.api.CalendarService.GetUpcomingExams:input_type -> modules.calendar.api.GetUpcomingExamsRequest
+	2,  // 21: modules.calendar.api.CalendarService.GetUserEvents:output_type -> modules.calendar.api.GetUserEventsResponse
+	4,  // 22: modules.calendar.api.CalendarService.CreateEvent:output_type -> modules.calendar.api.CreateEventResponse
+	6,  // 23: modules.calendar.api.CalendarService.GetClassSchedule:output_type -> modules.calendar.api.GetClassScheduleResponse
+	9,  // 24: modules.calendar.api.CalendarService.GetAcademicCalendar:output_type -> modules.calendar.api.GetAcademicCalendarResponse
+	12, // 25: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:output_type -> modules.calendar.api.GetCurrentSemesterInfoResponse
+	14, // 26: modules.calendar.api.CalendarService.CreateAcademicEvent:output_type -> modules.calendar.api.CreateAcademicEventResponse
+	16, // 27: modules.calendar.api.CalendarService.GetHolidays:output_type -> modules.calendar.api.GetHolidaysResponse
+	20, // 28: modules.calendar.api.CalendarService.GetWeekSchedule:output_type -> modules.calendar.api.GetWeekScheduleResponse
+	23, // 29: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:output_type -> modules.calendar.api.GetActiveRegistrationPeriodsResponse
+	26, // 30: modules.calendar.api.CalendarService.GetUpcomingExams:output_type -> modules.calendar.api.GetUpcomingExamsResponse
+	21, // [21:31] is the sub-list for method output_type
+	11, // [11:21] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_calendar_proto_init() }
@@ -1526,13 +2278,15 @@ func file_calendar_proto_init() {
 	}
 	file_calendar_proto_msgTypes[8].OneofWrappers = []any{}
 	file_calendar_proto_msgTypes[15].OneofWrappers = []any{}
+	file_calendar_proto_msgTypes[19].OneofWrappers = []any{}
+	file_calendar_proto_msgTypes[25].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_calendar_proto_rawDesc), len(file_calendar_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
