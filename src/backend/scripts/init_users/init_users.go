@@ -138,7 +138,7 @@ var users = []RegisterRequest{
 		BankAccountNr:       "78901234567890123456789012",
 		FacultyId:           1,
 		AdminRole:           "Kierownik Dziekanatu",
-		EmailAppPassword:    "",
+		EmailAppPassword:    "xxxxx",
 	},
 	{
 		Email:               "karol.kudlacz@student.ukw.edu.pl",
