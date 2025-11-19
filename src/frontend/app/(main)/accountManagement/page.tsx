@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 type UserData = {
-  user_id: number;
+  userId: number;
   name: string;
   surname: string;
   email: string;
@@ -18,9 +19,10 @@ type UserData = {
 export default function AccountManagementPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [loadingUserData, setLoadingUserData] = useState(true);
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Pobierz dane aktualnie zalogowanego użytkownika
   const fetchUserData = async () => {
@@ -29,32 +31,20 @@ export default function AccountManagementPage() {
       const res = await fetch("http://localhost:8083/api/auth/user", {
         method: "GET",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      console.log("Response status:", res.status);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const text = await res.text();
-      if (!text) {
-        throw new Error("Pusta odpowiedź z serwera");
-      }
-
-      const data = JSON.parse(text);
-      console.log("Otrzymane dane:", data);
-
+      const data = await res.json();
       if (!data?.user) throw new Error("Niepoprawny format odpowiedzi API");
 
       setUser(data.user);
-      setError("");
     } catch (err: any) {
-      console.error("fetchUserData:", err);
-      setError("Nie udało się pobrać danych użytkownika.");
+      toast.error("Nie udało się pobrać danych użytkownika.");
       setUser(null);
     } finally {
       setLoadingUserData(false);
-      console.log("Ładowanie danych zakończone");
     }
   };
 
@@ -72,50 +62,57 @@ export default function AccountManagementPage() {
     e.preventDefault();
     if (!user) return;
 
+    if (password !== confirmPassword) {
+      toast.error("Hasła nie są takie same!");
+      return;
+    }
+
     setSaving(true);
-    setSuccessMessage("");
-    setError("");
 
     try {
+      const bodyPayload: any = {
+        name: user.name,
+        surname: user.surname,
+      };
+
+      if (user.email) bodyPayload.email = user.email;
+      if (user.phone_nr) bodyPayload.phone_nr = user.phone_nr;
+      if (user.registration_address) bodyPayload.registration_address = user.registration_address;
+      if (user.postal_address) bodyPayload.postal_address = user.postal_address;
+      if (user.bank_account_nr) bodyPayload.bank_account_nr = user.bank_account_nr;
+      if (password) bodyPayload.password = password;
+
       const response = await fetch(
-        `http://localhost:8083/api/auth/edit/${user.user_id}`,
+        `http://localhost:8083/api/auth/edit/${user.userId}`, // poprawiony parametr userId
         {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: user.name,
-            surname: user.surname,
-            email: user.email,
-            phone_nr: user.phone_nr,
-            registration_address: user.registration_address,
-            postal_address: user.postal_address,
-            bank_account_nr: user.bank_account_nr,
-          }),
+          body: JSON.stringify(bodyPayload),
         }
       );
 
       if (!response.ok)
-        throw new Error(
-          `Nie udało się zapisać zmian (HTTP ${response.status})`
-        );
-      const result = await response.json();
+        throw new Error(`Nie udało się zapisać zmian (HTTP ${response.status})`);
 
-      setSuccessMessage("Dane użytkownika zostały zaktualizowane.");
+      const result = await response.json();
       setUser(result.updated_data || user);
+      setPassword("");
+      setConfirmPassword("");
+      toast.success("Dane użytkownika zostały zaktualizowane.");
     } catch (err: any) {
-      setError("Błąd podczas zapisu: " + err.message);
+      toast.error("Błąd podczas zapisu: " + err.message);
       console.error(err);
     } finally {
       setSaving(false);
     }
   };
+
   if (loadingUserData) return <p>Ładowanie danych użytkownika...</p>;
-  if (!user) return <p>Nie udało się wczytać danych użytkownika.</p>;
-  if (error)
+  if (!user)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-red-500 p-4">
-        <p>{error}</p>
+        <p>Nie udało się wczytać danych użytkownika.</p>
         <button
           onClick={fetchUserData}
           className="mt-3 px-4 py-2 bg-[var(--color-accent)] text-white rounded"
@@ -135,12 +132,6 @@ export default function AccountManagementPage() {
         className="max-w-2xl mx-auto bg-[var(--color-bg-secondary)] p-8 rounded shadow border border-[var(--color-accent)]"
         onSubmit={handleSave}
       >
-        {successMessage && (
-          <div className="mb-4 bg-green-50 border-l-4 border-green-500 text-green-800 p-3 rounded">
-            {successMessage}
-          </div>
-        )}
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm mb-1">Imię</label>
@@ -216,6 +207,31 @@ export default function AccountManagementPage() {
             value={user?.bank_account_nr ?? ""}
             onChange={handleChange}
             className="w-full border px-3 py-2 rounded bg-[var(--color-bg)]"
+          />
+        </div>
+
+        {/* Pola zmiany hasła */}
+        <div>
+          <label className="block text-sm mb-1">Nowe hasło</label>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border px-3 py-2 rounded bg-[var(--color-bg)]"
+            placeholder="Nowe hasło"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1">Potwierdź nowe hasło</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            className="w-full border px-3 py-2 rounded bg-[var(--color-bg)]"
+            placeholder="Potwierdź nowe hasło"
           />
         </div>
 

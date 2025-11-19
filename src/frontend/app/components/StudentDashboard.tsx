@@ -8,6 +8,19 @@ import plLocale from "@fullcalendar/core/locales/pl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
+type ApiScheduleClass = {
+  scheduleId: number;
+  classId: number;
+  subjectName: string;
+  classType: "wykład" | "laboratorium" | "ćwiczenia" | "seminarium";
+  dayOfWeek: number;
+  startTime: string; // ISO czas ale stała data 0000-01-01
+  endTime: string;
+  room: string;
+  building: string;
+  instructorName: string;
+};
+
 type ClassEvent = {
   id: string;
   title: string;
@@ -34,6 +47,35 @@ type CalendarEvent = {
   };
 };
 
+type Grade = {
+  gradeId: number;
+  subjectName: string;
+  value: string;
+  createdAt: string;
+  addedByName: string;
+};
+
+const classTypeMap: Record<string, ClassEvent["type"]> = {
+  wykład: "lecture",
+  laboratorium: "lab",
+  ćwiczenia: "exercise",
+  seminarium: "seminar",
+};
+
+const classTypeColors = {
+  lecture: { bg: "#2563eb", border: "#1e40af" },
+  lab: { bg: "#9333ea", border: "#6b21a8" },
+  exercise: { bg: "#0d9488", border: "#115e59" },
+  seminar: { bg: "#ea580c", border: "#9a3412" },
+};
+
+const classTypeLabels = {
+  lecture: "Wykład",
+  lab: "Laboratorium",
+  exercise: "Ćwiczenia",
+  seminar: "Seminarium",
+};
+
 export default function StudentMainPage() {
   const calendarRef = useRef<any>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -42,32 +84,19 @@ export default function StudentMainPage() {
   const [nextClass, setNextClass] = useState<ClassEvent | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [recentGrades, setRecentGrades] = useState<Grade[]>([]);
 
-  // Kolory dla różnych typów zajęć
-  const classTypeColors = {
-    lecture: { bg: "#2563eb", border: "#1e40af" },
-    lab: { bg: "#9333ea", border: "#6b21a8" },
-    exercise: { bg: "#0d9488", border: "#115e59" },
-    seminar: { bg: "#ea580c", border: "#9a3412" },
-  };
-
-  const classTypeLabels = {
-    lecture: "Wykład",
-    lab: "Laboratorium",
-    exercise: "Ćwiczenia",
-    seminar: "Seminarium",
-  };
-
-  // Funkcja do pobierania zajęć
+  // Pobierz plan tygodnia na podstawie daty (mon-sun)
   const fetchSchedule = async (startDate: Date, endDate: Date) => {
     setLoading(true);
     try {
-      const start = startDate.toISOString().split("T")[0];
-      const end = endDate.toISOString().split("T")[0];
-      
-      // Dostosuj endpoint do swojego API
+      // Aby wyznaczyć zakres start i end do ISO, potrzebujemy prawdziwe daty,
+      // ale endpoint bierze tylko opcjonalny date (dowolny dzień w tygodniu), więc przekazujemy startDate:
+      const paramDate = startDate.toISOString().split("T")[0];
+
+      // Pobieramy plan całego tygodnia dla paramDate
       const response = await fetch(
-        `${API_BASE}/api/schedule/range?start_date=${start}&end_date=${end}`,
+        `${API_BASE}/api/student/schedule/week?date=${paramDate}`,
         {
           method: "GET",
           credentials: "include",
@@ -78,94 +107,77 @@ export default function StudentMainPage() {
       const data = await response.json();
 
       if (data.success) {
-        const calendarEvents = (data.classes || []).map((event: ClassEvent) => ({
-          id: event.id,
-          title: event.title,
-          start: event.start,
-          end: event.end,
-          backgroundColor: classTypeColors[event.type].bg,
-          borderColor: classTypeColors[event.type].border,
-          extendedProps: {
-            type: event.type,
-            room: event.room,
-            instructor: event.instructor,
-            building: event.building,
-          },
-        }));
+        // Mapujemy dane ApiScheduleClass na format dla FullCalendar,
+        // zamieniając dzień tygodnia i godziny na pełne daty z rzeczywistym rokiem/miesiącem/dniem
+
+        const weekStart = new Date(startDate);
+        // Mapowanie eventów w tygodniu na pełne daty (dla FullCalendar)
+        const calendarEvents = (data.schedule || []).map((item: ApiScheduleClass) => {
+          const classType = classTypeMap[item.classType.toLowerCase()] || "lecture";
+
+          // Obliczamy datę zajęć na podstawie dnia tygodnia (1=Poniedziałek, ... 7=Niedziela)
+          const eventDate = new Date(weekStart);
+          eventDate.setDate(weekStart.getDate() + (item.dayOfWeek - 1));
+
+          // Parsujemy start i end time (godziny) - format ISO '0000-01-01T09:00:00Z'
+          const startHour = new Date(item.startTime);
+          const endHour = new Date(item.endTime);
+
+          // Ustawiamy start i end z faktyczną datą eventDate plus godziny
+          const start = new Date(eventDate);
+          start.setHours(startHour.getUTCHours(), startHour.getUTCMinutes(), 0, 0);
+
+          const end = new Date(eventDate);
+          end.setHours(endHour.getUTCHours(), endHour.getUTCMinutes(), 0, 0);
+
+          return {
+            id: item.scheduleId.toString(),
+            title: item.subjectName,
+            start: start.toISOString(),
+            end: end.toISOString(),
+            backgroundColor: classTypeColors[classType].bg,
+            borderColor: classTypeColors[classType].border,
+            extendedProps: {
+              type: classType,
+              room: item.room,
+              instructor: item.instructorName,
+              building: item.building,
+            },
+          };
+        });
+
         setEvents(calendarEvents);
       } else {
         console.error("Błąd API:", data.message);
-        setMockData();
+        setEvents([]);
       }
     } catch (error) {
       console.error("Błąd podczas pobierania planu:", error);
-      setMockData();
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Dane przykładowe (usuń gdy będziesz mieć prawdziwe API)
-  const setMockData = () => {
-    const today = new Date();
-    const formatDateTime = (hours: number, minutes: number) => {
-      const date = new Date(today);
-      date.setHours(hours, minutes, 0, 0);
-      return date.toISOString();
-    };
-
-    const mockClasses: ClassEvent[] = [
-      {
-        id: "1",
-        title: "Matematyka dyskretna",
-        start: formatDateTime(8, 0),
-        end: formatDateTime(9, 30),
-        type: "lecture",
-        room: "A-101",
-        instructor: "Dr Jan Kowalski",
-        building: "Budynek A",
-      },
-      {
-        id: "2",
-        title: "Systemy rozproszone",
-        start: formatDateTime(10, 0),
-        end: formatDateTime(11, 30),
-        type: "lab",
-        room: "B-205",
-        instructor: "Dr Anna Nowak",
-        building: "Budynek B",
-      },
-      {
-        id: "3",
-        title: "Bazy danych",
-        start: formatDateTime(12, 0),
-        end: formatDateTime(13, 30),
-        type: "exercise",
-        room: "C-301",
-        instructor: "Mgr Piotr Wiśniewski",
-        building: "Budynek C",
-      },
-     ];
-
-    const calendarEvents = mockClasses.map((event) => ({
-      id: event.id,
-      title: event.title,
-      start: event.start,
-      end: event.end,
-      backgroundColor: classTypeColors[event.type].bg,
-      borderColor: classTypeColors[event.type].border,
-      extendedProps: {
-        type: event.type,
-        room: event.room,
-        instructor: event.instructor,
-        building: event.building,
-      },
-    }));
-
-    setEvents(calendarEvents);
+  // Pobierz ostatnio dodane oceny
+  const fetchRecentGrades = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/student/grades/recent`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (data.grades) {
+        setRecentGrades(data.grades);
+      }
+    } catch (error) {
+      console.error("Błąd podczas pobierania ocen:", error);
+      setRecentGrades([]);
+    }
   };
 
-  // Określ aktualne i następne zajęcia
+  // Ustaw aktualne i następne zajęcia
   useEffect(() => {
     const updateCurrentClasses = () => {
       const now = new Date();
@@ -206,19 +218,20 @@ export default function StudentMainPage() {
 
     updateCurrentClasses();
     const interval = setInterval(updateCurrentClasses, 60000); // Co minutę
-
     return () => clearInterval(interval);
   }, [events]);
 
-  // Załaduj dane przy starcie
+  // Pobierz plan przy starcie: tydzień bieżący wg dzisiejszej daty
   useEffect(() => {
     const today = new Date();
+    const day = today.getDay();
+    // wylicz poniedziałek (dzień tygodnia 1)
     const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay() + 1); // Poniedziałek
+    weekStart.setDate(today.getDate() - day + (day === 0 ? -6 : 1)); // jeśli niedziela (0) to cofamy 6 dni
     const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6); // Niedziela
-
+    weekEnd.setDate(weekStart.getDate() + 6); // niedziela
     fetchSchedule(weekStart, weekEnd);
+    fetchRecentGrades();
   }, []);
 
   // Obsługa kliknięcia w wydarzenie
@@ -233,22 +246,34 @@ export default function StudentMainPage() {
       borderColor: event.borderColor,
       extendedProps: event.extendedProps,
     };
-    
+
     setSelectedEvent(calendarEvent);
     setShowEventModal(true);
   };
 
-  // Obsługa zmiany zakresu dat
+  // Obsługa zmiany zakresu widoku kalendarza (np. zmiana tygodnia)
   const handleDatesSet = (dateInfo: any) => {
     fetchSchedule(dateInfo.start, dateInfo.end);
   };
 
+  // Przejście do dziś
   const goToToday = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
       calendarApi.today();
     }
   };
+
+  // Liczenie zajęć i sumy godzin dzisiaj
+  const todayDateString = new Date().toDateString();
+  const eventsToday = events.filter(
+    (e) => new Date(e.start).toDateString() === todayDateString
+  );
+  const totalHoursToday = eventsToday.reduce((sum, e) => {
+    const start = new Date(e.start);
+    const end = new Date(e.end);
+    return sum + (end.getTime() - start.getTime()) / (1000 * 3600);
+  }, 0);
 
   return (
     <main className="min-h-screen px-6 py-6 text-[var(--color-text)] bg-[var(--color-bg)]">
@@ -327,17 +352,25 @@ export default function StudentMainPage() {
 
         {/* Prawa kolumna – informacje */}
         <div className="bg-[var(--color-bg-secondary)] p-6 rounded-xl shadow-md flex flex-col gap-6">
-          {/* Oceny */}
+          {/* Oceny - najnowsze */}
           <div>
             <p className="mb-2 text-sm font-semibold">Dodano nowe oceny:</p>
-            <div className="flex gap-4">
-              <div className="bg-teal-700 text-white px-6 py-2 rounded-lg font-bold text-xl shadow">
-                5
+            {recentGrades.length === 0 && (
+              <p className="text-[var(--color-text-secondary)] italic">Brak nowych ocen</p>
+            )}
+            {recentGrades.length > 0 && (
+              <div className="flex gap-4">
+                {recentGrades.slice(0, 2).map((grade) => (
+                  <div
+                    key={grade.gradeId}
+                    className="bg-teal-700 text-white px-6 py-2 rounded-lg font-bold text-xl shadow"
+                    title={`Przedmiot: ${grade.subjectName}\nDodano przez: ${grade.addedByName}\nData: ${grade.createdAt}`}
+                  >
+                    {grade.value}
+                  </div>
+                ))}
               </div>
-              <div className="bg-red-700 text-white px-6 py-2 rounded-lg font-bold text-xl shadow">
-                2
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Aktualne zajęcia */}
@@ -359,9 +392,7 @@ export default function StudentMainPage() {
                     minute: "2-digit",
                   })}
                 </p>
-                {currentClass.room && (
-                  <p className="text-xs">Sala: {currentClass.room}</p>
-                )}
+                {currentClass.room && <p className="text-xs">Sala: {currentClass.room}</p>}
               </div>
             ) : (
               <p className="text-[var(--color-text-secondary)] italic">
@@ -389,83 +420,29 @@ export default function StudentMainPage() {
                     minute: "2-digit",
                   })}
                 </p>
-                {nextClass.room && (
-                  <p className="text-xs">Sala: {nextClass.room}</p>
-                )}
+                {nextClass.room && <p className="text-xs">Sala: {nextClass.room}</p>}
               </div>
             ) : (
-              <p className="text-[var(--color-text-secondary)] italic">
-                Brak kolejnych zajęć dzisiaj
-              </p>
+              <p className="text-[var(--color-text-secondary)] italic">Brak kolejnych zajęć dzisiaj</p>
             )}
           </div>
 
-          {/* Statystyki */}
+          {/* Dzisiaj - liczba zajęć i liczba godzin */}
           <div className="border-t border-[#327f7a] pt-4">
             <p className="mb-2 text-sm font-semibold">Dzisiaj:</p>
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="bg-[var(--color-bg)] p-3 rounded-lg">
-                <p className="text-2xl font-bold text-[var(--color-accent)]">
-                  {events.filter((e) => {
-                    const eventDate = new Date(e.start).toDateString();
-                    const today = new Date().toDateString();
-                    return eventDate === today;
-                  }).length}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  zajęć
-                </p>
+                <p className="text-2xl font-bold text-[var(--color-accent)]">{eventsToday.length}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">zajęć</p>
               </div>
               <div className="bg-[var(--color-bg)] p-3 rounded-lg">
-                <p className="text-2xl font-bold text-[var(--color-accent)]">
-                  {events
-                    .filter((e) => {
-                      const eventDate = new Date(e.start).toDateString();
-                      const today = new Date().toDateString();
-                      return eventDate === today;
-                    })
-                    .reduce((total, e) => {
-                      const start = new Date(e.start);
-                      const end = new Date(e.end);
-                      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-                      return total + hours;
-                    }, 0)
-                    .toFixed(1)}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  godzin
-                </p>
+                <p className="text-2xl font-bold text-[var(--color-accent)]">{totalHoursToday.toFixed(1)}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">godzin</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-     {/* Sekcja aktualności */}
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold text-center mb-2">Aktualności</h2>
-        <div className="border-t-4 border-[#327f7a] w-1/3 mx-auto mb-4"></div>
-        <h3 className="text-lg font-bold text-center mb-2">
-          Spotkanie informacyjne dla studentów I roku
-        </h3>
-        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
-          W środę 12 listopada o godz. 16:00 w auli A odbędzie się spotkanie organizacyjne dla studentów pierwszego roku. Tematy: zasady zaliczeń, dostęp do platformy e-learningowej, pomoc materialna.
-        </p>
-        <div className="border-t-2 border-[#327f7a] w-1/3 mx-auto mb-4 mt-4"></div>
-        <h3 className="text-lg font-bold text-center mb-2">
-          Targi pracy i praktyk studenckich
-        </h3>
-        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
-          W dniach 18–19 listopada w holu głównym uczelni odbędą się targi pracy. Obecni będą przedstawiciele firm z branży IT, edukacji, administracji i NGO. Warto zabrać CV!
-        </p>
-        <div className="border-t-4 border-[#327f7a] w-1/3 mx-auto mb-4"></div>
-        <h3 className="text-lg font-bold text-center mb-2">
-          Warsztaty „Zarządzanie stresem przed sesją”
-        </h3>
-        <p className="text-sm text-center max-w-3xl mx-auto text-[var(--color-text)]">
-          Centrum Wsparcia Psychologicznego zaprasza na bezpłatne warsztaty 21 listopada o godz. 17:00 w auli A.
-        </p>
-      </section>
 
       {/* Modal szczegółów wydarzenia */}
       {showEventModal && selectedEvent && (
@@ -489,9 +466,7 @@ export default function StudentMainPage() {
 
             <div className="space-y-3">
               <div>
-                <strong className="text-sm text-[var(--color-text-secondary)]">
-                  Typ zajęć:
-                </strong>
+                <strong className="text-sm text-[var(--color-text-secondary)]">Typ zajęć:</strong>
                 <p className="flex items-center gap-2">
                   <span
                     className="inline-block w-3 h-3 rounded"
@@ -502,9 +477,7 @@ export default function StudentMainPage() {
               </div>
 
               <div>
-                <strong className="text-sm text-[var(--color-text-secondary)]">
-                  Godziny:
-                </strong>
+                <strong className="text-sm text-[var(--color-text-secondary)]">Godziny:</strong>
                 <p>
                   {new Date(selectedEvent.start).toLocaleTimeString("pl-PL", {
                     hour: "2-digit",
@@ -520,27 +493,21 @@ export default function StudentMainPage() {
 
               {selectedEvent.extendedProps.room && (
                 <div>
-                  <strong className="text-sm text-[var(--color-text-secondary)]">
-                    Sala:
-                  </strong>
+                  <strong className="text-sm text-[var(--color-text-secondary)]">Sala:</strong>
                   <p>{selectedEvent.extendedProps.room}</p>
                 </div>
               )}
 
               {selectedEvent.extendedProps.building && (
                 <div>
-                  <strong className="text-sm text-[var(--color-text-secondary)]">
-                    Budynek:
-                  </strong>
+                  <strong className="text-sm text-[var(--color-text-secondary)]">Budynek:</strong>
                   <p>{selectedEvent.extendedProps.building}</p>
                 </div>
               )}
 
               {selectedEvent.extendedProps.instructor && (
                 <div>
-                  <strong className="text-sm text-[var(--color-text-secondary)]">
-                    Prowadzący:
-                  </strong>
+                  <strong className="text-sm text-[var(--color-text-secondary)]">Prowadzący:</strong>
                   <p>{selectedEvent.extendedProps.instructor}</p>
                 </div>
               )}
@@ -560,68 +527,68 @@ export default function StudentMainPage() {
         .calendar-container .fc {
           background: var(--color-bg);
         }
-        
+
         .calendar-container .fc-theme-standard td,
         .calendar-container .fc-theme-standard th {
           border-color: var(--color-accent);
         }
-        
+
         .calendar-container .fc-col-header-cell {
           background: var(--color-bg-secondary);
           color: var(--color-text);
           font-weight: 600;
           padding: 8px;
         }
-        
+
         .calendar-container .fc-timegrid-slot {
           height: 3em;
         }
-        
+
         .calendar-container .fc-timegrid-slot-label {
           color: var(--color-text);
         }
-        
+
         .calendar-container .fc-button {
           background: var(--color-accent) !important;
           border-color: var(--color-accent) !important;
           color: white !important;
         }
-        
+
         .calendar-container .fc-button:hover {
           background: var(--color-accent-hover) !important;
         }
-        
+
         .calendar-container .fc-button-active {
           background: var(--color-accent-hover) !important;
         }
-        
+
         .calendar-container .fc-toolbar-title {
           color: var(--color-text) !important;
           font-size: 1.5em !important;
         }
-        
+
         .calendar-container .fc-timegrid-now-indicator-line {
           border-color: #ef4444 !important;
           border-width: 2px !important;
         }
-        
+
         .calendar-container .fc-timegrid-now-indicator-arrow {
           border-color: #ef4444 !important;
         }
-        
+
         .calendar-container .fc-event {
           cursor: pointer;
           border-radius: 4px;
         }
-        
+
         .calendar-container .fc-event:hover {
           opacity: 0.85;
         }
-        
+
         .calendar-container .fc-event-title {
           font-weight: 600;
         }
-        
+
         .calendar-container .fc-daygrid-day-frame {
           background: var(--color-bg);
         }
