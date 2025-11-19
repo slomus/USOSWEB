@@ -141,7 +141,7 @@ var users = []RegisterRequest{
 		EmailAppPassword:    "xxxxx",
 	},
 	{
-		Email:               "karol.kudlacz@student.ukw.edu.pl",
+		Email:               "kacper.pawlak@student.ukw.edu.pl",
 		Password:            "Karol123!",
 		Name:                "Karol",
 		Surname:             "Kudłacz",
@@ -153,7 +153,7 @@ var users = []RegisterRequest{
 		BankAccountNr:       "89012345678901234567890123",
 		FacultyId:           1,
 		AdminRole:           "Administrator Systemu",
-		EmailAppPassword:    "TUTAJ_PODAJESZ_SWOJE_HASŁO_DO_POCZTY!",
+		EmailAppPassword:    "xxxxx",
 	},
 }
 
