@@ -1488,13 +1488,32 @@ func (s *AuthServer) UpdateUserData(ctx context.Context, req *pb.UpdateUserDataR
 	}
 
 	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		loggedUserIDValues := md.Get("user_id")
-		if len(loggedUserIDValues) > 0 {
-			var loggedUserID int64
-			fmt.Sscanf(loggedUserIDValues[0], "%d", &loggedUserID)
+	if !ok {
+		return &pb.UpdateUserDataResponse{
+			Success: false,
+			Message: "No metadata",
+		}, nil
+	}
 
-			authLog.LogDebug(fmt.Sprintf("User %d attempting to update user %d", loggedUserID, req.UserId))
+	tokens := md.Get("user_id")
+	if len(tokens) == 0 {
+		return &pb.UpdateUserDataResponse{
+			Success: false,
+			Message: "User not authenticated",
+		}, nil
+	}
+
+	var loggedUserID int64
+	fmt.Sscanf(tokens[0], "%d", &loggedUserID)
+
+	if req.UserId != loggedUserID {
+		role, err := s.getUserRoleFromDB(ctx, loggedUserID)
+		if err != nil || role != RoleAdmin {
+			authLog.LogWarn(fmt.Sprintf("User %d attempted to edit user %d without permission", loggedUserID, req.UserId))
+			return &pb.UpdateUserDataResponse{
+				Success: false,
+				Message: "You can only edit your own data",
+			}, nil
 		}
 	}
 
