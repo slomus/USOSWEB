@@ -42,7 +42,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
   // Menu dla studentów
   const studentMenuItems: MenuItem[] = [
     { label: "Strona główna", href: "/StudentMainPage" },
-    { label: "Plan zajęć", href: "#" },
+    { label: "Plan zajęć", href: "/scheduleLesson" },
     { label: "Wiadomości", href: "/messages" },
     { label: "Kalendarz", href: "/calendar" },
     { label: "Oceny", href: "/marks" },
