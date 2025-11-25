@@ -69,11 +69,10 @@ export default function SchedulePage() {
   }, [selectedDate]);
 
   // Formatowanie godziny do HH:mm
-  const formatHour = (isoString: string) =>
-    new Date(isoString).toLocaleTimeString("pl-PL", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatHour = (timeString: string) => {
+    // API zwraca format "HH:mm:ss", więc wycinamy pierwsze 5 znaków ("HH:mm")
+    return timeString.slice(0, 5);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] p-6">
