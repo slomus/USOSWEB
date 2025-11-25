@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+// --- Definicje typów ---
+
 type Instructor = string;
 
 type Schedule = {
@@ -41,11 +43,24 @@ type AvailableClass = {
   instructors: Instructor[];
 };
 
+// Typ dla okresu rejestracji
+type RegistrationPeriod = {
+  id: number;
+  startDate: string;
+  endDate: string;
+} | null;
+
 type AvailableSubject = {
   subjectId: number;
-  subjectName: string;
-  description: string;
-  availableClasses: AvailableClass[];
+  name: string;      
+  alias: string;     
+  ects: number;
+  totalCapacity: number;
+  totalEnrolled: number;
+  availableSpots: number;
+  isEnrolled: boolean;
+  registrationPeriod: RegistrationPeriod; // Pole sterujące dostępnością zapisów
+  availableClasses?: AvailableClass[];    // Pole opcjonalne, ładowane "lazy"
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -54,14 +69,17 @@ export default function EnrollmentPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [availableSubjects, setAvailableSubjects] = useState<AvailableSubject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingClasses, setLoadingClasses] = useState<number | null>(null);
   const [error, setError] = useState("");
+  
   const [selectedSubject, setSelectedSubject] = useState<AvailableSubject | null>(null);
   const [selectedClasses, setSelectedClasses] = useState<number[]>([]);
+  
   const [enrolling, setEnrolling] = useState(false);
   const [unenrolling, setUnenrolling] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"enrolled" | "available">("enrolled");
 
-  // --- Pobierz zapisane przedmioty
+  // --- 1. Pobierz moje zapisy ---
   const fetchEnrollments = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/enrollments`, {
@@ -79,20 +97,65 @@ export default function EnrollmentPage() {
     }
   };
 
-  // --- Pobierz dostępne przedmioty
+  // --- 2. Pobierz listę dostępnych przedmiotów (bez szczegółów klas) ---
   const fetchAvailableSubjects = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/subjects`, { method: "GET", credentials: "include" });
       if (!res.ok) throw new Error("Nie udało się pobrać dostępnych przedmiotów");
       const data = await res.json();
-      setAvailableSubjects(data.subjects || []);
+      
+      // Mapujemy, aby upewnić się, że struktura jest bezpieczna
+      const subjects = (data.subjects || []).map((sub: any) => ({
+        ...sub,
+        availableClasses: [] // Inicjalizacja pustą tablicą
+      }));
+      
+      setAvailableSubjects(subjects);
     } catch (err: any) {
       console.error(err);
       setAvailableSubjects([]);
     }
   };
 
-  // --- Inicjalne ładowanie danych
+  // --- 3. Pobierz klasy dla konkretnego przedmiotu (Lazy Loading) ---
+  const fetchClassesForSubject = async (subjectId: number) => {
+    setLoadingClasses(subjectId);
+    try {
+      // Pobieramy szczegóły przedmiotu (w tym klasy)
+      const res = await fetch(`${API_BASE}/api/subjects/${subjectId}`, { 
+        method: "GET", 
+        credentials: "include" 
+      });
+      
+      if (!res.ok) throw new Error("Nie udało się pobrać szczegółów przedmiotu");
+      const data = await res.json();
+      
+      // POPRAWKA: Dane są zagnieżdżone w obiekcie 'subject' -> 'classes'
+      const newClasses = data.subject?.classes || [];
+
+      // Aktualizujemy stan availableSubjects wstawiając pobrane klasy
+      setAvailableSubjects((prev) =>
+        prev.map((sub) =>
+          sub.subjectId === subjectId
+            ? { ...sub, availableClasses: newClasses }
+            : sub
+        )
+      );
+      
+      // Jeśli przedmiot jest aktualnie wybrany, odświeżamy go w selectedSubject
+      if (selectedSubject?.subjectId === subjectId) {
+        setSelectedSubject((prev) => prev ? { ...prev, availableClasses: newClasses } : null);
+      }
+
+    } catch (err) {
+      console.error("Błąd pobierania klas:", err);
+      // Nie rzucamy alertu, żeby nie blokować UI, po prostu lista będzie pusta
+    } finally {
+      setLoadingClasses(null);
+    }
+  };
+
+  // --- Inicjalizacja ---
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -102,6 +165,7 @@ export default function EnrollmentPage() {
     loadData();
   }, []);
 
+  // --- Logika zapisu na przedmiot ---
   const handleEnroll = async () => {
     if (!selectedSubject || selectedClasses.length === 0) {
       alert("Wybierz przedmiot i przynajmniej jedne zajęcia");
@@ -119,13 +183,24 @@ export default function EnrollmentPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Nie udało się zapisać na przedmiot");
+      
+      if (!res.ok) {
+        // Tłumaczenie błędu "registration period not active"
+        if (data.message?.includes("registration period not active") || res.status === 400) {
+           throw new Error("Tura zapisów na ten przedmiot nie jest obecnie aktywna.");
+        }
+        throw new Error(data.message || "Nie udało się zapisać na przedmiot");
+      }
 
       alert(`Pomyślnie zapisano na przedmiot! ID zapisu: ${data.enrollmentId}`);
       setSelectedSubject(null);
       setSelectedClasses([]);
+      
+      // Odśwież dane
       await fetchEnrollments();
+      await fetchAvailableSubjects();
       setActiveTab("enrolled");
+      
     } catch (err: any) {
       console.error(err);
       alert(`Błąd: ${err.message}`);
@@ -134,6 +209,7 @@ export default function EnrollmentPage() {
     }
   };
 
+  // --- Logika wypisu z przedmiotu ---
   const handleUnenroll = async (subjectId: number) => {
     if (!confirm("Czy na pewno chcesz wypisać się z tego przedmiotu?")) return;
     setUnenrolling(subjectId);
@@ -145,8 +221,10 @@ export default function EnrollmentPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Nie udało się wypisać z przedmiotu");
+      
       alert(data.message || "Pomyślnie wypisano z przedmiotu");
       await fetchEnrollments();
+      await fetchAvailableSubjects();
     } catch (err: any) {
       console.error(err);
       alert(`Błąd: ${err.message}`);
@@ -155,12 +233,35 @@ export default function EnrollmentPage() {
     }
   };
 
+  // --- Helpers ---
   const toggleClassSelection = (classId: number) => {
     setSelectedClasses((prev) =>
       prev.includes(classId)
         ? prev.filter((id) => id !== classId)
         : [...prev, classId]
     );
+  };
+
+  const handleSubjectClick = (subject: AvailableSubject) => {
+    // Jeśli już wybrany - nic nie rób (lub zwiń)
+    if (selectedSubject?.subjectId === subject.subjectId) {
+        // Opcjonalnie: odznaczanie przy ponownym kliknięciu
+        // setSelectedSubject(null); 
+        return;
+    }
+
+    setSelectedSubject(subject);
+    setSelectedClasses([]);
+
+    // Jeśli przedmiot nie ma załadowanych klas, pobierz je
+    if (!subject.availableClasses || subject.availableClasses.length === 0) {
+      fetchClassesForSubject(subject.subjectId);
+    }
+  };
+
+  const isRegistrationActive = (subject: AvailableSubject) => {
+    // Jeśli registrationPeriod jest null -> zapisy zamknięte
+    return !!subject.registrationPeriod;
   };
 
   const formatDate = (dateString: string) =>
@@ -179,6 +280,7 @@ export default function EnrollmentPage() {
     return "text-red-600";
   };
 
+  // --- Renderowanie ---
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
@@ -192,6 +294,7 @@ export default function EnrollmentPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+      {/* Nagłówek */}
       <div className="bg-[var(--color-bg-secondary)] border-b border-[var(--color-accent)] px-6 py-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-[var(--color-accent)] mb-2">
@@ -211,6 +314,7 @@ export default function EnrollmentPage() {
           </div>
         )}
 
+        {/* Zakładki */}
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab("enrolled")}
@@ -234,7 +338,7 @@ export default function EnrollmentPage() {
           </button>
         </div>
 
-        {/* --- Enrolled Tab --- */}
+        {/* --- Zakładka: Zapisane przedmioty --- */}
         {activeTab === "enrolled" && (
           <div className="space-y-6">
             {enrollments.length === 0 ? (
@@ -301,7 +405,7 @@ export default function EnrollmentPage() {
           </div>
         )}
 
-        {/* --- Available Tab --- */}
+        {/* --- Zakładka: Dostępne przedmioty --- */}
         {activeTab === "available" && (
           <div className="space-y-6">
             {availableSubjects.length === 0 ? (
@@ -312,86 +416,131 @@ export default function EnrollmentPage() {
             ) : (
               availableSubjects.map((subject) => (
                 <div key={subject.subjectId} className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
-                  <div className="bg-[var(--color-accent)] text-white px-6 py-4">
-                    <h2 className="text-xl font-semibold">{subject.subjectName}</h2>
-                    <p className="text-sm opacity-90">{subject.description}</p>
+                  <div className="bg-[var(--color-accent)] text-white px-6 py-4 flex justify-between items-center">
+                      <div>
+                        <h2 className="text-xl font-semibold">{subject.name}</h2>
+                        <p className="text-sm opacity-90">{subject.alias} • ECTS: {subject.ects}</p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p>Wolnych miejsc: {subject.availableSpots}</p>
+                        {/* Status Rejestracji */}
+                        {isRegistrationActive(subject) ? (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-bold">
+                                Rejestracja otwarta
+                            </span>
+                        ) : (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-bold">
+                                Rejestracja zamknięta
+                            </span>
+                        )}
+                      </div>
                   </div>
 
                   <div className="p-6 space-y-4">
-                    {subject.availableClasses.map((cls) => (
-                      <div
-                        key={cls.classId}
-                        className={`border rounded-lg p-4 transition-colors cursor-pointer ${
-                          selectedSubject?.subjectId === subject.subjectId &&
-                          selectedClasses.includes(cls.classId)
-                            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                            : "border-[var(--color-text-secondary)] hover:border-[var(--color-accent)]"
-                        }`}
-                        onClick={() => {
-                          setSelectedSubject(subject);
-                          toggleClassSelection(cls.classId);
-                        }}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedSubject?.subjectId === subject.subjectId && selectedClasses.includes(cls.classId)}
-                              onChange={() => {
-                                setSelectedSubject(subject);
-                                toggleClassSelection(cls.classId);
-                              }}
-                              className="mt-1"
-                            />
-                            <div>
-                              <h4 className="font-semibold text-lg">{cls.classType} - Grupa {cls.groupNr}</h4>
-                              <p className="text-sm text-[var(--color-text-secondary)]">Prowadzący: {cls.instructors.join(", ")}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`font-semibold ${getCapacityColor(cls.availableSpots, cls.capacity)}`}>
-                              Wolne miejsca: {cls.availableSpots}/{cls.capacity}
-                            </p>
-                            <p className="text-sm text-[var(--color-text-secondary)]">Zapisanych: {cls.currentCapacity}</p>
-                          </div>
+                    {/* Przycisk rozwijania lub komunikat o blokadzie */}
+                    {isRegistrationActive(subject) ? (
+                        <>
+                            {selectedSubject?.subjectId !== subject.subjectId && (
+                                <button 
+                                    onClick={() => handleSubjectClick(subject)}
+                                    className="w-full text-left p-4 border border-dashed border-[var(--color-accent)] text-[var(--color-accent)] rounded-lg hover:bg-[var(--color-accent)]/5 transition-colors"
+                                >
+                                    {loadingClasses === subject.subjectId ? "Pobieranie grup zajęciowych..." : "Kliknij, aby wybrać grupy zajęciowe"}
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        <div className="text-center py-4 bg-[var(--color-bg)]/50 border border-dashed border-red-300 rounded-lg text-gray-500 text-sm">
+                            Wybór grup zablokowany - brak aktywnej tury zapisów.
                         </div>
+                    )}
 
-                        <div className="mt-3 pt-3 border-t border-[var(--color-text-secondary)] space-y-2">
-                          {cls.schedule.map((sch, idx) => (
-                            <div key={idx} className="flex justify-between text-sm bg-[var(--color-bg)] p-2 rounded">
-                              <span className="font-medium">{sch.dayOfWeek}</span>
-                              <span>{sch.startTime} - {sch.endTime}</span>
-                              <span>Sala {sch.classroom}, {sch.buildingName}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                    {/* Lista klas (tylko gdy aktywna tura i przedmiot wybrany) */}
+                    {isRegistrationActive(subject) && selectedSubject?.subjectId === subject.subjectId && (
+                        <>
+                            {loadingClasses === subject.subjectId && (
+                                <div className="text-center py-4">
+                                    <span className="text-[var(--color-accent)]">Ładowanie planu...</span>
+                                </div>
+                            )}
 
-                    {selectedSubject?.subjectId === subject.subjectId && selectedClasses.length > 0 && (
-                      <div className="mt-6 p-4 bg-[var(--color-accent)]/10 border border-[var(--color-accent)] rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold">Wybrano {selectedClasses.length} {selectedClasses.length === 1 ? "zajęcia" : "zajęć"}</p>
-                            <p className="text-sm text-[var(--color-text-secondary)]">Kliknij przycisk aby zapisać się na przedmiot</p>
-                          </div>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => { setSelectedSubject(null); setSelectedClasses([]); }}
-                              className="px-4 py-2 bg-[var(--color-text-secondary)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
-                            >
-                              Anuluj
-                            </button>
-                            <button
-                              onClick={handleEnroll}
-                              disabled={enrolling}
-                              className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {enrolling ? "Zapisywanie..." : "Zapisz się"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                            {(!subject.availableClasses || subject.availableClasses.length === 0) && loadingClasses !== subject.subjectId && (
+                                <div className="text-center py-4 text-[var(--color-text-secondary)]">
+                                    Brak zdefiniowanych grup zajęciowych dla tego przedmiotu.
+                                </div>
+                            )}
+
+                            {/* Lista klas */}
+                            {(subject.availableClasses || []).map((cls) => (
+                              <div
+                                key={cls.classId}
+                                className={`border rounded-lg p-4 transition-colors cursor-pointer ${
+                                  selectedClasses.includes(cls.classId)
+                                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                                    : "border-[var(--color-text-secondary)] hover:border-[var(--color-accent)]"
+                                }`}
+                                onClick={() => toggleClassSelection(cls.classId)}
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex items-start gap-3">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedClasses.includes(cls.classId)}
+                                      onChange={() => toggleClassSelection(cls.classId)}
+                                      className="mt-1"
+                                    />
+                                    <div>
+                                      <h4 className="font-semibold text-lg">{cls.classType} - Grupa {cls.groupNr}</h4>
+                                      <p className="text-sm text-[var(--color-text-secondary)]">Prowadzący: {cls.instructors.join(", ")}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className={`font-semibold ${getCapacityColor(cls.availableSpots, cls.capacity)}`}>
+                                      Wolne miejsca: {cls.availableSpots}/{cls.capacity}
+                                    </p>
+                                    <p className="text-sm text-[var(--color-text-secondary)]">Zapisanych: {cls.currentCapacity}</p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 pt-3 border-t border-[var(--color-text-secondary)] space-y-2">
+                                  {cls.schedule.map((sch, idx) => (
+                                    <div key={idx} className="flex justify-between text-sm bg-[var(--color-bg)] p-2 rounded">
+                                      <span className="font-medium">{sch.dayOfWeek}</span>
+                                      <span>{sch.startTime} - {sch.endTime}</span>
+                                      <span>Sala {sch.classroom}, {sch.buildingName}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Panel akcji (Zapisz / Anuluj) */}
+                            {selectedClasses.length > 0 && (
+                              <div className="mt-6 p-4 bg-[var(--color-accent)]/10 border border-[var(--color-accent)] rounded-lg">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-semibold">Wybrano {selectedClasses.length} {selectedClasses.length === 1 ? "zajęcia" : "zajęć"}</p>
+                                    <p className="text-sm text-[var(--color-text-secondary)]">Kliknij przycisk aby zapisać się na przedmiot</p>
+                                  </div>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => { setSelectedSubject(null); setSelectedClasses([]); }}
+                                      className="px-4 py-2 bg-[var(--color-text-secondary)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
+                                    >
+                                      Anuluj
+                                    </button>
+                                    <button
+                                      onClick={handleEnroll}
+                                      disabled={enrolling}
+                                      className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {enrolling ? "Zapisywanie..." : "Zapisz się"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                        </>
                     )}
                   </div>
                 </div>
