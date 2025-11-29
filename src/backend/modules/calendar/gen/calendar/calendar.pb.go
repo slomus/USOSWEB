@@ -1752,9 +1752,10 @@ type Exam struct {
 	Location        string                 `protobuf:"bytes,14,opt,name=location,proto3" json:"location,omitempty"`
 	DurationMinutes int32                  `protobuf:"varint,15,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	Description     string                 `protobuf:"bytes,16,opt,name=description,proto3" json:"description,omitempty"`
-	ExamType        string                 `protobuf:"bytes,17,opt,name=exam_type,json=examType,proto3" json:"exam_type,omitempty"` // final, retake, commission
+	ExamType        string                 `protobuf:"bytes,17,opt,name=exam_type,json=examType,proto3" json:"exam_type,omitempty"` // final, retake, commission, test, quiz
 	MaxStudents     int32                  `protobuf:"varint,18,opt,name=max_students,json=maxStudents,proto3" json:"max_students,omitempty"`
 	ClassType       string                 `protobuf:"bytes,19,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	GroupNr         int32                  `protobuf:"varint,20,opt,name=group_nr,json=groupNr,proto3" json:"group_nr,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1857,6 +1858,13 @@ func (x *Exam) GetClassType() string {
 		return x.ClassType
 	}
 	return ""
+}
+
+func (x *Exam) GetGroupNr() int32 {
+	if x != nil {
+		return x.GroupNr
+	}
+	return 0
 }
 
 type GetUpcomingExamsRequest struct {
@@ -1969,6 +1977,622 @@ func (x *GetUpcomingExamsResponse) GetTotalCount() int32 {
 		return x.TotalCount
 	}
 	return 0
+}
+
+type GetExamsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        *int32                 `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3,oneof" json:"exam_id,omitempty"`
+	ClassId       *int32                 `protobuf:"varint,2,opt,name=class_id,json=classId,proto3,oneof" json:"class_id,omitempty"`
+	ExamType      *string                `protobuf:"bytes,3,opt,name=exam_type,json=examType,proto3,oneof" json:"exam_type,omitempty"`
+	DateFrom      *string                `protobuf:"bytes,4,opt,name=date_from,json=dateFrom,proto3,oneof" json:"date_from,omitempty"` // "2024-01-01"
+	DateTo        *string                `protobuf:"bytes,5,opt,name=date_to,json=dateTo,proto3,oneof" json:"date_to,omitempty"`       // "2024-12-31"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExamsRequest) Reset() {
+	*x = GetExamsRequest{}
+	mi := &file_calendar_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExamsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExamsRequest) ProtoMessage() {}
+
+func (x *GetExamsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExamsRequest.ProtoReflect.Descriptor instead.
+func (*GetExamsRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetExamsRequest) GetExamId() int32 {
+	if x != nil && x.ExamId != nil {
+		return *x.ExamId
+	}
+	return 0
+}
+
+func (x *GetExamsRequest) GetClassId() int32 {
+	if x != nil && x.ClassId != nil {
+		return *x.ClassId
+	}
+	return 0
+}
+
+func (x *GetExamsRequest) GetExamType() string {
+	if x != nil && x.ExamType != nil {
+		return *x.ExamType
+	}
+	return ""
+}
+
+func (x *GetExamsRequest) GetDateFrom() string {
+	if x != nil && x.DateFrom != nil {
+		return *x.DateFrom
+	}
+	return ""
+}
+
+func (x *GetExamsRequest) GetDateTo() string {
+	if x != nil && x.DateTo != nil {
+		return *x.DateTo
+	}
+	return ""
+}
+
+type GetExamsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exams         []*Exam                `protobuf:"bytes,1,rep,name=exams,proto3" json:"exams,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExamsResponse) Reset() {
+	*x = GetExamsResponse{}
+	mi := &file_calendar_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExamsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExamsResponse) ProtoMessage() {}
+
+func (x *GetExamsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExamsResponse.ProtoReflect.Descriptor instead.
+func (*GetExamsResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GetExamsResponse) GetExams() []*Exam {
+	if x != nil {
+		return x.Exams
+	}
+	return nil
+}
+
+func (x *GetExamsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type CreateExamRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClassId         int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ExamDate        string                 `protobuf:"bytes,2,opt,name=exam_date,json=examDate,proto3" json:"exam_date,omitempty"` // "2024-01-15 10:00:00"
+	Location        string                 `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty"`
+	DurationMinutes int32                  `protobuf:"varint,4,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
+	Description     string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	ExamType        string                 `protobuf:"bytes,6,opt,name=exam_type,json=examType,proto3" json:"exam_type,omitempty"`
+	MaxStudents     *int32                 `protobuf:"varint,7,opt,name=max_students,json=maxStudents,proto3,oneof" json:"max_students,omitempty"`
+	Weight          *int32                 `protobuf:"varint,8,opt,name=weight,proto3,oneof" json:"weight,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CreateExamRequest) Reset() {
+	*x = CreateExamRequest{}
+	mi := &file_calendar_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateExamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateExamRequest) ProtoMessage() {}
+
+func (x *CreateExamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateExamRequest.ProtoReflect.Descriptor instead.
+func (*CreateExamRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *CreateExamRequest) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *CreateExamRequest) GetExamDate() string {
+	if x != nil {
+		return x.ExamDate
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.DurationMinutes
+	}
+	return 0
+}
+
+func (x *CreateExamRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetExamType() string {
+	if x != nil {
+		return x.ExamType
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetMaxStudents() int32 {
+	if x != nil && x.MaxStudents != nil {
+		return *x.MaxStudents
+	}
+	return 0
+}
+
+func (x *CreateExamRequest) GetWeight() int32 {
+	if x != nil && x.Weight != nil {
+		return *x.Weight
+	}
+	return 0
+}
+
+type CreateExamResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exam          *Exam                  `protobuf:"bytes,1,opt,name=exam,proto3" json:"exam,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateExamResponse) Reset() {
+	*x = CreateExamResponse{}
+	mi := &file_calendar_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateExamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateExamResponse) ProtoMessage() {}
+
+func (x *CreateExamResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateExamResponse.ProtoReflect.Descriptor instead.
+func (*CreateExamResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *CreateExamResponse) GetExam() *Exam {
+	if x != nil {
+		return x.Exam
+	}
+	return nil
+}
+
+func (x *CreateExamResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type UpdateExamRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ExamId          int32                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamDate        *string                `protobuf:"bytes,2,opt,name=exam_date,json=examDate,proto3,oneof" json:"exam_date,omitempty"`
+	Location        *string                `protobuf:"bytes,3,opt,name=location,proto3,oneof" json:"location,omitempty"`
+	DurationMinutes *int32                 `protobuf:"varint,4,opt,name=duration_minutes,json=durationMinutes,proto3,oneof" json:"duration_minutes,omitempty"`
+	Description     *string                `protobuf:"bytes,5,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	ExamType        *string                `protobuf:"bytes,6,opt,name=exam_type,json=examType,proto3,oneof" json:"exam_type,omitempty"`
+	MaxStudents     *int32                 `protobuf:"varint,7,opt,name=max_students,json=maxStudents,proto3,oneof" json:"max_students,omitempty"`
+	Weight          *int32                 `protobuf:"varint,8,opt,name=weight,proto3,oneof" json:"weight,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UpdateExamRequest) Reset() {
+	*x = UpdateExamRequest{}
+	mi := &file_calendar_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateExamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateExamRequest) ProtoMessage() {}
+
+func (x *UpdateExamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateExamRequest.ProtoReflect.Descriptor instead.
+func (*UpdateExamRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *UpdateExamRequest) GetExamId() int32 {
+	if x != nil {
+		return x.ExamId
+	}
+	return 0
+}
+
+func (x *UpdateExamRequest) GetExamDate() string {
+	if x != nil && x.ExamDate != nil {
+		return *x.ExamDate
+	}
+	return ""
+}
+
+func (x *UpdateExamRequest) GetLocation() string {
+	if x != nil && x.Location != nil {
+		return *x.Location
+	}
+	return ""
+}
+
+func (x *UpdateExamRequest) GetDurationMinutes() int32 {
+	if x != nil && x.DurationMinutes != nil {
+		return *x.DurationMinutes
+	}
+	return 0
+}
+
+func (x *UpdateExamRequest) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
+	}
+	return ""
+}
+
+func (x *UpdateExamRequest) GetExamType() string {
+	if x != nil && x.ExamType != nil {
+		return *x.ExamType
+	}
+	return ""
+}
+
+func (x *UpdateExamRequest) GetMaxStudents() int32 {
+	if x != nil && x.MaxStudents != nil {
+		return *x.MaxStudents
+	}
+	return 0
+}
+
+func (x *UpdateExamRequest) GetWeight() int32 {
+	if x != nil && x.Weight != nil {
+		return *x.Weight
+	}
+	return 0
+}
+
+type UpdateExamResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exam          *Exam                  `protobuf:"bytes,1,opt,name=exam,proto3" json:"exam,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateExamResponse) Reset() {
+	*x = UpdateExamResponse{}
+	mi := &file_calendar_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateExamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateExamResponse) ProtoMessage() {}
+
+func (x *UpdateExamResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateExamResponse.ProtoReflect.Descriptor instead.
+func (*UpdateExamResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *UpdateExamResponse) GetExam() *Exam {
+	if x != nil {
+		return x.Exam
+	}
+	return nil
+}
+
+func (x *UpdateExamResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DeleteExamRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        int32                  `protobuf:"varint,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteExamRequest) Reset() {
+	*x = DeleteExamRequest{}
+	mi := &file_calendar_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteExamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteExamRequest) ProtoMessage() {}
+
+func (x *DeleteExamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteExamRequest.ProtoReflect.Descriptor instead.
+func (*DeleteExamRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *DeleteExamRequest) GetExamId() int32 {
+	if x != nil {
+		return x.ExamId
+	}
+	return 0
+}
+
+type DeleteExamResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteExamResponse) Reset() {
+	*x = DeleteExamResponse{}
+	mi := &file_calendar_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteExamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteExamResponse) ProtoMessage() {}
+
+func (x *DeleteExamResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteExamResponse.ProtoReflect.Descriptor instead.
+func (*DeleteExamResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *DeleteExamResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteExamResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type GetMyExamsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyExamsRequest) Reset() {
+	*x = GetMyExamsRequest{}
+	mi := &file_calendar_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyExamsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyExamsRequest) ProtoMessage() {}
+
+func (x *GetMyExamsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyExamsRequest.ProtoReflect.Descriptor instead.
+func (*GetMyExamsRequest) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{35}
+}
+
+type GetMyExamsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exams         []*Exam                `protobuf:"bytes,1,rep,name=exams,proto3" json:"exams,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyExamsResponse) Reset() {
+	*x = GetMyExamsResponse{}
+	mi := &file_calendar_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyExamsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyExamsResponse) ProtoMessage() {}
+
+func (x *GetMyExamsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_calendar_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyExamsResponse.ProtoReflect.Descriptor instead.
+func (*GetMyExamsResponse) Descriptor() ([]byte, []int) {
+	return file_calendar_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetMyExamsResponse) GetExams() []*Exam {
+	if x != nil {
+		return x.Exams
+	}
+	return nil
+}
+
+func (x *GetMyExamsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
 }
 
 var File_calendar_proto protoreflect.FileDescriptor
@@ -2152,7 +2776,7 @@ const file_calendar_proto_rawDesc = "" +
 	"\asuccess\x18\n" +
 	" \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\v \x01(\tR\amessage\x12B\n" +
-	"\aperiods\x18\f \x03(\v2(.modules.calendar.api.RegistrationPeriodR\aperiods\"\xc2\x02\n" +
+	"\aperiods\x18\f \x03(\v2(.modules.calendar.api.RegistrationPeriodR\aperiods\"\xdd\x02\n" +
 	"\x04Exam\x12\x17\n" +
 	"\aexam_id\x18\n" +
 	" \x01(\x05R\x06examId\x12\x19\n" +
@@ -2165,7 +2789,8 @@ const file_calendar_proto_rawDesc = "" +
 	"\texam_type\x18\x11 \x01(\tR\bexamType\x12!\n" +
 	"\fmax_students\x18\x12 \x01(\x05R\vmaxStudents\x12\x1d\n" +
 	"\n" +
-	"class_type\x18\x13 \x01(\tR\tclassType\"L\n" +
+	"class_type\x18\x13 \x01(\tR\tclassType\x12\x19\n" +
+	"\bgroup_nr\x18\x14 \x01(\x05R\agroupNr\"L\n" +
 	"\x17GetUpcomingExamsRequest\x12\"\n" +
 	"\n" +
 	"days_ahead\x18\n" +
@@ -2177,7 +2802,69 @@ const file_calendar_proto_rawDesc = "" +
 	"\amessage\x18\v \x01(\tR\amessage\x120\n" +
 	"\x05exams\x18\f \x03(\v2\x1a.modules.calendar.api.ExamR\x05exams\x12\x1f\n" +
 	"\vtotal_count\x18\r \x01(\x05R\n" +
-	"totalCount2\xb4\f\n" +
+	"totalCount\"\xf2\x01\n" +
+	"\x0fGetExamsRequest\x12\x1c\n" +
+	"\aexam_id\x18\x01 \x01(\x05H\x00R\x06examId\x88\x01\x01\x12\x1e\n" +
+	"\bclass_id\x18\x02 \x01(\x05H\x01R\aclassId\x88\x01\x01\x12 \n" +
+	"\texam_type\x18\x03 \x01(\tH\x02R\bexamType\x88\x01\x01\x12 \n" +
+	"\tdate_from\x18\x04 \x01(\tH\x03R\bdateFrom\x88\x01\x01\x12\x1c\n" +
+	"\adate_to\x18\x05 \x01(\tH\x04R\x06dateTo\x88\x01\x01B\n" +
+	"\n" +
+	"\b_exam_idB\v\n" +
+	"\t_class_idB\f\n" +
+	"\n" +
+	"_exam_typeB\f\n" +
+	"\n" +
+	"_date_fromB\n" +
+	"\n" +
+	"\b_date_to\"^\n" +
+	"\x10GetExamsResponse\x120\n" +
+	"\x05exams\x18\x01 \x03(\v2\x1a.modules.calendar.api.ExamR\x05exams\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xb2\x02\n" +
+	"\x11CreateExamRequest\x12\x19\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1b\n" +
+	"\texam_date\x18\x02 \x01(\tR\bexamDate\x12\x1a\n" +
+	"\blocation\x18\x03 \x01(\tR\blocation\x12)\n" +
+	"\x10duration_minutes\x18\x04 \x01(\x05R\x0fdurationMinutes\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1b\n" +
+	"\texam_type\x18\x06 \x01(\tR\bexamType\x12&\n" +
+	"\fmax_students\x18\a \x01(\x05H\x00R\vmaxStudents\x88\x01\x01\x12\x1b\n" +
+	"\x06weight\x18\b \x01(\x05H\x01R\x06weight\x88\x01\x01B\x0f\n" +
+	"\r_max_studentsB\t\n" +
+	"\a_weight\"^\n" +
+	"\x12CreateExamResponse\x12.\n" +
+	"\x04exam\x18\x01 \x01(\v2\x1a.modules.calendar.api.ExamR\x04exam\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x97\x03\n" +
+	"\x11UpdateExamRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\x05R\x06examId\x12 \n" +
+	"\texam_date\x18\x02 \x01(\tH\x00R\bexamDate\x88\x01\x01\x12\x1f\n" +
+	"\blocation\x18\x03 \x01(\tH\x01R\blocation\x88\x01\x01\x12.\n" +
+	"\x10duration_minutes\x18\x04 \x01(\x05H\x02R\x0fdurationMinutes\x88\x01\x01\x12%\n" +
+	"\vdescription\x18\x05 \x01(\tH\x03R\vdescription\x88\x01\x01\x12 \n" +
+	"\texam_type\x18\x06 \x01(\tH\x04R\bexamType\x88\x01\x01\x12&\n" +
+	"\fmax_students\x18\a \x01(\x05H\x05R\vmaxStudents\x88\x01\x01\x12\x1b\n" +
+	"\x06weight\x18\b \x01(\x05H\x06R\x06weight\x88\x01\x01B\f\n" +
+	"\n" +
+	"_exam_dateB\v\n" +
+	"\t_locationB\x13\n" +
+	"\x11_duration_minutesB\x0e\n" +
+	"\f_descriptionB\f\n" +
+	"\n" +
+	"_exam_typeB\x0f\n" +
+	"\r_max_studentsB\t\n" +
+	"\a_weight\"^\n" +
+	"\x12UpdateExamResponse\x12.\n" +
+	"\x04exam\x18\x01 \x01(\v2\x1a.modules.calendar.api.ExamR\x04exam\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\",\n" +
+	"\x11DeleteExamRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\x05R\x06examId\"H\n" +
+	"\x12DeleteExamResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x13\n" +
+	"\x11GetMyExamsRequest\"`\n" +
+	"\x12GetMyExamsResponse\x120\n" +
+	"\x05exams\x18\x01 \x03(\v2\x1a.modules.calendar.api.ExamR\x05exams\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\x9a\x11\n" +
 	"\x0fCalendarService\x12\x95\x01\n" +
 	"\rGetUserEvents\x12*.modules.calendar.api.GetUserEventsRequest\x1a+.modules.calendar.api.GetUserEventsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/calendar/user/{user_id}/events\x12\x83\x01\n" +
 	"\vCreateEvent\x12(.modules.calendar.api.CreateEventRequest\x1a).modules.calendar.api.CreateEventResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/calendar/events\x12\xa2\x01\n" +
@@ -2188,7 +2875,18 @@ const file_calendar_proto_rawDesc = "" +
 	"\vGetHolidays\x12(.modules.calendar.api.GetHolidaysRequest\x1a).modules.calendar.api.GetHolidaysResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/calendar/holidays\x12\x92\x01\n" +
 	"\x0fGetWeekSchedule\x12,.modules.calendar.api.GetWeekScheduleRequest\x1a-.modules.calendar.api.GetWeekScheduleResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/student/schedule/week\x12\xbf\x01\n" +
 	"\x1cGetActiveRegistrationPeriods\x129.modules.calendar.api.GetActiveRegistrationPeriodsRequest\x1a:.modules.calendar.api.GetActiveRegistrationPeriodsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/registration/periods/active\x12\x96\x01\n" +
-	"\x10GetUpcomingExams\x12-.modules.calendar.api.GetUpcomingExamsRequest\x1a..modules.calendar.api.GetUpcomingExamsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/student/exams/upcomingBNZLgithub.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar;calendarb\x06proto3"
+	"\x10GetUpcomingExams\x12-.modules.calendar.api.GetUpcomingExamsRequest\x1a..modules.calendar.api.GetUpcomingExamsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/student/exams/upcoming\x12m\n" +
+	"\bGetExams\x12%.modules.calendar.api.GetExamsRequest\x1a&.modules.calendar.api.GetExamsResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"/api/exams\x12{\n" +
+	"\n" +
+	"GetMyExams\x12'.modules.calendar.api.GetMyExamsRequest\x1a(.modules.calendar.api.GetMyExamsResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/student/exams\x12v\n" +
+	"\n" +
+	"CreateExam\x12'.modules.calendar.api.CreateExamRequest\x1a(.modules.calendar.api.CreateExamResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
+	"/api/exams\x12\x80\x01\n" +
+	"\n" +
+	"UpdateExam\x12'.modules.calendar.api.UpdateExamRequest\x1a(.modules.calendar.api.UpdateExamResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/api/exams/{exam_id}\x12}\n" +
+	"\n" +
+	"DeleteExam\x12'.modules.calendar.api.DeleteExamRequest\x1a(.modules.calendar.api.DeleteExamResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/api/exams/{exam_id}BNZLgithub.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar;calendarb\x06proto3"
 
 var (
 	file_calendar_proto_rawDescOnce sync.Once
@@ -2202,7 +2900,7 @@ func file_calendar_proto_rawDescGZIP() []byte {
 	return file_calendar_proto_rawDescData
 }
 
-var file_calendar_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_calendar_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_calendar_proto_goTypes = []any{
 	(*CalendarEvent)(nil),                        // 0: modules.calendar.api.CalendarEvent
 	(*GetUserEventsRequest)(nil),                 // 1: modules.calendar.api.GetUserEventsRequest
@@ -2231,6 +2929,16 @@ var file_calendar_proto_goTypes = []any{
 	(*Exam)(nil),                                 // 24: modules.calendar.api.Exam
 	(*GetUpcomingExamsRequest)(nil),              // 25: modules.calendar.api.GetUpcomingExamsRequest
 	(*GetUpcomingExamsResponse)(nil),             // 26: modules.calendar.api.GetUpcomingExamsResponse
+	(*GetExamsRequest)(nil),                      // 27: modules.calendar.api.GetExamsRequest
+	(*GetExamsResponse)(nil),                     // 28: modules.calendar.api.GetExamsResponse
+	(*CreateExamRequest)(nil),                    // 29: modules.calendar.api.CreateExamRequest
+	(*CreateExamResponse)(nil),                   // 30: modules.calendar.api.CreateExamResponse
+	(*UpdateExamRequest)(nil),                    // 31: modules.calendar.api.UpdateExamRequest
+	(*UpdateExamResponse)(nil),                   // 32: modules.calendar.api.UpdateExamResponse
+	(*DeleteExamRequest)(nil),                    // 33: modules.calendar.api.DeleteExamRequest
+	(*DeleteExamResponse)(nil),                   // 34: modules.calendar.api.DeleteExamResponse
+	(*GetMyExamsRequest)(nil),                    // 35: modules.calendar.api.GetMyExamsRequest
+	(*GetMyExamsResponse)(nil),                   // 36: modules.calendar.api.GetMyExamsResponse
 }
 var file_calendar_proto_depIdxs = []int32{
 	0,  // 0: modules.calendar.api.GetUserEventsResponse.events:type_name -> modules.calendar.api.CalendarEvent
@@ -2244,31 +2952,45 @@ var file_calendar_proto_depIdxs = []int32{
 	18, // 8: modules.calendar.api.GetWeekScheduleResponse.schedule:type_name -> modules.calendar.api.ScheduleEntry
 	21, // 9: modules.calendar.api.GetActiveRegistrationPeriodsResponse.periods:type_name -> modules.calendar.api.RegistrationPeriod
 	24, // 10: modules.calendar.api.GetUpcomingExamsResponse.exams:type_name -> modules.calendar.api.Exam
-	1,  // 11: modules.calendar.api.CalendarService.GetUserEvents:input_type -> modules.calendar.api.GetUserEventsRequest
-	3,  // 12: modules.calendar.api.CalendarService.CreateEvent:input_type -> modules.calendar.api.CreateEventRequest
-	5,  // 13: modules.calendar.api.CalendarService.GetClassSchedule:input_type -> modules.calendar.api.GetClassScheduleRequest
-	8,  // 14: modules.calendar.api.CalendarService.GetAcademicCalendar:input_type -> modules.calendar.api.GetAcademicCalendarRequest
-	11, // 15: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:input_type -> modules.calendar.api.GetCurrentSemesterInfoRequest
-	13, // 16: modules.calendar.api.CalendarService.CreateAcademicEvent:input_type -> modules.calendar.api.CreateAcademicEventRequest
-	15, // 17: modules.calendar.api.CalendarService.GetHolidays:input_type -> modules.calendar.api.GetHolidaysRequest
-	19, // 18: modules.calendar.api.CalendarService.GetWeekSchedule:input_type -> modules.calendar.api.GetWeekScheduleRequest
-	22, // 19: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:input_type -> modules.calendar.api.GetActiveRegistrationPeriodsRequest
-	25, // 20: modules.calendar.api.CalendarService.GetUpcomingExams:input_type -> modules.calendar.api.GetUpcomingExamsRequest
-	2,  // 21: modules.calendar.api.CalendarService.GetUserEvents:output_type -> modules.calendar.api.GetUserEventsResponse
-	4,  // 22: modules.calendar.api.CalendarService.CreateEvent:output_type -> modules.calendar.api.CreateEventResponse
-	6,  // 23: modules.calendar.api.CalendarService.GetClassSchedule:output_type -> modules.calendar.api.GetClassScheduleResponse
-	9,  // 24: modules.calendar.api.CalendarService.GetAcademicCalendar:output_type -> modules.calendar.api.GetAcademicCalendarResponse
-	12, // 25: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:output_type -> modules.calendar.api.GetCurrentSemesterInfoResponse
-	14, // 26: modules.calendar.api.CalendarService.CreateAcademicEvent:output_type -> modules.calendar.api.CreateAcademicEventResponse
-	16, // 27: modules.calendar.api.CalendarService.GetHolidays:output_type -> modules.calendar.api.GetHolidaysResponse
-	20, // 28: modules.calendar.api.CalendarService.GetWeekSchedule:output_type -> modules.calendar.api.GetWeekScheduleResponse
-	23, // 29: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:output_type -> modules.calendar.api.GetActiveRegistrationPeriodsResponse
-	26, // 30: modules.calendar.api.CalendarService.GetUpcomingExams:output_type -> modules.calendar.api.GetUpcomingExamsResponse
-	21, // [21:31] is the sub-list for method output_type
-	11, // [11:21] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	24, // 11: modules.calendar.api.GetExamsResponse.exams:type_name -> modules.calendar.api.Exam
+	24, // 12: modules.calendar.api.CreateExamResponse.exam:type_name -> modules.calendar.api.Exam
+	24, // 13: modules.calendar.api.UpdateExamResponse.exam:type_name -> modules.calendar.api.Exam
+	24, // 14: modules.calendar.api.GetMyExamsResponse.exams:type_name -> modules.calendar.api.Exam
+	1,  // 15: modules.calendar.api.CalendarService.GetUserEvents:input_type -> modules.calendar.api.GetUserEventsRequest
+	3,  // 16: modules.calendar.api.CalendarService.CreateEvent:input_type -> modules.calendar.api.CreateEventRequest
+	5,  // 17: modules.calendar.api.CalendarService.GetClassSchedule:input_type -> modules.calendar.api.GetClassScheduleRequest
+	8,  // 18: modules.calendar.api.CalendarService.GetAcademicCalendar:input_type -> modules.calendar.api.GetAcademicCalendarRequest
+	11, // 19: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:input_type -> modules.calendar.api.GetCurrentSemesterInfoRequest
+	13, // 20: modules.calendar.api.CalendarService.CreateAcademicEvent:input_type -> modules.calendar.api.CreateAcademicEventRequest
+	15, // 21: modules.calendar.api.CalendarService.GetHolidays:input_type -> modules.calendar.api.GetHolidaysRequest
+	19, // 22: modules.calendar.api.CalendarService.GetWeekSchedule:input_type -> modules.calendar.api.GetWeekScheduleRequest
+	22, // 23: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:input_type -> modules.calendar.api.GetActiveRegistrationPeriodsRequest
+	25, // 24: modules.calendar.api.CalendarService.GetUpcomingExams:input_type -> modules.calendar.api.GetUpcomingExamsRequest
+	27, // 25: modules.calendar.api.CalendarService.GetExams:input_type -> modules.calendar.api.GetExamsRequest
+	35, // 26: modules.calendar.api.CalendarService.GetMyExams:input_type -> modules.calendar.api.GetMyExamsRequest
+	29, // 27: modules.calendar.api.CalendarService.CreateExam:input_type -> modules.calendar.api.CreateExamRequest
+	31, // 28: modules.calendar.api.CalendarService.UpdateExam:input_type -> modules.calendar.api.UpdateExamRequest
+	33, // 29: modules.calendar.api.CalendarService.DeleteExam:input_type -> modules.calendar.api.DeleteExamRequest
+	2,  // 30: modules.calendar.api.CalendarService.GetUserEvents:output_type -> modules.calendar.api.GetUserEventsResponse
+	4,  // 31: modules.calendar.api.CalendarService.CreateEvent:output_type -> modules.calendar.api.CreateEventResponse
+	6,  // 32: modules.calendar.api.CalendarService.GetClassSchedule:output_type -> modules.calendar.api.GetClassScheduleResponse
+	9,  // 33: modules.calendar.api.CalendarService.GetAcademicCalendar:output_type -> modules.calendar.api.GetAcademicCalendarResponse
+	12, // 34: modules.calendar.api.CalendarService.GetCurrentSemesterInfo:output_type -> modules.calendar.api.GetCurrentSemesterInfoResponse
+	14, // 35: modules.calendar.api.CalendarService.CreateAcademicEvent:output_type -> modules.calendar.api.CreateAcademicEventResponse
+	16, // 36: modules.calendar.api.CalendarService.GetHolidays:output_type -> modules.calendar.api.GetHolidaysResponse
+	20, // 37: modules.calendar.api.CalendarService.GetWeekSchedule:output_type -> modules.calendar.api.GetWeekScheduleResponse
+	23, // 38: modules.calendar.api.CalendarService.GetActiveRegistrationPeriods:output_type -> modules.calendar.api.GetActiveRegistrationPeriodsResponse
+	26, // 39: modules.calendar.api.CalendarService.GetUpcomingExams:output_type -> modules.calendar.api.GetUpcomingExamsResponse
+	28, // 40: modules.calendar.api.CalendarService.GetExams:output_type -> modules.calendar.api.GetExamsResponse
+	36, // 41: modules.calendar.api.CalendarService.GetMyExams:output_type -> modules.calendar.api.GetMyExamsResponse
+	30, // 42: modules.calendar.api.CalendarService.CreateExam:output_type -> modules.calendar.api.CreateExamResponse
+	32, // 43: modules.calendar.api.CalendarService.UpdateExam:output_type -> modules.calendar.api.UpdateExamResponse
+	34, // 44: modules.calendar.api.CalendarService.DeleteExam:output_type -> modules.calendar.api.DeleteExamResponse
+	30, // [30:45] is the sub-list for method output_type
+	15, // [15:30] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_calendar_proto_init() }
@@ -2280,13 +3002,16 @@ func file_calendar_proto_init() {
 	file_calendar_proto_msgTypes[15].OneofWrappers = []any{}
 	file_calendar_proto_msgTypes[19].OneofWrappers = []any{}
 	file_calendar_proto_msgTypes[25].OneofWrappers = []any{}
+	file_calendar_proto_msgTypes[27].OneofWrappers = []any{}
+	file_calendar_proto_msgTypes[29].OneofWrappers = []any{}
+	file_calendar_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_calendar_proto_rawDesc), len(file_calendar_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

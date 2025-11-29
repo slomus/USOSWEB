@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package search;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/slomus/USOSWEB/src/backend/modules/common/gen/search;search";
+
+message GlobalSearchRequest {
+  string query = 1;
+  repeated string entity_types = 2; // ["users", "subjects", "courses", "buildings"] - opcjonalne
+  int32 limit_per_type = 3; // default: 5
+}
+
+message UserSearchResult {
+  int64 user_id = 1;
+  string name = 2;
+  string surname = 3;
+  string email = 4;
+  string role = 5;
+}
+
+message SubjectSearchResult {
+  int32 subject_id = 1;
+  string name = 2;
+  string alias = 3;
+  float ects = 4;
+  string description = 5; 
+}
+
+message CourseSearchResult {
+  int32 course_id = 1;
+  string name = 2;
+  string alias = 3;
+  string faculty_name = 4;
+}
+
+message BuildingSearchResult {
+  int32 building_id = 1;
+  string name = 2;
+  string address = 3;
+}
+
+message ClassSearchResult {
+  int32 class_id = 1;
+  string subject_name = 2;
+  string class_type = 3;
+  int32 group_nr = 4;
+  string building_name = 5;
+}
+
+message GlobalSearchResponse {
+  repeated UserSearchResult users = 1;
+  repeated SubjectSearchResult subjects = 2;
+  repeated CourseSearchResult courses = 3;
+  repeated BuildingSearchResult buildings = 4;
+  repeated ClassSearchResult classes = 5;
+  int32 total_results = 6;
+  string message = 7;
+}
+
+service SearchService {
+  rpc GlobalSearch(GlobalSearchRequest) returns (GlobalSearchResponse) {
+    option (google.api.http) = {
+      get: "/api/search"
+    };
+  }
+}

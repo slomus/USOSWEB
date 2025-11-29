@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	calendarPb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
@@ -16,11 +15,13 @@ import (
 	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
 	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	academicPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
+	searchPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/search"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+ "google.golang.org/protobuf/encoding/protojson"
 )
 
 var appLog = logger.NewLogger("api-gateway")
@@ -159,6 +160,12 @@ func main() {
 	defer cancel()
 	appLog.LogDebug("Configuring gRPC-Gateway multiplexer")
 	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+        MarshalOptions: protojson.MarshalOptions{
+            EmitUnpopulated: true,  
+        },
+    }),
+
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
 			if key == "Cookie" {
 				return "cookie", true
@@ -248,7 +255,7 @@ func main() {
 	//Course Service
 	appLog.LogInfo("Registering cou endpoints")
 
-	// SubjectsService
+	// Subjects Service
   appLog.LogInfo("Registering SubjectsService endpoints")
   err = academicPb.RegisterSubjectsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
   if err != nil {
@@ -257,7 +264,7 @@ func main() {
   }
   appLog.LogInfo("SubjectsService endpoints registered successfully")
 
-  // EnrollmentsService
+  // Enrollments Service
   appLog.LogInfo("Registering EnrollmentsService endpoints")
   err = academicPb.RegisterEnrollmentsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
   if err != nil {
@@ -265,6 +272,16 @@ func main() {
       panic(err)
   }
   appLog.LogInfo("EnrollmentsService endpoints registered successfully")
+
+	// Search Service
+	appLog.LogInfo("Registering SearchService endpoints")
+  err = searchPb.RegisterSearchServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+  if err != nil {
+      appLog.LogError("Failed to register SearchService gateway", err)
+      panic(err)
+  }
+  appLog.LogInfo("SearchService endpoints registered successfully")
+
 
 	handler := loggingMiddleware(allowCORS(mux))
 	appLog.LogInfo("API Gateway configured with endpoints:")
@@ -308,6 +325,7 @@ func main() {
 		"DELETE /api/enrollments/{subject_id}",
     "GET  /api/enrollments",
     "POST /api/enrollments/check-conflicts",		
+		"GET /api/search",
 
 	}
 	for _, endpoint := range endpoints {

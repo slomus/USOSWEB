@@ -6,21 +6,23 @@ import (
 	"net"
 
 	"github.com/slomus/USOSWEB/src/backend/configs"
+	pbAcademic "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
+	searchPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/search"
 	middleware "github.com/slomus/USOSWEB/src/backend/modules/common/middleware"
 	applicationsSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/applications"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/services/auth"
 	courses "github.com/slomus/USOSWEB/src/backend/modules/common/services/courses"
+	enrollmentsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/enrollments"
 	gradesSvc "github.com/slomus/USOSWEB/src/backend/modules/common/services/grades"
+	"github.com/slomus/USOSWEB/src/backend/modules/common/services/search"
+	subjectsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/subjects"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
-	subjectsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/subjects"
-  enrollmentsService "github.com/slomus/USOSWEB/src/backend/modules/common/services/enrollments"
-  pbAcademic "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 )
 
 var appLog = logger.NewLogger("common-service")
@@ -78,6 +80,7 @@ func main() {
 	courseServer := courses.NewCourseServerWithCache(db, redisCache)
 	gradesServer := gradesSvc.NewGradesServerWithCache(db, redisCache)
 	applicationsServer := applicationsSvc.NewApplicationsServer(db)
+	searchServer := search.NewSearchServer(db)
 
 	// Rejestracja serwisów Auth
 	authPb.RegisterAuthServiceServer(grpcServer, authServer)
@@ -102,6 +105,9 @@ func main() {
 	// Rejestracja serwisu Enrollment
   enrollmentsServer := enrollmentsService.NewEnrollmentsServer(db)
 	pbAcademic.RegisterEnrollmentsServiceServer(grpcServer, enrollmentsServer)
+
+	searchPb.RegisterSearchServiceServer(grpcServer, searchServer)
+	appLog.LogInfo("SearchService registered")
 
 	appLog.LogInfo("Common Service registered and listening on :3003")
 	appLog.LogInfo("Available services:")

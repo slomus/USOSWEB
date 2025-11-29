@@ -7,7 +7,7 @@ COURSE_PROTO=$(PROTO_DIR)/course.proto
 APPLICATIONS_PROTO=$(PROTO_DIR)/applications.proto
 GRADES_PROTO=$(PROTO_DIR)/grades.proto
 ACADEMIC_PROTO=$(PROTO_DIR)/academic.proto
-
+SEARCH_PROTO = $(PROTO_DIR)/search.proto
 
 .PHONY: help generate-proto generate-auth generate-course generate-grades clean run test build
 
@@ -57,6 +57,17 @@ generate-academic:
 		--grpc-gateway_opt=paths=source_relative \
 		--grpc-gateway_opt=generate_unbound_methods=true \
 		$(ACADEMIC_PROTO)
+
+generate-search:
+	mkdir -p $(OUT_DIR)/search
+	protoc -I $(PROTO_DIR) \
+		-I $(GOOGLEAPIS_DIR) \
+		--go_out=$(OUT_DIR)/search --go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR)/search --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=$(OUT_DIR)/search --grpc-gateway_opt=paths=source_relative \
+		$(SEARCH_PROTO)
+
+
 
 run: generate-proto
 	go run main.go
