@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-
+	"strings"
   "google.golang.org/grpc/metadata"
 	pb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
@@ -713,4 +713,495 @@ func (s *CalendarServer) GetUpcomingExams(ctx context.Context, req *pb.GetUpcomi
 		Exams:      exams,
 		TotalCount: int32(len(exams)),
 	}, nil
+}
+
+func (s *CalendarServer) GetExams(ctx context.Context, req *pb.GetExamsRequest) (*pb.GetExamsResponse, error) {
+	calendarLog.LogInfo("GetExams request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	role, albumNr, teachingStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	query := `
+		SELECT 
+			e.id,
+			e.class_id,
+			s.name as subject_name,
+			e.exam_date,
+			e.location,
+			e.duration_minutes,
+			e.description,
+			e.exam_type,
+			e.max_students,
+			c.class_type,
+			c.group_nr
+		FROM exams e
+		JOIN classes c ON e.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+	argPos := 1
+
+	if role == "student" {
+		query += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM student_classes sc WHERE sc.class_id = e.class_id AND sc.album_nr = $%d)", argPos)
+		args = append(args, albumNr)
+		argPos++
+	} else if role == "teacher" {
+		query += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM course_instructors ci WHERE ci.class_id = e.class_id AND ci.teaching_staff_id = $%d)", argPos)
+		args = append(args, teachingStaffID)
+		argPos++
+	}
+
+	if req.ExamId != nil {
+		query += fmt.Sprintf(" AND e.id = $%d", argPos)
+		args = append(args, *req.ExamId)
+		argPos++
+	}
+
+	if req.ClassId != nil {
+		query += fmt.Sprintf(" AND e.class_id = $%d", argPos)
+		args = append(args, *req.ClassId)
+		argPos++
+	}
+
+	if req.ExamType != nil {
+		query += fmt.Sprintf(" AND e.exam_type = $%d", argPos)
+		args = append(args, *req.ExamType)
+		argPos++
+	}
+
+	if req.DateFrom != nil {
+		query += fmt.Sprintf(" AND e.exam_date >= $%d", argPos)
+		args = append(args, *req.DateFrom)
+		argPos++
+	}
+
+	if req.DateTo != nil {
+		query += fmt.Sprintf(" AND e.exam_date <= $%d", argPos)
+		args = append(args, *req.DateTo)
+		argPos++
+	}
+
+	query += " ORDER BY e.exam_date ASC"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		calendarLog.LogError("Failed to query exams", err)
+		return nil, status.Error(codes.Internal, "failed to fetch exams")
+	}
+	defer rows.Close()
+
+	var exams []*pb.Exam
+	for rows.Next() {
+		var exam pb.Exam
+		var examDate time.Time
+		var location, description sql.NullString
+		var maxStudents sql.NullInt32
+
+		err := rows.Scan(
+			&exam.ExamId,
+			&exam.ClassId,
+			&exam.SubjectName,
+			&examDate,
+			&location,
+			&exam.DurationMinutes,
+			&description,
+			&exam.ExamType,
+			&maxStudents,
+			&exam.ClassType,
+			&exam.GroupNr,
+		)
+		if err != nil {
+			calendarLog.LogError("Failed to scan exam row", err)
+			continue
+		}
+
+		exam.ExamDate = examDate.Format("2006-01-02 15:04:05")
+		if location.Valid {
+			exam.Location = location.String
+		}
+		if description.Valid {
+			exam.Description = description.String
+		}
+		if maxStudents.Valid {
+			exam.MaxStudents = maxStudents.Int32
+		}
+
+		exams = append(exams, &exam)
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Returning %d exams for %s user %d", len(exams), role, userID))
+	return &pb.GetExamsResponse{
+		Exams:   exams,
+		Message: "Exams retrieved successfully",
+	}, nil
+}
+
+func (s *CalendarServer) GetMyExams(ctx context.Context, req *pb.GetMyExamsRequest) (*pb.GetMyExamsResponse, error) {
+	calendarLog.LogInfo("GetMyExams request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	var albumNr int
+	err = s.db.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+	if err != nil {
+		return nil, status.Error(codes.PermissionDenied, "user is not a student")
+	}
+
+	query := `
+		SELECT 
+			e.id,
+			e.class_id,
+			s.name as subject_name,
+			e.exam_date,
+			e.location,
+			e.duration_minutes,
+			e.description,
+			e.exam_type,
+			e.max_students,
+			c.class_type,
+			c.group_nr
+		FROM exams e
+		JOIN classes c ON e.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		JOIN student_classes sc ON sc.class_id = e.class_id
+		WHERE sc.album_nr = $1
+		ORDER BY e.exam_date ASC
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, albumNr)
+	if err != nil {
+		calendarLog.LogError("Failed to query student exams", err)
+		return nil, status.Error(codes.Internal, "failed to fetch exams")
+	}
+	defer rows.Close()
+
+	var exams []*pb.Exam
+	for rows.Next() {
+		var exam pb.Exam
+		var examDate time.Time
+		var location, description sql.NullString
+		var maxStudents sql.NullInt32
+
+		err := rows.Scan(
+			&exam.ExamId,
+			&exam.ClassId,
+			&exam.SubjectName,
+			&examDate,
+			&location,
+			&exam.DurationMinutes,
+			&description,
+			&exam.ExamType,
+			&maxStudents,
+			&exam.ClassType,
+			&exam.GroupNr,
+		)
+		if err != nil {
+			calendarLog.LogError("Failed to scan exam row", err)
+			continue
+		}
+
+		exam.ExamDate = examDate.Format("2006-01-02 15:04:05")
+		if location.Valid {
+			exam.Location = location.String
+		}
+		if description.Valid {
+			exam.Description = description.String
+		}
+		if maxStudents.Valid {
+			exam.MaxStudents = maxStudents.Int32
+		}
+
+		exams = append(exams, &exam)
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Returning %d exams for student %d", len(exams), albumNr))
+	return &pb.GetMyExamsResponse{
+		Exams:   exams,
+		Message: "Exams retrieved successfully",
+	}, nil
+}
+
+func (s *CalendarServer) CreateExam(ctx context.Context, req *pb.CreateExamRequest) (*pb.CreateExamResponse, error) {
+	calendarLog.LogInfo("CreateExam request received")
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	role, _, teachingStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role == "student" {
+		return nil, status.Error(codes.PermissionDenied, "students cannot create exams")
+	}
+
+	// Walidacja exam_type
+	validTypes := map[string]bool{
+		"final": true, "retake": true, "commission": true,
+		"midterm": true, "quiz": true, "project": true, "test": true,
+	}
+	if !validTypes[req.ExamType] {
+		return nil, status.Error(codes.InvalidArgument, "invalid exam_type")
+	}
+
+	if role == "teacher" {
+		var teaches bool
+		err = s.db.QueryRowContext(ctx,
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)",
+			req.ClassId, teachingStaffID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
+		}
+	}
+
+	examDate, err := time.Parse("2006-01-02 15:04:05", req.ExamDate)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid exam_date format (use YYYY-MM-DD HH:MM:SS)")
+	}
+
+
+	var examID int32
+	err = s.db.QueryRowContext(ctx, `
+		INSERT INTO exams (class_id, exam_date, location, duration_minutes, description, exam_type, max_students)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id
+	`, req.ClassId, examDate, req.Location, req.DurationMinutes, req.Description, req.ExamType, req.MaxStudents).Scan(&examID)
+
+	if err != nil {
+		calendarLog.LogError("Failed to create exam", err)
+		return nil, status.Error(codes.Internal, "failed to create exam")
+	}
+
+	var exam pb.Exam
+	err = s.db.QueryRowContext(ctx, `
+		SELECT 
+			e.id, e.class_id, s.name, e.exam_date, e.location, e.duration_minutes,
+			e.description, e.exam_type, e.max_students, c.class_type, c.group_nr
+		FROM exams e
+		JOIN classes c ON e.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		WHERE e.id = $1
+	`, examID).Scan(
+		&exam.ExamId, &exam.ClassId, &exam.SubjectName, &examDate,
+		&exam.Location, &exam.DurationMinutes, &exam.Description,
+		&exam.ExamType, &exam.MaxStudents, &exam.ClassType, &exam.GroupNr,
+	)
+
+	exam.ExamDate = examDate.Format("2006-01-02 15:04:05")
+
+	calendarLog.LogInfo(fmt.Sprintf("Created exam %d by %s user %d", examID, role, userID))
+	return &pb.CreateExamResponse{
+		Exam:    &exam,
+		Message: "Exam created successfully",
+	}, nil
+}
+
+func (s *CalendarServer) UpdateExam(ctx context.Context, req *pb.UpdateExamRequest) (*pb.UpdateExamResponse, error) {
+	calendarLog.LogInfo(fmt.Sprintf("UpdateExam request received for exam_id: %d", req.ExamId))
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	role, _, teachingStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role == "student" {
+		return nil, status.Error(codes.PermissionDenied, "students cannot update exams")
+	}
+
+	var classID int32
+	err = s.db.QueryRowContext(ctx, "SELECT class_id FROM exams WHERE id = $1", req.ExamId).Scan(&classID)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch exam")
+	}
+
+	if role == "teacher" {
+		var teaches bool
+		err = s.db.QueryRowContext(ctx,
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)",
+			classID, teachingStaffID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
+		}
+	}
+
+	updates := []string{}
+	args := []interface{}{}
+	argPos := 1
+
+	if req.ExamDate != nil {
+		examDate, err := time.Parse("2006-01-02 15:04:05", *req.ExamDate)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid exam_date format")
+		}
+		updates = append(updates, fmt.Sprintf("exam_date = $%d", argPos))
+		args = append(args, examDate)
+		argPos++
+	}
+
+	if req.Location != nil {
+		updates = append(updates, fmt.Sprintf("location = $%d", argPos))
+		args = append(args, *req.Location)
+		argPos++
+	}
+
+	if req.DurationMinutes != nil {
+		updates = append(updates, fmt.Sprintf("duration_minutes = $%d", argPos))
+		args = append(args, *req.DurationMinutes)
+		argPos++
+	}
+
+	if req.Description != nil {
+		updates = append(updates, fmt.Sprintf("description = $%d", argPos))
+		args = append(args, *req.Description)
+		argPos++
+	}
+
+	if req.ExamType != nil {
+		updates = append(updates, fmt.Sprintf("exam_type = $%d", argPos))
+		args = append(args, *req.ExamType)
+		argPos++
+	}
+
+	if req.MaxStudents != nil {
+		updates = append(updates, fmt.Sprintf("max_students = $%d", argPos))
+		args = append(args, *req.MaxStudents)
+		argPos++
+	}
+
+	
+	if len(updates) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "no fields to update")
+	}
+
+	updates = append(updates, fmt.Sprintf("updated_at = NOW()"))
+	args = append(args, req.ExamId)
+	updateQuery := fmt.Sprintf("UPDATE exams SET %s WHERE id = $%d", strings.Join(updates, ", "), argPos)
+
+	_, err = s.db.ExecContext(ctx, updateQuery, args...)
+	if err != nil {
+		calendarLog.LogError("Failed to update exam", err)
+		return nil, status.Error(codes.Internal, "failed to update exam")
+	}
+
+	var exam pb.Exam
+	var examDate time.Time
+	err = s.db.QueryRowContext(ctx, `
+		SELECT 
+			e.id, e.class_id, s.name, e.exam_date, e.location, e.duration_minutes,
+			e.description, e.exam_type, e.max_students, c.class_type, c.group_nr
+		FROM exams e
+		JOIN classes c ON e.class_id = c.class_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		WHERE e.id = $1
+	`, req.ExamId).Scan(
+		&exam.ExamId, &exam.ClassId, &exam.SubjectName, &examDate,
+		&exam.Location, &exam.DurationMinutes, &exam.Description,
+		&exam.ExamType, &exam.MaxStudents, &exam.ClassType, &exam.GroupNr,
+	)
+
+	exam.ExamDate = examDate.Format("2006-01-02 15:04:05")
+
+	calendarLog.LogInfo(fmt.Sprintf("Updated exam %d by %s user %d", req.ExamId, role, userID))
+	return &pb.UpdateExamResponse{
+		Exam:    &exam,
+		Message: "Exam updated successfully",
+	}, nil
+}
+
+func (s *CalendarServer) DeleteExam(ctx context.Context, req *pb.DeleteExamRequest) (*pb.DeleteExamResponse, error) {
+	calendarLog.LogInfo(fmt.Sprintf("DeleteExam request received for exam_id: %d", req.ExamId))
+
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	role, _, teachingStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role == "student" {
+		return nil, status.Error(codes.PermissionDenied, "students cannot delete exams")
+	}
+
+	var classID int32
+	err = s.db.QueryRowContext(ctx, "SELECT class_id FROM exams WHERE id = $1", req.ExamId).Scan(&classID)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch exam")
+	}
+
+	if role == "teacher" {
+		var teaches bool
+		err = s.db.QueryRowContext(ctx,
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)",
+			classID, teachingStaffID).Scan(&teaches)
+		if err != nil || !teaches {
+			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
+		}
+	}
+
+	result, err := s.db.ExecContext(ctx, "DELETE FROM exams WHERE id = $1", req.ExamId)
+	if err != nil {
+		calendarLog.LogError("Failed to delete exam", err)
+		return nil, status.Error(codes.Internal, "failed to delete exam")
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+
+	calendarLog.LogInfo(fmt.Sprintf("Deleted exam %d by %s user %d", req.ExamId, role, userID))
+	return &pb.DeleteExamResponse{
+		Success: true,
+		Message: "Exam deleted successfully",
+	}, nil
+}
+
+func (s *CalendarServer) getUserRoleAndIdentifiers(ctx context.Context, userID int64) (role string, albumNr int64, teachingStaffID int64, err error) {
+	query := `
+		SELECT
+			CASE
+				WHEN s.user_id IS NOT NULL THEN 'student'
+				WHEN ts.user_id IS NOT NULL THEN 'teacher'
+				WHEN a.user_id IS NOT NULL THEN 'admin'
+				ELSE 'unknown'
+			END as role,
+			COALESCE(s.album_nr, 0) as album_nr,
+			COALESCE(ts.teaching_staff_id, 0) as teaching_staff_id
+		FROM users u
+		LEFT JOIN students s ON u.user_id = s.user_id
+		LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+		LEFT JOIN administrative_staff a ON u.user_id = a.user_id
+		WHERE u.user_id = $1`
+
+	err = s.db.QueryRowContext(ctx, query, userID).Scan(&role, &albumNr, &teachingStaffID)
+	return
 }

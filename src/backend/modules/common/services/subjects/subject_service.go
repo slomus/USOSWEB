@@ -65,15 +65,18 @@ func (s *SubjectsServer) GetSubjects(ctx context.Context, req *pb.GetSubjectsReq
 			WHERE sc.album_nr = $1
 		),
 		registration_periods AS (
-			SELECT 
-				ac.applies_to as subject_alias,
-				ac.start_date::text as start_date,
-				ac.end_date::text as end_date,
-				(CURRENT_DATE BETWEEN ac.start_date AND ac.end_date) as is_active
-			FROM academic_calendar ac
-			WHERE ac.event_type = 'registration'
-				AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
-		)
+    SELECT 
+        ac.applies_to as subject_alias,
+        ac.start_date::text as start_date,
+        ac.end_date::text as end_date,
+        (CURRENT_DATE BETWEEN ac.start_date AND ac.end_date) as is_active
+    FROM academic_calendar ac
+    WHERE ac.event_type = 'registration'
+      AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
+    ORDER BY 
+      CASE WHEN ac.applies_to = 'all' THEN 1 ELSE 0 END,  
+      ac.start_date DESC
+		)	
 		SELECT 
 			ss.subject_id,
 			ss.alias,
@@ -88,7 +91,7 @@ func (s *SubjectsServer) GetSubjects(ctx context.Context, req *pb.GetSubjectsReq
 			COALESCE(rp.is_active, FALSE) as reg_is_active
 		FROM subject_stats ss
 		LEFT JOIN enrollment_check ec ON ss.subject_id = ec.subject_id
-		LEFT JOIN registration_periods rp ON ss.alias = rp.subject_alias
+		LEFT JOIN registration_periods rp ON (ss.alias = rp.subject_alias OR rp.subject_alias = 'all')
 		WHERE ($2::int IS NULL OR EXISTS (
 			SELECT 1 FROM course_subjects cs 
 			WHERE cs.subject_id = ss.subject_id 
@@ -177,7 +180,23 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 
 	var subject pb.SubjectDetails
 	var isEnrolled bool
+	var startDate, endDate sql.NullString
+	var regIsActive bool
+
 	err = s.db.QueryRow(`
+		WITH registration_periods AS (
+			SELECT 
+				ac.applies_to as subject_alias,
+				ac.start_date::text as start_date,
+				ac.end_date::text as end_date,
+				(CURRENT_DATE BETWEEN ac.start_date AND ac.end_date) as is_active
+			FROM academic_calendar ac
+			WHERE ac.event_type = 'registration'
+			  AND CURRENT_DATE <= ac.end_date + INTERVAL '30 days'
+			ORDER BY 
+			  CASE WHEN ac.applies_to != 'all' THEN 0 ELSE 1 END,
+			  ac.start_date DESC
+		)
 		SELECT 
 			s.subject_id,
 			s.alias,
@@ -191,9 +210,14 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 				 WHERE c.subject_id = s.subject_id AND sc.album_nr = $2 
 				 LIMIT 1),
 				FALSE
-			) as is_enrolled
+			) as is_enrolled,
+			rp.start_date,
+			rp.end_date,
+			COALESCE(rp.is_active, FALSE) as reg_is_active
 		FROM subjects s
+		LEFT JOIN registration_periods rp ON (s.alias = rp.subject_alias OR rp.subject_alias = 'all')
 		WHERE s.subject_id = $1
+		LIMIT 1
 	`, req.SubjectId, albumNr).Scan(
 		&subject.SubjectId,
 		&subject.Alias,
@@ -202,6 +226,9 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 		&subject.Description,
 		&subject.Syllabus,
 		&isEnrolled,
+		&startDate,
+		&endDate,
+		&regIsActive,
 	)
 
 	if err != nil {
@@ -214,6 +241,14 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 	}
 
 	subject.IsEnrolled = isEnrolled
+
+	if startDate.Valid && endDate.Valid {
+		subject.RegistrationPeriod = &pb.RegistrationPeriod{
+			StartDate: startDate.String,
+			EndDate:   endDate.String,
+			IsActive:  regIsActive,
+		}
+	}
 
 	classesQuery := `
 		SELECT 
@@ -280,8 +315,6 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 			class.Instructors = instructors
 		}
 
-		// Na razie dodajemy placeholder - można rozszerzyć o rzeczywiste dane z calendar
-		// TODO: Dodać integrację z calendar_events
 		class.Schedule = []*pb.TimeSlot{
 			{
 				DayOfWeek:    "Poniedziałek",
@@ -297,37 +330,13 @@ func (s *SubjectsServer) GetSubjectDetails(ctx context.Context, req *pb.GetSubje
 
 	subject.Classes = classes
 
-	var startDate, endDate sql.NullString
-	var regIsActive bool
-	err = s.db.QueryRow(`
-		SELECT 
-			start_date::text,
-			end_date::text,
-			(CURRENT_DATE BETWEEN start_date AND end_date) as is_active
-		FROM academic_calendar
-		WHERE event_type = 'registration'
-		  AND applies_to = $1
-		  AND CURRENT_DATE <= end_date + INTERVAL '30 days'
-		ORDER BY start_date DESC
-		LIMIT 1
-	`, subject.Alias).Scan(&startDate, &endDate, &regIsActive)
-
-	if err == nil && startDate.Valid {
-		subject.RegistrationPeriod = &pb.RegistrationPeriod{
-			StartDate: startDate.String,
-			EndDate:   endDate.String,
-			IsActive:  regIsActive,
-		}
-	}
-
-
-
 	subjectsLog.LogInfo(fmt.Sprintf("Successfully returned subject details for subject_id: %d", req.SubjectId))
 	return &pb.GetSubjectDetailsResponse{
 		Subject: &subject,
 		Message: "Subject details retrieved successfully",
 	}, nil
 }
+
 
 func (s *SubjectsServer) GetAvailableSubjects(ctx context.Context, req *pb.GetAvailableSubjectsRequest) (*pb.GetAvailableSubjectsResponse, error) {
 	subjectsLog.LogInfo("GetAvailableSubjects request received")
@@ -412,7 +421,7 @@ func (s *SubjectsServer) GetAvailableSubjects(ctx context.Context, req *pb.GetAv
 			COALESCE(rp.is_active, FALSE)
 		FROM subject_stats ss
 		LEFT JOIN enrollment_check ec ON ss.subject_id = ec.subject_id
-		LEFT JOIN registration_periods rp ON ss.alias = rp.subject_alias
+		LEFT JOIN registration_periods rp ON (ss.alias = rp.subject_alias OR rp.subject_alias = 'all')
 		ORDER BY ss.name
 	`
 	

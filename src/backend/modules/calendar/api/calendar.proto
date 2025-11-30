@@ -193,9 +193,10 @@ message Exam {
   string location = 14;
   int32 duration_minutes = 15;
   string description = 16;
-  string exam_type = 17; // final, retake, commission
+  string exam_type = 17; // final, retake, commission, test, quiz
   int32 max_students = 18;
   string class_type = 19;
+  int32 group_nr = 20;
 }
 
 message GetUpcomingExamsRequest {
@@ -209,6 +210,67 @@ message GetUpcomingExamsResponse {
   int32 total_count = 13;
 }
 
+message GetExamsRequest {
+  optional int32 exam_id = 1;
+  optional int32 class_id = 2;
+  optional string exam_type = 3;
+  optional string date_from = 4; // "2024-01-01"
+  optional string date_to = 5;   // "2024-12-31"
+}
+
+message GetExamsResponse {
+  repeated Exam exams = 1;
+  string message = 2;
+}
+
+message CreateExamRequest {
+  int32 class_id = 1;
+  string exam_date = 2; // "2024-01-15 10:00:00"
+  string location = 3;
+  int32 duration_minutes = 4;
+  string description = 5;
+  string exam_type = 6;
+  optional int32 max_students = 7;
+  optional int32 weight = 8;
+}
+
+message CreateExamResponse {
+  Exam exam = 1;
+  string message = 2;
+}
+
+message UpdateExamRequest {
+  int32 exam_id = 1;
+  optional string exam_date = 2;
+  optional string location = 3;
+  optional int32 duration_minutes = 4;
+  optional string description = 5;
+  optional string exam_type = 6;
+  optional int32 max_students = 7;
+  optional int32 weight = 8;
+}
+
+message UpdateExamResponse {
+  Exam exam = 1;
+  string message = 2;
+}
+
+message DeleteExamRequest {
+  int32 exam_id = 1;
+}
+
+message DeleteExamResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetMyExamsRequest {
+}
+
+message GetMyExamsResponse {
+  repeated Exam exams = 1;
+  string message = 2;
+}
 
 // Calendar Service
 service CalendarService {
@@ -275,6 +337,38 @@ service CalendarService {
   rpc GetUpcomingExams(GetUpcomingExamsRequest) returns (GetUpcomingExamsResponse) {
     option (google.api.http) = {
       get : "/api/student/exams/upcoming"
+    };
+  }
+
+  rpc GetExams(GetExamsRequest) returns (GetExamsResponse) {
+    option (google.api.http) = {
+      get: "/api/exams"
+    };
+  }
+  
+  rpc GetMyExams(GetMyExamsRequest) returns (GetMyExamsResponse) {
+    option (google.api.http) = {
+      get: "/api/student/exams"
+    };
+  }
+
+  rpc CreateExam(CreateExamRequest) returns (CreateExamResponse) {
+    option (google.api.http) = {
+      post: "/api/exams"
+      body: "*"
+    };
+  }
+
+  rpc UpdateExam(UpdateExamRequest) returns (UpdateExamResponse) {
+    option (google.api.http) = {
+      put: "/api/exams/{exam_id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteExam(DeleteExamRequest) returns (DeleteExamResponse) {
+    option (google.api.http) = {
+      delete: "/api/exams/{exam_id}"
     };
   }
 }

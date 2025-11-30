@@ -29,6 +29,11 @@ const (
 	CalendarService_GetWeekSchedule_FullMethodName              = "/modules.calendar.api.CalendarService/GetWeekSchedule"
 	CalendarService_GetActiveRegistrationPeriods_FullMethodName = "/modules.calendar.api.CalendarService/GetActiveRegistrationPeriods"
 	CalendarService_GetUpcomingExams_FullMethodName             = "/modules.calendar.api.CalendarService/GetUpcomingExams"
+	CalendarService_GetExams_FullMethodName                     = "/modules.calendar.api.CalendarService/GetExams"
+	CalendarService_GetMyExams_FullMethodName                   = "/modules.calendar.api.CalendarService/GetMyExams"
+	CalendarService_CreateExam_FullMethodName                   = "/modules.calendar.api.CalendarService/CreateExam"
+	CalendarService_UpdateExam_FullMethodName                   = "/modules.calendar.api.CalendarService/UpdateExam"
+	CalendarService_DeleteExam_FullMethodName                   = "/modules.calendar.api.CalendarService/DeleteExam"
 )
 
 // CalendarServiceClient is the client API for CalendarService service.
@@ -47,6 +52,11 @@ type CalendarServiceClient interface {
 	GetWeekSchedule(ctx context.Context, in *GetWeekScheduleRequest, opts ...grpc.CallOption) (*GetWeekScheduleResponse, error)
 	GetActiveRegistrationPeriods(ctx context.Context, in *GetActiveRegistrationPeriodsRequest, opts ...grpc.CallOption) (*GetActiveRegistrationPeriodsResponse, error)
 	GetUpcomingExams(ctx context.Context, in *GetUpcomingExamsRequest, opts ...grpc.CallOption) (*GetUpcomingExamsResponse, error)
+	GetExams(ctx context.Context, in *GetExamsRequest, opts ...grpc.CallOption) (*GetExamsResponse, error)
+	GetMyExams(ctx context.Context, in *GetMyExamsRequest, opts ...grpc.CallOption) (*GetMyExamsResponse, error)
+	CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*CreateExamResponse, error)
+	UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*UpdateExamResponse, error)
+	DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamResponse, error)
 }
 
 type calendarServiceClient struct {
@@ -157,6 +167,56 @@ func (c *calendarServiceClient) GetUpcomingExams(ctx context.Context, in *GetUpc
 	return out, nil
 }
 
+func (c *calendarServiceClient) GetExams(ctx context.Context, in *GetExamsRequest, opts ...grpc.CallOption) (*GetExamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetExamsResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetExams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) GetMyExams(ctx context.Context, in *GetMyExamsRequest, opts ...grpc.CallOption) (*GetMyExamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyExamsResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetMyExams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*CreateExamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateExamResponse)
+	err := c.cc.Invoke(ctx, CalendarService_CreateExam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) UpdateExam(ctx context.Context, in *UpdateExamRequest, opts ...grpc.CallOption) (*UpdateExamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateExamResponse)
+	err := c.cc.Invoke(ctx, CalendarService_UpdateExam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteExamResponse)
+	err := c.cc.Invoke(ctx, CalendarService_DeleteExam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CalendarServiceServer is the server API for CalendarService service.
 // All implementations must embed UnimplementedCalendarServiceServer
 // for forward compatibility.
@@ -173,6 +233,11 @@ type CalendarServiceServer interface {
 	GetWeekSchedule(context.Context, *GetWeekScheduleRequest) (*GetWeekScheduleResponse, error)
 	GetActiveRegistrationPeriods(context.Context, *GetActiveRegistrationPeriodsRequest) (*GetActiveRegistrationPeriodsResponse, error)
 	GetUpcomingExams(context.Context, *GetUpcomingExamsRequest) (*GetUpcomingExamsResponse, error)
+	GetExams(context.Context, *GetExamsRequest) (*GetExamsResponse, error)
+	GetMyExams(context.Context, *GetMyExamsRequest) (*GetMyExamsResponse, error)
+	CreateExam(context.Context, *CreateExamRequest) (*CreateExamResponse, error)
+	UpdateExam(context.Context, *UpdateExamRequest) (*UpdateExamResponse, error)
+	DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamResponse, error)
 	mustEmbedUnimplementedCalendarServiceServer()
 }
 
@@ -212,6 +277,21 @@ func (UnimplementedCalendarServiceServer) GetActiveRegistrationPeriods(context.C
 }
 func (UnimplementedCalendarServiceServer) GetUpcomingExams(context.Context, *GetUpcomingExamsRequest) (*GetUpcomingExamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUpcomingExams not implemented")
+}
+func (UnimplementedCalendarServiceServer) GetExams(context.Context, *GetExamsRequest) (*GetExamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExams not implemented")
+}
+func (UnimplementedCalendarServiceServer) GetMyExams(context.Context, *GetMyExamsRequest) (*GetMyExamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyExams not implemented")
+}
+func (UnimplementedCalendarServiceServer) CreateExam(context.Context, *CreateExamRequest) (*CreateExamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateExam not implemented")
+}
+func (UnimplementedCalendarServiceServer) UpdateExam(context.Context, *UpdateExamRequest) (*UpdateExamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateExam not implemented")
+}
+func (UnimplementedCalendarServiceServer) DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteExam not implemented")
 }
 func (UnimplementedCalendarServiceServer) mustEmbedUnimplementedCalendarServiceServer() {}
 func (UnimplementedCalendarServiceServer) testEmbeddedByValue()                         {}
@@ -414,6 +494,96 @@ func _CalendarService_GetUpcomingExams_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CalendarService_GetExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).GetExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_GetExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).GetExams(ctx, req.(*GetExamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_GetMyExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).GetMyExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_GetMyExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).GetMyExams(ctx, req.(*GetMyExamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_CreateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).CreateExam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_CreateExam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).CreateExam(ctx, req.(*CreateExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_UpdateExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).UpdateExam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_UpdateExam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).UpdateExam(ctx, req.(*UpdateExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_DeleteExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).DeleteExam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_DeleteExam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).DeleteExam(ctx, req.(*DeleteExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CalendarService_ServiceDesc is the grpc.ServiceDesc for CalendarService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -460,6 +630,26 @@ var CalendarService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUpcomingExams",
 			Handler:    _CalendarService_GetUpcomingExams_Handler,
+		},
+		{
+			MethodName: "GetExams",
+			Handler:    _CalendarService_GetExams_Handler,
+		},
+		{
+			MethodName: "GetMyExams",
+			Handler:    _CalendarService_GetMyExams_Handler,
+		},
+		{
+			MethodName: "CreateExam",
+			Handler:    _CalendarService_CreateExam_Handler,
+		},
+		{
+			MethodName: "UpdateExam",
+			Handler:    _CalendarService_UpdateExam_Handler,
+		},
+		{
+			MethodName: "DeleteExam",
+			Handler:    _CalendarService_DeleteExam_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
