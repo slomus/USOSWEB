@@ -223,6 +223,52 @@ func (s *ApplicationsServer) GetApplicationCategories(ctx context.Context, _ *pb
 	return &pb.GetApplicationCategoriesResponse{Items: items}, nil
 }
 
+//Delete
+func (s *ApplicationsServer) DeleteApplication(ctx context.Context, req *pb.DeleteApplicationRequest) (*pb.DeleteApplicationResponse, error) {
+	callerAlbum, _ := s.resolveCallerAlbum(ctx)
+	
+	var ownerAlbum int32
+	var status string
+	err := s.db.QueryRowContext(ctx, 
+		"SELECT album_nr, status FROM applications WHERE application_id = $1", 
+		req.ApplicationId).Scan(&ownerAlbum, &status)
+	
+	if err == sql.ErrNoRows {
+		return &pb.DeleteApplicationResponse{
+			Success: false,
+			Message: "Application not found",
+		}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch application: %w", err)
+	}
+	
+	if callerAlbum != 0 {
+		if ownerAlbum != callerAlbum {
+			return &pb.DeleteApplicationResponse{
+				Success: false,
+				Message: "Forbidden - not your application",
+			}, nil
+		}
+		if status != "submitted" {
+			return &pb.DeleteApplicationResponse{
+				Success: false,
+				Message: "Cannot delete application with status: " + status,
+			}, nil
+		}
+	}
+	
+	_, err = s.db.ExecContext(ctx, "DELETE FROM applications WHERE application_id = $1", req.ApplicationId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete application: %w", err)
+	}
+	
+	return &pb.DeleteApplicationResponse{
+		Success: true,
+		Message: "Application deleted successfully",
+	}, nil
+}
+
 func (s *ApplicationsServer) CreateOrUpdateCategory(ctx context.Context, req *pb.CreateOrUpdateCategoryRequest) (*pb.CreateOrUpdateCategoryResponse, error) {
 	// Only non-students can create/update categories
 	if album, ok := s.resolveCallerAlbum(ctx); ok && album != 0 {

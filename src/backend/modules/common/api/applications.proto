@@ -83,6 +83,15 @@ message CreateOrUpdateCategoryResponse {
   string message = 11;
 }
 
+message DeleteApplicationRequest {
+  int32 application_id = 1;
+}
+
+message DeleteApplicationResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 service ApplicationsService {
   rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse) {
     option (google.api.http) = {
@@ -107,6 +116,12 @@ service ApplicationsService {
       body : "*"
     };
   }
+
+  rpc DeleteApplication(DeleteApplicationRequest) returns (DeleteApplicationResponse) {
+      option (google.api.http) = {
+        delete : "/api/applications/{application_id}"
+      };
+    }
 }
 
 

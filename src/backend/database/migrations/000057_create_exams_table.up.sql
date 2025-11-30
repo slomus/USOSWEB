@@ -5,7 +5,7 @@ CREATE TABLE exams (
   location VARCHAR(100),
   duration_minutes INTEGER DEFAULT 90,
   description TEXT,
-  exam_type VARCHAR(50) DEFAULT 'final' CHECK (exam_type IN ('final', 'retake', 'commission', 'midterm', 'quiz', 'project', 'test')),
+  exam_type VARCHAR(50) DEFAULT 'final' CONSTRAINT exams_exam_type_check CHECK (exam_type IN ('final', 'retake', 'commission', 'midterm', 'quiz', 'project', 'test')),
   max_students INTEGER,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()

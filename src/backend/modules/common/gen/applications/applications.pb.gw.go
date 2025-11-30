@@ -159,6 +159,45 @@ func local_request_ApplicationsService_CreateOrUpdateCategory_0(ctx context.Cont
 	return msg, metadata, err
 }
 
+func request_ApplicationsService_DeleteApplication_0(ctx context.Context, marshaler runtime.Marshaler, client ApplicationsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq DeleteApplicationRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["application_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "application_id")
+	}
+	protoReq.ApplicationId, err = runtime.Int32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "application_id", err)
+	}
+	msg, err := client.DeleteApplication(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_ApplicationsService_DeleteApplication_0(ctx context.Context, marshaler runtime.Marshaler, server ApplicationsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq DeleteApplicationRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["application_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "application_id")
+	}
+	protoReq.ApplicationId, err = runtime.Int32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "application_id", err)
+	}
+	msg, err := server.DeleteApplication(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterApplicationsServiceHandlerServer registers the http handlers for service ApplicationsService to "mux".
 // UnaryRPC     :call ApplicationsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -244,6 +283,26 @@ func RegisterApplicationsServiceHandlerServer(ctx context.Context, mux *runtime.
 			return
 		}
 		forward_ApplicationsService_CreateOrUpdateCategory_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodDelete, pattern_ApplicationsService_DeleteApplication_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/modules.common.api.ApplicationsService/DeleteApplication", runtime.WithHTTPPathPattern("/api/applications/{application_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ApplicationsService_DeleteApplication_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ApplicationsService_DeleteApplication_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -353,6 +412,23 @@ func RegisterApplicationsServiceHandlerClient(ctx context.Context, mux *runtime.
 		}
 		forward_ApplicationsService_CreateOrUpdateCategory_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodDelete, pattern_ApplicationsService_DeleteApplication_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/modules.common.api.ApplicationsService/DeleteApplication", runtime.WithHTTPPathPattern("/api/applications/{application_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ApplicationsService_DeleteApplication_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ApplicationsService_DeleteApplication_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -361,6 +437,7 @@ var (
 	pattern_ApplicationsService_CreateOrUpdateApplication_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "applications"}, ""))
 	pattern_ApplicationsService_GetApplicationCategories_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "application-categories"}, ""))
 	pattern_ApplicationsService_CreateOrUpdateCategory_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "application-categories"}, ""))
+	pattern_ApplicationsService_DeleteApplication_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "applications", "application_id"}, ""))
 )
 
 var (
@@ -368,4 +445,5 @@ var (
 	forward_ApplicationsService_CreateOrUpdateApplication_0 = runtime.ForwardResponseMessage
 	forward_ApplicationsService_GetApplicationCategories_0  = runtime.ForwardResponseMessage
 	forward_ApplicationsService_CreateOrUpdateCategory_0    = runtime.ForwardResponseMessage
+	forward_ApplicationsService_DeleteApplication_0         = runtime.ForwardResponseMessage
 )
