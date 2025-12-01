@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSearch, FaFilter, FaUserGraduate } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSearch } from "react-icons/fa";
+import { toast } from "react-toastify";
 
-type Grade = {
+type Mark = {
   gradeId: number;
   albumNr: number;
   subjectId: number;
@@ -17,26 +18,36 @@ type Grade = {
   addedByTeachingStaffId?: number;
   comment: string;
   createdAt: string;
-  studentName?: string;
-  studentSurname?: string;
 };
 
 type Student = {
-  user_id: number;
+  userId: number;
   name: string;
   surname: string;
   email: string;
-  album_nr?: number;
-  active: boolean;
-  role: string;
+  albumNr?: number;
 };
 
-type GradeForm = {
+type Subject = {
+  subjectId: number;
+  alias: string;
+  name: string;
+  ects: number;
+};
+
+type TeacherClass = {
+  classId: number;
+  subjectId: number;
+  subjectName: string;
+  subjectAlias: string;
+  classType: string;
+  groupNr: number;
+};
+
+type NewMarkForm = {
   albumNr: string;
   subjectId: string;
   classId: string;
-  subjectName: string;
-  classType: string;
   value: string;
   weight: string;
   attempt: string;
@@ -45,258 +56,163 @@ type GradeForm = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
-export default function TeacherGradesManagementPage() {
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [filteredGrades, setFilteredGrades] = useState<Grade[]>([]);
+export default function TeacherMarksPage() {
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [filteredMarks, setFilteredMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  
+
   // Filtry
-  const [selectedStudent, setSelectedStudent] = useState<string>("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  
+  const [gradeIdSearch, setGradeIdSearch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
+
   // Modalne okna
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
-  const [viewingGrade, setViewingGrade] = useState<Grade | null>(null);
-  const [deletingGradeId, setDeletingGradeId] = useState<number | null>(null);
+  const [editingMark, setEditingMark] = useState<Mark | null>(null);
+  const [deletingMarkId, setDeletingMarkId] = useState<number | null>(null);
   
-  // Formularz
-  const [gradeForm, setGradeForm] = useState<GradeForm>({
+  // Search states for modal dropdowns
+  const [studentSearch, setStudentSearch] = useState("");
+  const [subjectSearch, setSubjectSearch] = useState("");
+  const [classSearch, setClassSearch] = useState("");
+  
+  // Formularz nowej/edytowanej oceny
+  const [markForm, setMarkForm] = useState<NewMarkForm>({
     albumNr: "",
-    subjectId: "1",
-    classId: "1",
-    subjectName: "",
-    classType: "LAB",
+    subjectId: "",
+    classId: "",
     value: "",
     weight: "1",
     attempt: "1",
     comment: "",
   });
 
-  // Pobieranie danych
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // 1. Pobierz listę studentów
-        const studentsRes = await fetch(`${API_BASE}/api/auth/users`, {
-          credentials: "include",
-        });
-        
-        if (!studentsRes.ok) {
-          throw new Error("Nie udało się pobrać listy studentów");
-        }
+  const [editForm, setEditForm] = useState({
+    value: "",
+    weight: "",
+    comment: "",
+  });
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Najpierw pobierz zajęcia prowadzone przez teachera
+      const classesRes = await fetch(`${API_BASE}/api/teacher/classes`, {
+        credentials: "include",
+      });
+      
+      let teacherClassIds: number[] = [];
+      if (classesRes.ok) {
+        const classesData = await classesRes.json();
+        console.log("Teacher classes:", classesData);
+        setTeacherClasses(classesData.classes || []);
+        teacherClassIds = classesData.classes?.map((c: TeacherClass) => c.classId) || [];
+      }
+
+      // Pobierz listę wszystkich studentów
+      const studentsRes = await fetch(`${API_BASE}/api/auth/users`, {
+        credentials: "include",
+      });
+      if (studentsRes.ok) {
         const studentsData = await studentsRes.json();
         const studentsList = studentsData.users?.filter((u: any) => u.role === "student") || [];
         setStudents(studentsList);
 
-        // 2. Pobierz oceny dla każdego studenta
-        const allGrades: Grade[] = [];
+        // Pobierz oceny dla każdego studenta (API wymaga album_nr dla teachera)
+        // Tylko oceny z zajęć prowadzonych przez tego teachera będą zwrócone przez backend
+        const allGrades: Mark[] = [];
         
-        for (const student of studentsList) {
-          if (student.album_nr) {
-            try {
-              const gradesRes = await fetch(
-                `${API_BASE}/api/grades?album_nr=${student.album_nr}`,
-                { credentials: "include" }
-              );
-              
-              if (gradesRes.ok) {
-                const gradesData = await gradesRes.json();
-                const studentGrades = (gradesData.grades || []).map((grade: any) => ({
-                  ...grade,
-                  studentName: student.name,
-                  studentSurname: student.surname,
-                }));
-                allGrades.push(...studentGrades);
+        // Batch requests - po 10 studentów naraz
+        const batchSize = 10;
+        for (let i = 0; i < studentsList.length; i += batchSize) {
+          const batch = studentsList.slice(i, i + batchSize);
+          const promises = batch.map(async (student: Student) => {
+            if (student.albumNr) {
+              try {
+                const gradesRes = await fetch(`${API_BASE}/api/grades?album_nr=${student.albumNr}`, {
+                  credentials: "include",
+                });
+                if (gradesRes.ok) {
+                  const gradesData = await gradesRes.json();
+                  return gradesData.grades || [];
+                }
+              } catch (err) {
+                console.error(`Błąd pobierania ocen dla studenta ${student.albumNr}:`, err);
               }
-            } catch (err) {
-              console.error(`Błąd pobierania ocen dla studenta ${student.album_nr}:`, err);
             }
-          }
+            return [];
+          });
+          
+          const batchResults = await Promise.all(promises);
+          batchResults.forEach(grades => allGrades.push(...grades));
         }
-
-        setGrades(allGrades);
-        setFilteredGrades(allGrades);
-        setError("");
         
-      } catch (err) {
-        console.error("Błąd pobierania danych:", err);
-        setError("Nie udało się pobrać danych");
-      } finally {
-        setLoading(false);
+        console.log("All grades:", allGrades);
+        console.log("First grade:", allGrades[0]);
+        setMarks(allGrades);
+        setFilteredMarks(allGrades);
       }
-    };
 
-    fetchData();
-  }, []);
+      // Pobierz przedmioty
+      const subjectsRes = await fetch(`${API_BASE}/api/subjects`, {
+        credentials: "include",
+      });
+      if (subjectsRes.ok) {
+        const subjectsData = await subjectsRes.json();
+        setSubjects(subjectsData.subjects || []);
+      }
+
+    } catch (err) {
+      console.error("Błąd pobierania danych:", err);
+      toast.error("Nie udało się pobrać danych");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtrowanie ocen
   useEffect(() => {
-    let filtered = [...grades];
+    let filtered = [...marks];
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.subjectName?.toLowerCase().includes(term) ||
+        m.value.toLowerCase().includes(term) ||
+        getStudentName(m.albumNr).toLowerCase().includes(term) ||
+        m.comment.toLowerCase().includes(term)
+      );
+    }
+
+    if (gradeIdSearch && gradeIdSearch.trim() !== "") {
+      filtered = filtered.filter(m => 
+        m.gradeId.toString().includes(gradeIdSearch)
+      );
+    }
 
     if (selectedStudent) {
-      filtered = filtered.filter(g => g.albumNr.toString() === selectedStudent);
+      filtered = filtered.filter(m => m.albumNr.toString() === selectedStudent);
     }
 
     if (selectedSubject) {
-      filtered = filtered.filter(g => 
-        g.subjectName?.toLowerCase().includes(selectedSubject.toLowerCase())
-      );
+      filtered = filtered.filter(m => m.subjectId.toString() === selectedSubject);
     }
 
-    if (searchTerm) {
-      filtered = filtered.filter(g => 
-        g.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.studentSurname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.subjectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.albumNr.toString().includes(searchTerm)
-      );
-    }
+    setFilteredMarks(filtered);
+  }, [searchTerm, gradeIdSearch, selectedStudent, selectedSubject, marks]);
 
-    setFilteredGrades(filtered);
-  }, [selectedStudent, selectedSubject, searchTerm, grades]);
-
-  // Dodawanie nowej oceny
-  const handleAddGrade = async () => {
-    if (!gradeForm.albumNr || !gradeForm.value) {
-      alert("Wypełnij wymagane pola: student i ocena");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/api/grades`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          album_nr: parseInt(gradeForm.albumNr),
-          subject_id: parseInt(gradeForm.subjectId),
-          class_id: parseInt(gradeForm.classId),
-          value: gradeForm.value,
-          weight: parseInt(gradeForm.weight),
-          attempt: parseInt(gradeForm.attempt),
-          comment: gradeForm.comment,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Ocena dodana pomyślnie!");
-        setShowAddModal(false);
-        resetForm();
-        window.location.reload();
-      } else {
-        const errorData = await response.json();
-        alert(`Błąd: ${errorData.message || "Nie udało się dodać oceny"}`);
-      }
-    } catch (err) {
-      console.error("Błąd dodawania oceny:", err);
-      alert("Wystąpił błąd podczas dodawania oceny");
-    }
-  };
-
-  // Edycja oceny
-  const handleEditGrade = async () => {
-    if (!editingGrade) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/api/grades/${editingGrade.gradeId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          value: gradeForm.value,
-          weight: parseInt(gradeForm.weight),
-          attempt: parseInt(gradeForm.attempt),
-          comment: gradeForm.comment,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Ocena zaktualizowana pomyślnie!");
-        setEditingGrade(null);
-        resetForm();
-        window.location.reload();
-      } else {
-        const errorData = await response.json();
-        alert(`Błąd: ${errorData.message || "Nie udało się zaktualizować oceny"}`);
-      }
-    } catch (err) {
-      console.error("Błąd edycji oceny:", err);
-      alert("Wystąpił błąd podczas edycji oceny");
-    }
-  };
-
-  // Usuwanie oceny
-  const handleDeleteGrade = async (gradeId: number) => {
-    if (!confirm("Czy na pewno chcesz usunąć tę ocenę? Tej operacji nie można cofnąć.")) return;
-
-    setDeletingGradeId(gradeId);
-    try {
-      const response = await fetch(`${API_BASE}/api/grades/${gradeId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        alert("Ocena usunięta pomyślnie!");
-        setGrades(grades.filter(g => g.gradeId !== gradeId));
-      } else {
-        const errorData = await response.json();
-        alert(`Błąd: ${errorData.message || "Nie udało się usunąć oceny"}`);
-      }
-    } catch (err) {
-      console.error("Błąd usuwania oceny:", err);
-      alert("Wystąpił błąd podczas usuwania oceny");
-    } finally {
-      setDeletingGradeId(null);
-    }
-  };
-
-  const resetForm = () => {
-    setGradeForm({
-      albumNr: "",
-      subjectId: "1",
-      classId: "1",
-      subjectName: "",
-      classType: "LAB",
-      value: "",
-      weight: "1",
-      attempt: "1",
-      comment: "",
-    });
-  };
-
-  const openEditModal = (grade: Grade) => {
-    setEditingGrade(grade);
-    setGradeForm({
-      albumNr: grade.albumNr.toString(),
-      subjectId: grade.subjectId.toString(),
-      classId: grade.classId.toString(),
-      subjectName: grade.subjectName || "",
-      classType: grade.classType || "LAB",
-      value: grade.value,
-      weight: grade.weight.toString(),
-      attempt: grade.attempt.toString(),
-      comment: grade.comment,
-    });
-  };
-
-  const getGradeColor = (value: string) => {
-    if (value === "ZAL") return "bg-[var(--color-accent)] text-white";
-    if (value === "NZAL") return "bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)]";
-
-    const numValue = parseFloat(value.replace(",", "."));
-    if (isNaN(numValue)) return "bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)]";
-
-    if (numValue >= 4.5) return "bg-[var(--color-accent)] text-white";
-    if (numValue >= 3.0) return "bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)]";
-    return "bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)]";
+  const getStudentName = (albumNr: number) => {
+    const student = students.find(s => s.albumNr === albumNr);
+    return student ? `${student.name} ${student.surname} (${albumNr})` : `Album: ${albumNr}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -309,569 +225,570 @@ export default function TeacherGradesManagementPage() {
     });
   };
 
-  const getStudentName = (albumNr: number) => {
-    const student = students.find(s => s.album_nr === albumNr);
-    return student ? `${student.name} ${student.surname}` : `Album ${albumNr}`;
+  // Dodawanie nowej oceny
+  const handleAddMark = async () => {
+    if (!markForm.albumNr || !markForm.subjectId || !markForm.value || !markForm.classId) {
+      toast.error("Wypełnij wymagane pola: student, przedmiot, zajęcia, ocena");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/grades`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          album_nr: parseInt(markForm.albumNr),
+          subject_id: parseInt(markForm.subjectId),
+          class_id: parseInt(markForm.classId),
+          value: markForm.value,
+          weight: parseInt(markForm.weight),
+          attempt: parseInt(markForm.attempt),
+          comment: markForm.comment,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Ocena dodana pomyślnie!");
+        setShowAddModal(false);
+        resetForm();
+        fetchData();
+      } else {
+        const errorData = await response.json();
+        toast.error(`Błąd: ${errorData.message || "Nie udało się dodać oceny"}`);
+      }
+    } catch (error) {
+      console.error("Błąd dodawania oceny:", error);
+      toast.error("Wystąpił błąd podczas dodawania oceny");
+    }
+  };
+
+  // Edycja oceny
+  const handleEditMark = async () => {
+    if (!editingMark) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/grades/${editingMark.gradeId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grade_id: editingMark.gradeId,
+          value: editForm.value,
+          weight: parseInt(editForm.weight),
+          comment: editForm.comment,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Ocena zaktualizowana pomyślnie!");
+        setEditingMark(null);
+        fetchData();
+      } else {
+        const errorData = await response.json();
+        toast.error(`Błąd: ${errorData.message || "Nie udało się zaktualizować oceny"}`);
+      }
+    } catch (error) {
+      console.error("Błąd edycji oceny:", error);
+      toast.error("Wystąpił błąd podczas edycji oceny");
+    }
+  };
+
+  // Usuwanie oceny
+  const handleDeleteMark = async (gradeId: number) => {
+    if (!confirm("Czy na pewno chcesz usunąć tę ocenę?")) return;
+
+    setDeletingMarkId(gradeId);
+    try {
+      const response = await fetch(`${API_BASE}/api/grades/${gradeId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        toast.success("Ocena usunięta pomyślnie!");
+        setMarks(marks.filter(m => m.gradeId !== gradeId));
+      } else {
+        const errorData = await response.json();
+        toast.error(`Błąd: ${errorData.message || "Nie udało się usunąć oceny"}`);
+      }
+    } catch (error) {
+      console.error("Błąd usuwania oceny:", error);
+      toast.error("Wystąpił błąd podczas usuwania oceny");
+    } finally {
+      setDeletingMarkId(null);
+    }
+  };
+
+  const resetForm = () => {
+    setMarkForm({
+      albumNr: "",
+      subjectId: "",
+      classId: "",
+      value: "",
+      weight: "1",
+      attempt: "1",
+      comment: "",
+    });
+    setStudentSearch("");
+    setSubjectSearch("");
+    setClassSearch("");
+  };
+
+  const openEditModal = (mark: Mark) => {
+    setEditingMark(mark);
+    setEditForm({
+      value: mark.value,
+      weight: mark.weight.toString(),
+      comment: mark.comment,
+    });
+  };
+
+  // Filtruj zajęcia po wybranym przedmiocie
+  const getFilteredClasses = () => {
+    if (!markForm.subjectId) return [];
+    return teacherClasses.filter(c => c.subjectId.toString() === markForm.subjectId);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent)] mb-4 mx-auto"></div>
-          <p className="text-lg text-[var(--color-text-secondary)]">Ładowanie danych...</p>
-        </div>
+      <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] items-center justify-center">
+        <div className="text-xl">Ładowanie ocen...</div>
       </div>
     );
   }
 
-  const uniqueSubjects = Array.from(new Set(grades.map(g => g.subjectName).filter(Boolean)));
-  const averageGrade = grades.length > 0 
-    ? (grades.reduce((sum, g) => {
-        const val = parseFloat(g.value.replace(",", "."));
-        return isNaN(val) ? sum : sum + val;
-      }, 0) / grades.filter(g => !isNaN(parseFloat(g.value.replace(",", ".")))).length).toFixed(2)
-    : "0.00";
-
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      {/* Header */}
-      <div className="bg-[var(--color-bg-secondary)] border-b border-[var(--color-accent)] px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="max-w-7xl mx-auto p-6 pt-24">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--color-accent)] mb-2">
+            <h1 className="text-4xl font-bold text-[var(--color-accent)] mb-2 border-b border-[var(--color-accent)] pb-4">
               Zarządzanie Ocenami
             </h1>
             <p className="text-sm text-[var(--color-text-secondary)]">
-              Panel wykładowcy - wystawiaj i zarządzaj ocenami studentów
+              Zarządzaj ocenami studentów z Twoich zajęć
             </p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors font-semibold"
+            className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center gap-2"
           >
             <FaPlus /> Dodaj Ocenę
           </button>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {error && (
-          <div className="mb-6 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] rounded-lg p-4">
-            <p className="text-[var(--color-accent)]">{error}</p>
-          </div>
-        )}
-
-        {/* Filtry */}
-        <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <FaFilter /> Filtry i Wyszukiwanie
-            </h2>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-            >
-              {showFilters ? "Ukryj" : "Pokaż"} filtry
-            </button>
-          </div>
-
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Student</label>
-                <select
-                  value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                >
-                  <option value="">Wszyscy studenci</option>
-                  {students.map((student) => (
-                    <option key={student.user_id} value={student.album_nr}>
-                      {student.name} {student.surname} (Album: {student.album_nr})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Przedmiot</label>
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                >
-                  <option value="">Wszystkie przedmioty</option>
-                  {uniqueSubjects.map((subject) => (
-                    <option key={subject} value={subject}>
-                      {subject}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Szukaj</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Student, przedmiot, album..."
-                    className="w-full px-3 py-2 pl-10 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  />
-                  <FaSearch className="absolute left-3 top-3 text-[var(--color-text-secondary)]" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(selectedStudent || selectedSubject || searchTerm) && (
-            <div className="mt-4 pt-4 border-t border-[var(--color-accent)]">
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Znaleziono: <strong className="text-[var(--color-accent)]">{filteredGrades.length}</strong> ocen
-                <button
-                  onClick={() => {
-                    setSelectedStudent("");
-                    setSelectedSubject("");
-                    setSearchTerm("");
-                  }}
-                  className="ml-4 text-[var(--color-accent)] hover:underline"
-                >
-                  Wyczyść filtry
-                </button>
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Statystyki */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
+            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
               Wszystkie Oceny
             </h3>
-            <p className="text-3xl font-bold text-[var(--color-accent)]">{grades.length}</p>
+            <p className="text-3xl font-bold text-[var(--color-accent)]">{marks.length}</p>
           </div>
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2 flex items-center gap-2">
-              <FaUserGraduate className="text-[var(--color-accent)]" /> Liczba Studentów
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
+            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
+              Studenci
             </h3>
-            <p className="text-3xl font-bold text-[var(--color-accent)]">{students.length}</p>
+            <p className="text-3xl font-bold text-[var(--color-accent)]">
+              {new Set(marks.map(m => m.albumNr)).size}
+            </p>
           </div>
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">
-              Średnia Ocen
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
+            <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
+              Moje Przedmioty
             </h3>
-            <p className="text-3xl font-bold text-[var(--color-accent)]">{averageGrade}</p>
+            <p className="text-3xl font-bold text-[var(--color-accent)]">
+              {new Set(teacherClasses.map(c => c.subjectId)).size}
+            </p>
           </div>
         </div>
 
-        {/* Lista ocen */}
-        <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-[var(--color-accent)] text-white px-6 py-4">
-            <h2 className="text-xl font-semibold">Lista Ocen</h2>
-          </div>
-
-          {filteredGrades.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
-                Brak ocen
-              </h3>
-              <p className="text-[var(--color-text-secondary)]">
-                Nie znaleziono żadnych ocen spełniających kryteria wyszukiwania
-              </p>
+        {/* Filtry */}
+        <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 border border-[var(--color-accent)]">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <FaSearch /> Filtrowanie
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Wyszukiwanie</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Szukaj..."
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+              />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[var(--color-accent)]/10">
+            <div>
+              <label className="block text-sm font-medium mb-2">ID Oceny</label>
+              <input
+                type="text"
+                value={gradeIdSearch}
+                onChange={(e) => setGradeIdSearch(e.target.value)}
+                placeholder="np. 123"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Student</label>
+              <select
+                value={selectedStudent}
+                onChange={(e) => setSelectedStudent(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+              >
+                <option value="">Wszyscy</option>
+                {students.map(s => (
+                  <option key={s.userId} value={s.albumNr}>
+                    {s.name} {s.surname} (Album: {s.albumNr})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Przedmiot</label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+              >
+                <option value="">Wszystkie</option>
+                {Array.from(new Set(teacherClasses.map(c => c.subjectId))).map(subjectId => {
+                  const cls = teacherClasses.find(c => c.subjectId === subjectId);
+                  return (
+                    <option key={subjectId} value={subjectId}>
+                      {cls?.subjectName} ({cls?.subjectAlias})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabela ocen */}
+        <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg border border-[var(--color-accent)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-[var(--color-accent)]/10">
+                <tr>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">ID</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Student</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Przedmiot</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Ocena</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Waga</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Podejście</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Data</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold">Akcje</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMarks.length === 0 ? (
                   <tr>
-                    <th className="text-left py-4 px-6 font-semibold">Student</th>
-                    <th className="text-left py-4 px-4 font-semibold">Przedmiot</th>
-                    <th className="text-center py-4 px-4 font-semibold">Typ</th>
-                    <th className="text-center py-4 px-4 font-semibold">Ocena</th>
-                    <th className="text-center py-4 px-4 font-semibold">Waga</th>
-                    <th className="text-center py-4 px-4 font-semibold">Podejście</th>
-                    <th className="text-left py-4 px-4 font-semibold">Data</th>
-                    <th className="text-center py-4 px-6 font-semibold">Akcje</th>
+                    <td colSpan={8} className="text-center py-12 text-[var(--color-text-secondary)]">
+                      Brak ocen do wyświetlenia
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-accent)]/20">
-                  {filteredGrades.map((grade) => (
+                ) : (
+                  filteredMarks.map((mark) => (
                     <tr
-                      key={grade.gradeId}
-                      className="hover:bg-[var(--color-bg)] transition-colors"
+                      key={mark.gradeId}
+                      className="border-t border-[var(--color-accent)]/20 hover:bg-[var(--color-accent)]/5"
                     >
-                      <td className="py-4 px-6">
-                        <div>
-                          <div className="font-medium">
-                            {grade.studentName} {grade.studentSurname}
-                          </div>
-                          <div className="text-sm text-[var(--color-text-secondary)]">
-                            Album: {grade.albumNr}
-                          </div>
-                        </div>
+                      <td className="py-2 px-4 text-xs text-[var(--color-text-secondary)]">
+                        #{mark.gradeId}
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="font-medium">
-                          {grade.subjectName || `Przedmiot ${grade.subjectId}`}
-                        </div>
-                        {grade.comment && (
-                          <div className="text-sm text-[var(--color-text-secondary)]">
-                            {grade.comment}
-                          </div>
-                        )}
+                      <td className="py-2 px-4">
+                        <div className="font-semibold">{getStudentName(mark.albumNr)}</div>
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="px-2 py-1 bg-[var(--color-accent)] text-white text-xs rounded font-medium">
-                          {grade.classType || "LAB"}
+                      <td className="py-2 px-4">
+                        <div className="font-semibold">{mark.subjectName}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{mark.classType}</div>
+                      </td>
+                      <td className="py-2 px-4">
+                        <span className="px-2 py-1 bg-[var(--color-accent)]/20 text-[var(--color-accent)] rounded font-bold">
+                          {mark.value}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <span
-                          className={`px-3 py-1 rounded-full font-bold ${getGradeColor(
-                            grade.value
-                          )}`}
-                        >
-                          {grade.value}
-                        </span>
+                      <td className="py-2 px-4">{mark.weight}</td>
+                      <td className="py-2 px-4">{mark.attempt}</td>
+                      <td className="py-2 px-4 text-sm">
+                        {formatDate(mark.createdAt)}
                       </td>
-                      <td className="py-4 px-4 text-center font-medium">
-                        {grade.weight}
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        {grade.attempt > 1 ? (
-                          <span className="text-[var(--color-accent)] font-medium">
-                            {grade.attempt}
-                          </span>
-                        ) : (
-                          <span className="text-[var(--color-text-secondary)]">-</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-sm text-[var(--color-text-secondary)]">
-                        {formatDate(grade.createdAt)}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="py-2 px-4">
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => setViewingGrade(grade)}
-                            className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded hover:bg-[var(--color-accent)] hover:text-white transition-colors text-sm"
-                          >
-                            Podgląd
-                          </button>
-                          <button
-                            onClick={() => openEditModal(grade)}
-                            className="px-3 py-1 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] transition-colors text-sm"
+                            onClick={() => openEditModal(mark)}
+                            className="p-1 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 rounded transition"
+                            title="Edytuj"
                           >
                             <FaEdit />
                           </button>
                           <button
-                            onClick={() => handleDeleteGrade(grade.gradeId)}
-                            disabled={deletingGradeId === grade.gradeId}
-                            className="px-3 py-1 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded hover:bg-[var(--color-accent)] hover:text-white transition-colors text-sm disabled:opacity-50"
+                            onClick={() => handleDeleteMark(mark.gradeId)}
+                            disabled={deletingMarkId === mark.gradeId}
+                            className="p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] rounded transition disabled:opacity-50"
+                            title="Usuń"
                           >
                             <FaTrash />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modal podglądu */}
-      {viewingGrade && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full border border-[var(--color-accent)]">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-2xl font-semibold text-[var(--color-accent)]">
-                Szczegóły Oceny
-              </h3>
-              <button
-                onClick={() => setViewingGrade(null)}
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                <FaTimes size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-[var(--color-bg)] p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <p><strong>Student:</strong> {viewingGrade.studentName} {viewingGrade.studentSurname}</p>
-                  <p><strong>Nr albumu:</strong> {viewingGrade.albumNr}</p>
-                  <p><strong>Przedmiot:</strong> {viewingGrade.subjectName || `ID: ${viewingGrade.subjectId}`}</p>
-                  <p><strong>Typ zajęć:</strong> {viewingGrade.classType || "LAB"}</p>
-                  <p><strong>Ocena:</strong> <span className={`px-2 py-1 rounded ${getGradeColor(viewingGrade.value)}`}>{viewingGrade.value}</span></p>
-                  <p><strong>Waga:</strong> {viewingGrade.weight}</p>
-                  <p><strong>Podejście:</strong> {viewingGrade.attempt}</p>
-                  <p><strong>Data:</strong> {formatDate(viewingGrade.createdAt)}</p>
-                </div>
-                {viewingGrade.comment && (
-                  <div className="mt-3 pt-3 border-t border-[var(--color-accent)]">
-                    <p className="text-sm"><strong>Komentarz:</strong></p>
-                    <p className="text-sm mt-1">{viewingGrade.comment}</p>
-                  </div>
+                  ))
                 )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setViewingGrade(null)}
-                className="px-6 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded-lg hover:bg-[var(--color-accent)] hover:text-white transition-colors"
-              >
-                Zamknij
-              </button>
-              <button
-                onClick={() => {
-                  openEditModal(viewingGrade);
-                  setViewingGrade(null);
-                }}
-                className="px-6 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-2"
-              >
-                <FaEdit /> Edytuj
-              </button>
-            </div>
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
 
-      {/* Modal dodawania */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-[var(--color-accent)]">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-semibold text-[var(--color-accent)]">
-                Dodaj Nową Ocenę
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
-                }}
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                <FaTimes size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Student <span className="text-[var(--color-accent)]">*</span>
-                </label>
-                <select
-                  value={gradeForm.albumNr}
-                  onChange={(e) => setGradeForm({ ...gradeForm, albumNr: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  required
-                >
-                  <option value="">Wybierz studenta</option>
-                  {students.map((student) => (
-                    <option key={student.user_id} value={student.album_nr}>
-                      {student.name} {student.surname} (Album: {student.album_nr})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nazwa przedmiotu</label>
-                  <input
-                    type="text"
-                    value={gradeForm.subjectName}
-                    onChange={(e) => setGradeForm({ ...gradeForm, subjectName: e.target.value })}
-                    placeholder="np. Programowanie obiektowe"
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Typ zajęć</label>
-                  <select
-                    value={gradeForm.classType}
-                    onChange={(e) => setGradeForm({ ...gradeForm, classType: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  >
-                    <option value="LAB">Laboratorium</option>
-                    <option value="LEC">Wykład</option>
-                    <option value="PRO">Projekt</option>
-                    <option value="SEM">Seminarium</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Ocena <span className="text-[var(--color-accent)]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={gradeForm.value}
-                    onChange={(e) => setGradeForm({ ...gradeForm, value: e.target.value })}
-                    placeholder="np. 4.5 lub ZAL"
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Waga</label>
-                  <input
-                    type="number"
-                    value={gradeForm.weight}
-                    onChange={(e) => setGradeForm({ ...gradeForm, weight: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Podejście</label>
-                  <input
-                    type="number"
-                    value={gradeForm.attempt}
-                    onChange={(e) => setGradeForm({ ...gradeForm, attempt: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Komentarz</label>
-                <textarea
-                  value={gradeForm.comment}
-                  onChange={(e) => setGradeForm({ ...gradeForm, comment: e.target.value })}
-                  rows={3}
-                  placeholder="Dodatkowy komentarz do oceny..."
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] resize-vertical"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
+        {/* Modal Dodawania Oceny */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold">Dodaj Ocenę</h2>
                 <button
                   onClick={() => {
                     setShowAddModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded-lg hover:bg-[var(--color-accent)] hover:text-white transition-colors"
+                  className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
                 >
-                  Anuluj
+                  <FaTimes size={24} />
                 </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Student <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    list="students-list"
+                    value={studentSearch}
+                    onChange={(e) => {
+                      setStudentSearch(e.target.value);
+                      const student = students.find(s => 
+                        `${s.name} ${s.surname} (${s.albumNr})` === e.target.value
+                      );
+                      if (student) {
+                        setMarkForm({ ...markForm, albumNr: student.albumNr?.toString() || "" });
+                      }
+                    }}
+                    placeholder="Szukaj studenta..."
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    required
+                  />
+                  <datalist id="students-list">
+                    {students.map((s) => (
+                      <option key={s.userId} value={`${s.name} ${s.surname} (${s.albumNr})`} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Przedmiot <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    list="subjects-list"
+                    value={subjectSearch}
+                    onChange={(e) => {
+                      setSubjectSearch(e.target.value);
+                      const classItem = teacherClasses.find(c => 
+                        `${c.subjectName} (${c.subjectAlias})` === e.target.value
+                      );
+                      if (classItem) {
+                        setMarkForm({ ...markForm, subjectId: classItem.subjectId.toString(), classId: "" });
+                      }
+                    }}
+                    placeholder="Szukaj przedmiotu..."
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    required
+                  />
+                  <datalist id="subjects-list">
+                    {Array.from(new Set(teacherClasses.map(c => c.subjectId))).map(subjectId => {
+                      const cls = teacherClasses.find(c => c.subjectId === subjectId);
+                      return (
+                        <option key={subjectId} value={`${cls?.subjectName} (${cls?.subjectAlias})`} />
+                      );
+                    })}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Zajęcia <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={markForm.classId}
+                    onChange={(e) => setMarkForm({ ...markForm, classId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    required
+                    disabled={!markForm.subjectId}
+                  >
+                    <option value="">Wybierz zajęcia</option>
+                    {getFilteredClasses().map((c) => (
+                      <option key={c.classId} value={c.classId}>
+                        {c.classType} - Grupa {c.groupNr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Ocena <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={markForm.value}
+                      onChange={(e) => setMarkForm({ ...markForm, value: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      required
+                    >
+                      <option value="">Wybierz</option>
+                      <option value="2.0">2.0</option>
+                      <option value="3.0">3.0</option>
+                      <option value="3.5">3.5</option>
+                      <option value="4.0">4.0</option>
+                      <option value="4.5">4.5</option>
+                      <option value="5.0">5.0</option>
+                      <option value="NZAL">NZAL</option>
+                      <option value="ZAL">ZAL</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Waga</label>
+                    <input
+                      type="number"
+                      value={markForm.weight}
+                      onChange={(e) => setMarkForm({ ...markForm, weight: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      min="1"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Podejście</label>
+                    <input
+                      type="number"
+                      value={markForm.attempt}
+                      onChange={(e) => setMarkForm({ ...markForm, attempt: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      min="1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Komentarz</label>
+                  <textarea
+                    value={markForm.comment}
+                    onChange={(e) => setMarkForm({ ...markForm, comment: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-6">
                 <button
-                  onClick={handleAddGrade}
-                  className="px-6 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-2"
+                  onClick={handleAddMark}
+                  className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
                 >
                   <FaSave /> Dodaj Ocenę
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:opacity-90 transition"
+                >
+                  Anuluj
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal edycji */}
-      {editingGrade && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-[var(--color-accent)]">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-semibold text-[var(--color-accent)]">
-                Edytuj Ocenę
-              </h3>
-              <button
-                onClick={() => {
-                  setEditingGrade(null);
-                  resetForm();
-                }}
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                <FaTimes size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-[var(--color-bg)] p-4 rounded-lg mb-4">
-                <p className="text-sm">
-                  <strong>Student:</strong> {editingGrade.studentName} {editingGrade.studentSurname} (Album: {editingGrade.albumNr})
-                </p>
-                <p className="text-sm">
-                  <strong>Przedmiot:</strong> {editingGrade.subjectName || `ID: ${editingGrade.subjectId}`}
-                </p>
+        {/* Modal Edycji Oceny */}
+        {editingMark && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-lg w-full">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold">Edytuj Ocenę #{editingMark.gradeId}</h2>
+                <button
+                  onClick={() => setEditingMark(null)}
+                  className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                >
+                  <FaTimes size={24} />
+                </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Ocena <span className="text-[var(--color-accent)]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={gradeForm.value}
-                    onChange={(e) => setGradeForm({ ...gradeForm, value: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-2">Ocena</label>
+                  <select
+                    value={editForm.value}
+                    onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                  >
+                    <option value="2.0">2.0</option>
+                    <option value="3.0">3.0</option>
+                    <option value="3.5">3.5</option>
+                    <option value="4.0">4.0</option>
+                    <option value="4.5">4.5</option>
+                    <option value="5.0">5.0</option>
+                    <option value="NZAL">NZAL</option>
+                    <option value="ZAL">ZAL</option>
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Waga</label>
                   <input
                     type="number"
-                    value={gradeForm.weight}
-                    onChange={(e) => setGradeForm({ ...gradeForm, weight: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
+                    value={editForm.weight}
+                    onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    min="1"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Podejście</label>
-                  <input
-                    type="number"
-                    value={gradeForm.attempt}
-                    onChange={(e) => setGradeForm({ ...gradeForm, attempt: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)]"
+                  <label className="block text-sm font-medium mb-2">Komentarz</label>
+                  <textarea
+                    value={editForm.comment}
+                    onChange={(e) => setEditForm({ ...editForm, comment: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    rows={3}
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Komentarz</label>
-                <textarea
-                  value={gradeForm.comment}
-                  onChange={(e) => setGradeForm({ ...gradeForm, comment: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] resize-vertical"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex gap-4 mt-6">
                 <button
-                  onClick={() => {
-                    setEditingGrade(null);
-                    resetForm();
-                  }}
-                  className="px-6 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded-lg hover:bg-[var(--color-accent)] hover:text-white transition-colors"
-                >
-                  Anuluj
-                </button>
-                <button
-                  onClick={handleEditGrade}
-                  className="px-6 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-2"
+                  onClick={handleEditMark}
+                  className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
                 >
                   <FaSave /> Zapisz Zmiany
+                </button>
+                <button
+                  onClick={() => setEditingMark(null)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:opacity-90 transition"
+                >
+                  Anuluj
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
