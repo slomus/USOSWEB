@@ -49,7 +49,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Wnioski", href: "/getApplication" },
     { label: "Kierunek", href: "/field" },
     { label: "Rejestracja na przedmioty", href: "/enrollment" },
-    { label: "Egzaminy i zaliczenia", href: "/examsPasses" },
+    { label: "Zaliczenia i egzaminy", href: "/examsPasses" },
     { label: "Zarządzanie kontem", href: "/accountManagement" },
     { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },

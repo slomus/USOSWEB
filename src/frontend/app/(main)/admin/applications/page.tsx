@@ -30,7 +30,7 @@ type Student = {
   name: string;
   surname: string;
   email: string;
-  album_nr?: number;
+  albumNr?: number;
 };
 
 type ApplicationForm = {
@@ -158,7 +158,7 @@ export default function AdminApplicationsManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           categoryId: parseInt(appForm.categoryId),
-          album_nr: parseInt(appForm.albumNr),
+          albumNr: parseInt(appForm.albumNr),
           title: appForm.title,
           content: appForm.content,
         }),
@@ -315,9 +315,11 @@ export default function AdminApplicationsManagementPage() {
   };
 
   const getStudentName = (albumNr: number) => {
-    const student = students.find(s => s.album_nr === albumNr);
-    return student ? `${student.name} ${student.surname}` : `Album ${albumNr}`;
-  };
+  const student = students.find(s => Number(s.albumNr) === Number(albumNr));
+  return student
+    ? `${student.name} ${student.surname}`
+    : `Album ${albumNr}`;
+};
 
   const getCategoryName = (categoryId: number) => {
     const category = categories.find(c => c.categoryId === categoryId);
@@ -433,7 +435,7 @@ export default function AdminApplicationsManagementPage() {
                 >
                   <option value="">Wszyscy studenci</option>
                   {students.map((student, index) => (
-                    <option key={`student-filter-${student.user_id}-${index}`} value={student.album_nr}>
+                    <option key={`student-filter-${student.user_id}-${index}`} value={student.albumNr}>
                       {student.name} {student.surname}
                     </option>
                   ))}
@@ -679,8 +681,8 @@ export default function AdminApplicationsManagementPage() {
                   >
                     <option value="">Wybierz studenta</option>
                     {students.map((student, index) => (
-                      <option key={`student-add-${student.user_id}-${index}`} value={student.album_nr}>
-                        {student.name} {student.surname} (Album: {student.album_nr})
+                      <option key={`student-add-${student.user_id}-${index}`} value={student.albumNr}>
+                        {student.name} {student.surname} (Album: {student.albumNr})
                       </option>
                     ))}
                   </select>

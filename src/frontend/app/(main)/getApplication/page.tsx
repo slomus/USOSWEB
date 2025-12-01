@@ -2,788 +2,440 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { FaClock, FaCheckCircle, FaTimesCircle, FaFileAlt } from "react-icons/fa";
 
-type ApplicationCategory = {
+interface ApplicationCategory {
   categoryId: number;
   name: string;
+  description: string;
   applicationStartDate: string;
   applicationEndDate: string;
-  description: string;
   active: boolean;
-};
+}
 
-type ApplicationStatus = "zakończona" | "aktywna" | "planowana";
-
-type ApplicationFormData = {
+interface Application {
+  applicationId: number;
   categoryId: number;
+  albumNr: number;
   title: string;
   content: string;
-  albumNr: string;
-};
+  status: "submitted" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+}
 
-export default function ApplicationsPage() {
+const API_BASE = "http://localhost:8083";
+
+export default function GetApplicationPage() {
   const [categories, setCategories] = useState<ApplicationCategory[]>([]);
+  const [myApplications, setMyApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState<ApplicationCategory | null>(null);
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
-  const [formData, setFormData] = useState<ApplicationFormData>({
-    categoryId: 0,
+  const [selectedCategory, setSelectedCategory] = useState<ApplicationCategory | null>(null);
+  const [applicationForm, setApplicationForm] = useState({
     title: "",
     content: "",
-    albumNr: "1",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState<string>("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
 
-  const InfoIcon = () => (
-    <svg
-      className="h-5 w-5 text-[var(--color-accent)]"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const ArrowRightIcon = () => (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
-  );
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-  const CalendarIcon = () => (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  );
+      // Pobierz kategorie wniosków
+      const categoriesResponse = await fetch(`${API_BASE}/api/application-categories`, {
+        credentials: "include",
+      });
 
-  const CloseIcon = () => (
-    <svg
-      className="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
-    </svg>
-  );
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        console.log("Categories data:", categoriesData);
+        setCategories(categoriesData.items || []);
+      }
 
-  const CheckIcon = () => (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
-    </svg>
-  );
+      // Pobierz wnioski studenta
+      const applicationsResponse = await fetch(`${API_BASE}/api/applications`, {
+        credentials: "include",
+      });
 
-  const getApplicationStatus = (
-    category: ApplicationCategory
-  ): ApplicationStatus => {
+      if (applicationsResponse.ok) {
+        const applicationsData = await applicationsResponse.json();
+        console.log("Applications data:", applicationsData);
+        setMyApplications(applicationsData.items || []);
+      }
+    } catch (error) {
+      console.error("Błąd podczas pobierania danych:", error);
+      toast.error("Nie udało się pobrać danych");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getApplicationStatus = (category: ApplicationCategory) => {
     const now = new Date();
-    const startDate = category.applicationStartDate
-      ? new Date(category.applicationStartDate)
-      : null;
-    const endDate = category.applicationEndDate
-      ? new Date(category.applicationEndDate)
-      : null;
-
-    if (!startDate || !endDate) return "planowana";
+    const startDate = new Date(category.applicationStartDate);
+    const endDate = new Date(category.applicationEndDate);
 
     if (now < startDate) return "planowana";
-    if (now > endDate) return "zakończona";
-    return "aktywna";
-  };
-
-  const getStatusColor = (status: ApplicationStatus) => {
-    switch (status) {
-      case "aktywna":
-        return "text-[var(--color-accent)] bg-[var(--color-accent)]/10";
-      case "zakończona":
-        return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
-      case "planowana":
-        return "text-[var(--color-accent2)] bg-[var(--color-accent2)]/10";
-      default:
-        return "text-[var(--color-text-secondary)] bg-[var(--color-text-secondary)]/10";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pl-PL", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getCurrentAcademicYear = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const month = now.getMonth();
-
-    if (month >= 9) {
-      return `${currentYear}/${currentYear + 1}`;
-    } else {
-      return `${currentYear - 1}/${currentYear}`;
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      categoryId: 0,
-      title: "",
-      content: "",
-      albumNr: "1",
-    });
-    setShowApplicationForm(false);
-    setSelectedCategory(null);
-    setSubmitSuccess("");
+    if (now >= startDate && now <= endDate) return "aktywna";
+    return "zakończona";
   };
 
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || formData.title.trim().length < 3) {
-      alert("Tytuł musi mieć co najmniej 3 znaki");
+    if (!selectedCategory) {
+      toast.error("Wybierz kategorię wniosku");
       return;
     }
 
-    if (!formData.content.trim() || formData.content.trim().length < 10) {
-      alert("Treść musi mieć co najmniej 10 znaków");
+    if (!applicationForm.title || !applicationForm.content) {
+      toast.error("Wypełnij wszystkie pola");
       return;
     }
 
     setSubmitting(true);
-
     try {
-      const response = await fetch("http://localhost:8083/api/applications", {
+      const response = await fetch(`${API_BASE}/api/applications`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          category_id: formData.categoryId,
-          title: formData.title.trim(),
-          content: formData.content.trim(),
-          album_nr: formData.albumNr,
+          category_id: selectedCategory.categoryId,
+          title: applicationForm.title,
+          content: applicationForm.content,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Błąd HTTP: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      console.log("Backend response:", result);
-      console.log("Response status:", response.status);
-
-      toast.success(
-        `Wniosek złożony! Numer: ${
-          result.application_id || result.id || result.applicationId || ""
-        }`,
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
-      );
-
-      resetForm();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(`Błąd składania wniosku: ${err.message}`, {
-          position: "top-right",
-          autoClose: 5000,
-        });
+      if (response.ok) {
+        toast.success("Wniosek został wysłany pomyślnie!");
+        setApplicationForm({ title: "", content: "" });
+        setSelectedCategory(null);
+        setSubmitSuccess("Wniosek został wysłany pomyślnie!");
+        
+        // Odśwież listę wniosków
+        fetchData();
       } else {
-        toast.error("Wystąpił nieznany błąd", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        const errorData = await response.json();
+        toast.error(`Błąd: ${errorData.message || "Nie udało się wysłać wniosku"}`);
       }
+    } catch (error) {
+      console.error("Błąd wysyłania wniosku:", error);
+      toast.error("Wystąpił błąd podczas wysyłania wniosku");
     } finally {
       setSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const res = await fetch(
-          "http://localhost:8083/api/application-categories",
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return (
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium flex items-center gap-1">
+            <FaClock /> Oczekujący
+          </span>
         );
-
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error("Endpoint kategorii wniosków nie jest dostępny");
-          } else if (res.status === 500) {
-            throw new Error("Błąd serwera");
-          } else {
-            throw new Error(`Błąd HTTP: ${res.status}`);
-          }
-        }
-
-        const data = await res.json();
-        setCategories(data.items || []);
-      } catch (err: unknown) {
-        console.error("Błąd podczas pobierania kategorii wniosków:", err);
-        if (err instanceof Error) {
-          if (err.name === "TypeError" || err.message.includes("fetch")) {
-            setError(
-              "Nie można połączyć się z serwerem. Sprawdź czy backend jest uruchomiony."
-            );
-          } else {
-            setError("Nie udało się pobrać kategorii wniosków");
-          }
-        } else {
-          setError("Nie udało się pobrać kategorii wniosków");
-        }
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  const handleRetry = () => {
-    setError("");
-    setCategories([]);
-    setLoading(true);
-
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:8083/api/application-categories",
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+      case "approved":
+        return (
+          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
+            <FaCheckCircle /> Zaakceptowany
+          </span>
         );
-
-        if (!res.ok) {
-          throw new Error(`Błąd HTTP: ${res.status}`);
-        }
-
-        const data = await res.json();
-        setCategories(data.items || []);
-      } catch (err: unknown) {
-        console.error("Błąd podczas pobierania kategorii wniosków:", err);
-
-        if (err instanceof Error) {
-          setError(`Błąd: ${err.message}`);
-        } else {
-          setError("Nie udało się pobrać kategorii wniosków");
-        }
-
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  };
-
-  const handleApplicationAction = (
-    category: ApplicationCategory,
-    action: "info" | "apply"
-  ) => {
-    if (action === "info") {
-      setSelectedCategory(category);
-    } else if (action === "apply") {
-      const status = getApplicationStatus(category);
-      if (status === "zakończona") {
-        alert("Termin składania wniosków dla tej kategorii już minął.");
-        return;
-      }
-      if (status === "planowana") {
-        alert(
-          "Termin składania wniosków dla tej kategorii jeszcze się nie rozpoczął."
+      case "rejected":
+        return (
+          <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium flex items-center gap-1">
+            <FaTimesCircle /> Odrzucony
+          </span>
         );
-        return;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        categoryId: category.categoryId,
-        albumNr: "1",
-      }));
-      setSelectedCategory(category);
-      setShowApplicationForm(true);
+      default:
+        return null;
     }
   };
 
+  // Statystyki wniosków
+  const submittedCount = myApplications.filter(app => app.status === "submitted").length;
+  const approvedCount = myApplications.filter(app => app.status === "approved").length;
+  const rejectedCount = myApplications.filter(app => app.status === "rejected").length;
+  const totalCount = myApplications.length;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent)] mb-4 mx-auto"></div>
-          <p className="text-lg text-[var(--color-text-secondary)]">
-            Ładowanie kategorii wniosków...
-          </p>
+      <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+        <div className="flex-1 flex flex-col">
+          <main className="p-6 max-w-6xl mx-auto w-full pt-24">
+            <div className="flex justify-center items-center h-64">
+              <div className="text-xl">Ładowanie danych...</div>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      {/* Header */}
-      <div className="bg-[var(--color-bg-secondary)] border-b border-[var(--color-accent)] px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-[var(--color-accent)] mb-2">
-            Wnioski, które można złożyć w Twoich jednostkach
+    <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+      <div className="flex-1 flex flex-col">
+        <main className="p-6 max-w-6xl mx-auto w-full pt-24">
+          {/* Nagłówek */}
+          <h1 className="text-4xl font-bold mb-8 border-b border-[var(--color-accent)] pb-4">
+            Wnioski
           </h1>
-          <div className="flex items-center space-x-2 text-sm text-[var(--color-text-secondary)]">
-            <InfoIcon />
-            <span>Rok akademicki {getCurrentAcademicYear()}</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {error && (
-          <div className="mb-6 bg-[var(--color-bg-secondary)] border border-[var(--color-accent2)] rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-[var(--color-accent2)] mb-1">
-                  Uwaga
-                </h3>
-                <p className="text-[var(--color-text-secondary)]">{error}</p>
-              </div>
-              <button
-                onClick={handleRetry}
-                className="bg-[var(--color-accent2)] hover:bg-[var(--color-accent)] text-white px-4 py-2 rounded transition-colors"
-              >
-                Ponów
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Komunikat o sukcesie */}
-        {submitSuccess && (
-          <div className="mb-6 bg-green-50 border-2 border-green-400 rounded-lg p-6 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckIcon />
-                  </div>
+          {/* Komunikat sukcesu */}
+          {submitSuccess && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 rounded-full p-2">
+                  <FaCheckCircle className="text-green-600 text-xl" />
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-semibold text-green-800 mb-1">
-                    Sukces!
-                  </h3>
+                <div>
+                  <h3 className="font-semibold text-green-800">Sukces!</h3>
                   <p className="text-green-700">{submitSuccess}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSubmitSuccess("")}
                 className="text-green-600 hover:text-green-800 transition-colors"
-                title="Zamknij"
               >
-                <CloseIcon />
+                ✕
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Statystyki */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
-              Aktywne wnioski
-            </h3>
-            <p className="text-3xl font-bold">
-              {
-                categories.filter(
-                  (cat) => getApplicationStatus(cat) === "aktywna"
-                ).length
-              }
-            </p>
-          </div>
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
-              Planowane
-            </h3>
-            <p className="text-3xl font-bold">
-              {
-                categories.filter(
-                  (cat) => getApplicationStatus(cat) === "planowana"
-                ).length
-              }
-            </p>
-          </div>
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
-            <h3 className="text-lg font-semibold text-[var(--color-accent)] mb-2">
-              Zakończone
-            </h3>
-            <p className="text-3xl font-bold">
-              {
-                categories.filter(
-                  (cat) => getApplicationStatus(cat) === "zakończona"
-                ).length
-              }
-            </p>
-          </div>
-        </div>
-
-        {/* Tabela wniosków */}
-        <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-[var(--color-accent)] text-white px-6 py-4">
-            <h2 className="text-xl font-semibold">
-              Dostępne kategorie wniosków
-            </h2>
-          </div>
-
-          {categories.length === 0 && !loading ? (
-            <div className="px-6 py-12 text-center">
-              <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
-                Brak dostępnych wniosków
-              </h3>
-              <p className="text-[var(--color-text-secondary)]">
-                Obecnie nie ma dostępnych kategorii wniosków dla Twojego konta.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[var(--color-accent)]/10">
-                  <tr>
-                    <th className="text-left py-4 px-6 font-semibold">Nazwa</th>
-                    <th className="text-center py-4 px-4 font-semibold">
-                      Status
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold">
-                      Organizator
-                    </th>
-                    <th className="text-center py-4 px-4 font-semibold">
-                      Termin
-                    </th>
-                    <th className="text-center py-4 px-6 font-semibold">
-                      Akcje
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-accent)]/20">
-                  {categories.map((category) => {
-                    const status = getApplicationStatus(category);
-                    return (
-                      <tr
-                        key={category.categoryId}
-                        className="hover:bg-[var(--color-bg)] transition-colors"
-                      >
-                        <td className="py-4 px-6">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="w-8 h-8 bg-[var(--color-accent)]/10 rounded border border-[var(--color-accent)]/30 flex items-center justify-center">
-                                <span className="text-xs text-[var(--color-accent)] font-semibold">
-                                  {category.categoryId}
-                                </span>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--color-text)]">
-                                {category.name}
-                              </div>
-                              <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                                {category.description}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                              status
-                            )}`}
-                          >
-                            {status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="text-sm">
-                            <div className="font-medium">
-                              Uniwersytet Kazimierza Wielkiego w Bydgoszczy
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="flex items-center justify-center space-x-1 text-sm text-[var(--color-text-secondary)]">
-                            <CalendarIcon />
-                            <span>
-                              Rok akademicki {getCurrentAcademicYear()}
-                            </span>
-                          </div>
-                          {category.applicationStartDate &&
-                            category.applicationEndDate && (
-                              <div className="text-xs text-[var(--color-text-secondary)] mt-1">
-                                {formatDate(category.applicationStartDate)} -{" "}
-                                {formatDate(category.applicationEndDate)}
-                              </div>
-                            )}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center justify-center space-x-2">
-                            <button
-                              onClick={() =>
-                                handleApplicationAction(category, "info")
-                              }
-                              className="flex items-center space-x-1 text-[var(--color-accent)] hover:text-[var(--color-accent2)] transition-colors text-sm"
-                            >
-                              <span>informacje</span>
-                              <ArrowRightIcon />
-                            </button>
-                            <span className="text-[var(--color-text-secondary)]">
-                              →
-                            </span>
-                            <button
-                              onClick={() =>
-                                handleApplicationAction(category, "apply")
-                              }
-                              className={`flex items-center space-x-1 transition-colors text-sm ${
-                                status === "zakończona" ||
-                                status === "planowana"
-                                  ? "text-[var(--color-text-secondary)] cursor-not-allowed"
-                                  : "text-[var(--color-accent)] hover:text-[var(--color-accent2)]"
-                              }`}
-                              disabled={
-                                status === "zakończona" ||
-                                status === "planowana"
-                              }
-                            >
-                              <span>wypełnij wniosek</span>
-                              <ArrowRightIcon />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Modal z informacjami o wniosku */}
-      {selectedCategory && !showApplicationForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-md w-full mx-4 border border-[var(--color-accent)]">
-            <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-4">
-              {selectedCategory.name}
-            </h3>
-            <p className="text-[var(--color-text-secondary)] mb-4">
-              {selectedCategory.description}
-            </p>
-            {selectedCategory.applicationStartDate &&
-              selectedCategory.applicationEndDate && (
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Terminy:</h4>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Początek:{" "}
-                    {formatDate(selectedCategory.applicationStartDate)}
-                  </p>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    Koniec: {formatDate(selectedCategory.applicationEndDate)}
-                  </p>
-                </div>
-              )}
-            <div className="mb-4">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                  getApplicationStatus(selectedCategory)
-                )}`}
-              >
-                Status: {getApplicationStatus(selectedCategory)}
-              </span>
+          {/* Statystyki wniosków */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
+              <div className="flex items-center gap-3 mb-2">
+                <FaFileAlt className="text-[var(--color-accent)] text-2xl" />
+                <h3 className="text-lg font-semibold text-[var(--color-accent)]">
+                  Wszystkie wnioski
+                </h3>
+              </div>
+              <p className="text-3xl font-bold">{totalCount}</p>
             </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className="px-4 py-2 bg-[var(--color-text-secondary)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
-              >
-                Zamknij
-              </button>
-              <button
-                onClick={() =>
-                  handleApplicationAction(selectedCategory, "apply")
-                }
-                className={`px-4 py-2 rounded transition-colors ${
-                  getApplicationStatus(selectedCategory) === "aktywna"
-                    ? "bg-[var(--color-accent)] hover:bg-[var(--color-accent2)] text-white"
-                    : "bg-[var(--color-text-secondary)] text-white cursor-not-allowed"
-                }`}
-                disabled={getApplicationStatus(selectedCategory) !== "aktywna"}
-              >
-                Wypełnij wniosek
-              </button>
+
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
+              <div className="flex items-center gap-3 mb-2">
+                <FaClock className="text-yellow-500 text-2xl" />
+                <h3 className="text-lg font-semibold text-[var(--color-accent)]">
+                  Oczekujące
+                </h3>
+              </div>
+              <p className="text-3xl font-bold">{submittedCount}</p>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                Wniosek czeka na rozpatrzenie
+              </p>
+            </div>
+
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
+              <div className="flex items-center gap-3 mb-2">
+                <FaCheckCircle className="text-green-500 text-2xl" />
+                <h3 className="text-lg font-semibold text-[var(--color-accent)]">
+                  Zaakceptowane
+                </h3>
+              </div>
+              <p className="text-3xl font-bold">{approvedCount}</p>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                Wniosek został rozpatrzony pozytywnie
+              </p>
+            </div>
+
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 border border-[var(--color-accent)]">
+              <div className="flex items-center gap-3 mb-2">
+                <FaTimesCircle className="text-red-500 text-2xl" />
+                <h3 className="text-lg font-semibold text-[var(--color-accent)]">
+                  Odrzucone
+                </h3>
+              </div>
+              <p className="text-3xl font-bold">{rejectedCount}</p>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                Wniosek został odrzucony
+              </p>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Modal z formularzem wniosku */}
-      {showApplicationForm && selectedCategory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full mx-4 border border-[var(--color-accent)] my-8">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-[var(--color-accent)]">
+          {/* Moje wnioski */}
+          {myApplications.length > 0 && (
+            <section className="bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-lg mb-10">
+              <h2 className="text-2xl font-semibold mb-6">Moje wnioski</h2>
+              <div className="space-y-4">
+                {myApplications.map((app) => {
+                  const category = categories.find(c => c.categoryId === app.categoryId);
+                  return (
+                    <div
+                      key={app.applicationId}
+                      className="border border-[var(--color-accent)] rounded-xl p-4 bg-[var(--color-bg)] shadow-md"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{app.title}</h3>
+                          <p className="text-sm text-[var(--color-text-secondary)]">
+                            Kategoria: {category?.name || "Nieznana"}
+                          </p>
+                        </div>
+                        {getStatusBadge(app.status)}
+                      </div>
+                      <p className="text-sm mb-2">{app.content}</p>
+                      <div className="text-xs text-[var(--color-text-secondary)]">
+                        <p>Utworzono: {new Date(app.createdAt).toLocaleString("pl-PL")}</p>
+                        <p>Zaktualizowano: {new Date(app.updatedAt).toLocaleString("pl-PL")}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Tabela kategorii wniosków */}
+          <section className="bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-lg mb-10">
+            <h2 className="text-2xl font-semibold mb-6">
+              Dostępne kategorie wniosków
+            </h2>
+
+            {categories.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
+                  Brak dostępnych wniosków
+                </h3>
+                <p className="text-[var(--color-text-secondary)]">
+                  Obecnie nie ma dostępnych kategorii wniosków dla Twojego konta.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[var(--color-bg)] border-b border-[var(--color-accent)]">
+                      <th className="p-3">Nazwa wniosku</th>
+                      <th className="p-3">Opis</th>
+                      <th className="p-3">Okres składania</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Akcja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.map((category) => {
+                      const status = getApplicationStatus(category);
+                      const isActive = status === "aktywna";
+                      
+                      return (
+                        <tr
+                          key={category.categoryId}
+                          className="border-b border-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] transition"
+                        >
+                          <td className="p-3 font-semibold">{category.name}</td>
+                          <td className="p-3">{category.description || "Brak opisu"}</td>
+                          <td className="p-3">
+                            <div className="text-sm">
+                              <p>Od: {new Date(category.applicationStartDate).toLocaleDateString("pl-PL")}</p>
+                              <p>Do: {new Date(category.applicationEndDate).toLocaleDateString("pl-PL")}</p>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                status === "aktywna"
+                                  ? "bg-green-100 text-green-800"
+                                  : status === "planowana"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => setSelectedCategory(category)}
+                              disabled={!isActive}
+                              className={`px-4 py-2 rounded-lg font-medium transition ${
+                                isActive
+                                  ? "bg-[var(--color-accent)] text-white hover:opacity-90"
+                                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                              }`}
+                            >
+                              {isActive ? "Wypełnij wniosek" : "Niedostępny"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* Formularz wniosku */}
+          {selectedCategory && (
+            <section className="bg-[var(--color-bg-secondary)] p-6 rounded-2xl shadow-lg">
+              <h2 className="text-2xl font-semibold mb-6">
                 Wypełnij wniosek: {selectedCategory.name}
-              </h3>
-              <button
-                onClick={resetForm}
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
-                title="Zamknij"
-              >
-                <CloseIcon />
-              </button>
-            </div>
+              </h2>
 
-            <form onSubmit={handleSubmitApplication} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium text-[var(--color-text)] mb-2"
-                >
-                  Tytuł wniosku *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, title: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  placeholder="Wprowadź tytuł wniosku (min. 3 znaki)"
-                  required
-                  minLength={3}
-                />
-              </div>
+              <form onSubmit={handleSubmitApplication} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Tytuł wniosku <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={applicationForm.title}
+                    onChange={(e) =>
+                      setApplicationForm({ ...applicationForm, title: e.target.value })
+                    }
+                    className="w-full px-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                    placeholder="Wprowadź tytuł wniosku"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="content"
-                  className="block text-sm font-medium text-[var(--color-text)] mb-2"
-                >
-                  Treść wniosku *
-                </label>
-                <textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      content: e.target.value,
-                    }))
-                  }
-                  rows={8}
-                  className="w-full px-3 py-2 border border-[var(--color-accent)] rounded-md bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-vertical"
-                  placeholder="Wprowadź treść wniosku (min. 10 znaków)"
-                  required
-                  minLength={10}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Treść wniosku <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={applicationForm.content}
+                    onChange={(e) =>
+                      setApplicationForm({ ...applicationForm, content: e.target.value })
+                    }
+                    className="w-full px-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)] min-h-[200px]"
+                    placeholder="Wprowadź treść wniosku"
+                    required
+                  />
+                </div>
 
-              <div className="bg-[var(--color-bg)] p-4 rounded-md border border-[var(--color-accent)]/30">
-                <h4 className="font-semibold text-[var(--color-text)] mb-2">
-                  Informacje o kategorii:
-                </h4>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  {selectedCategory.description}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-2">
-                  Termin: {formatDate(selectedCategory.applicationStartDate)} -{" "}
-                  {formatDate(selectedCategory.applicationEndDate)}
-                </p>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-6 py-2 bg-[var(--color-text-secondary)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
-                  disabled={submitting}
-                >
-                  Anuluj
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={submitting}
-                >
-                  {submitting ? "Wypełnianie..." : "Wypełnij i złóż wniosek"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-6 py-3 bg-[var(--color-accent)] text-white rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? "Wysyłanie..." : "Wyślij wniosek"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setApplicationForm({ title: "", content: "" });
+                    }}
+                    className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:opacity-90 transition"
+                  >
+                    Anuluj
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
