@@ -1,49 +1,163 @@
 // app/components/TeacherDashboard.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import ScheduleCalendar, { CalendarEvent } from "@/app/components/ScheduleCalendar";
 
 export default function LecturerDashboard() {
+  const [dashboardEvents, setDashboardEvents] = useState<CalendarEvent[]>([]);
+  const [currentClass, setCurrentClass] = useState<CalendarEvent | null>(null);
+  const [nextClass, setNextClass] = useState<CalendarEvent | null>(null);
+
+  // Logic to calculate "Now" and "Next" based on calendar events
+  useEffect(() => {
+    const updateCurrentClasses = () => {
+      const now = new Date();
+      let current: CalendarEvent | null = null;
+      let next: CalendarEvent | null = null;
+
+      // Filter for today's classes
+      const todaysClasses = dashboardEvents.filter((e) => {
+        if (e.allDay || e.extendedProps.source !== "class") return false;
+        const eStart = new Date(e.start);
+        return eStart.toDateString() === now.toDateString();
+      });
+
+      // Sort by time
+      todaysClasses.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+      for (const event of todaysClasses) {
+        const start = new Date(event.start);
+        const end = event.end ? new Date(event.end) : start;
+
+        if (now >= start && now <= end) {
+          current = event;
+        } else if (now < start && !next) {
+          next = event;
+        }
+      }
+
+      setCurrentClass(current);
+      setNextClass(next);
+    };
+
+    updateCurrentClasses();
+    const interval = setInterval(updateCurrentClasses, 30000); // Update every 30s
+    return () => clearInterval(interval);
+  }, [dashboardEvents]);
+
+  // Statistics for the side panel
+  const todayDateString = new Date().toDateString();
+  const classesToday = dashboardEvents.filter(
+    (e) =>
+      !e.allDay &&
+      e.extendedProps.source === "class" &&
+      new Date(e.start).toDateString() === todayDateString
+  );
+  
+  const totalHoursToday = classesToday.reduce((sum, e) => {
+    const start = new Date(e.start);
+    const end = e.end ? new Date(e.end) : start;
+    return sum + (end.getTime() - start.getTime()) / (1000 * 3600);
+  }, 0);
+
   return (
     <main className="min-h-screen px-6 py-6 text-[var(--color-text)] bg-[var(--color-bg)]">
-      {/* Główna siatka */}
+      
+      {/* Grid Layout: Calendar + Info Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        {/* Lewa i środkowa kolumna – duży widok planu zajęć */}
-        <div className="lg:col-span-2 bg-[var(--color-bg)] p-8 rounded-xl shadow-md h-[70vh] flex flex-col justify-center items-center border border-[#327f7a]">
-          <div className="text-[var(--color-text)] text-center w-full h-full flex flex-col justify-center items-center">
-            <p className="text-lg mb-4 font-semibold">
-              Plan zajęć / Kalendarz wykładowcy
-            </p>
-            <div className="w-full h-full bg-[rgba(50,127,122,0.1)] rounded-xl flex justify-center items-center border border-[#327f7a]">
-              <p className="text-sm italic text-[var(--color-text)]">
-                [Tutaj zostanie wstawiony komponent kalendarza wykładowcy]
-              </p>
-            </div>
+        
+        {/* Left Column: Calendar Component */}
+        <div className="lg:col-span-2 bg-[var(--color-bg)] rounded-xl shadow-md border border-[#327f7a] overflow-hidden">
+          <div className="p-4">
+             {/* Reusing the ScheduleCalendar component */}
+            <ScheduleCalendar onEventsLoaded={setDashboardEvents} />
           </div>
         </div>
 
-        {/* Prawa kolumna – informacje o zajęciach */}
-        <div className="bg-[var(--color-bg)] p-6 rounded-xl shadow-md flex flex-col justify-start gap-6 border border-[#327f7a]">
-          {/* Aktualne zajęcia */}
-          <div>
-            <p className="mb-2 text-sm border-b border-[#327f7a] pb-2 font-medium">
-              Aktualne zajęcia:
+        {/* Right Column: Dynamic Class Info */}
+        <div className="bg-[var(--color-bg)] p-6 rounded-xl shadow-md flex flex-col gap-6 border border-[#327f7a] h-fit">
+          
+          <div className="pb-2 border-b border-[#327f7a]">
+            <h2 className="text-xl font-semibold text-[#327f7a]">Panel Dydaktyczny</h2>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
-            <div className="bg-teal-700 text-white px-4 py-2 rounded-lg inline-block text-sm">
-              Systemy rozproszone
-            </div>
           </div>
 
-          {/* Następne zajęcia */}
+          {/* Current Class */}
           <div>
-            <p className="mb-2 text-sm border-b border-[#327f7a] pb-2 font-medium">
+            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">
+              Aktualnie trwają:
+            </p>
+            {currentClass ? (
+              <div className="bg-teal-700 text-white p-4 rounded-lg shadow-lg">
+                <p className="font-bold text-lg">{currentClass.extendedProps.type}</p>
+                <p className="text-sm opacity-90">{currentClass.title}</p>
+                <div className="mt-2 flex justify-between text-xs opacity-80 border-t border-teal-600 pt-2">
+                  <span>Sala: {currentClass.extendedProps.room}</span>
+                  <span>
+                    {new Date(currentClass.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {" - "}
+                    {currentClass.end
+                      ? new Date(currentClass.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : ""}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[rgba(50,127,122,0.1)] p-4 rounded-lg border border-dashed border-[#327f7a]">
+                <p className="text-sm italic text-center opacity-80">Brak zajęć w tej chwili.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Next Class */}
+          <div>
+            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">
               Następne zajęcia:
             </p>
-            <div className="bg-teal-700 text-white px-4 py-2 rounded-lg inline-block text-sm">
-              Podstawy programowania
+            {nextClass ? (
+              <div className="bg-[var(--color-bg)] border-l-4 border-[#327f7a] p-4 rounded-r-lg shadow-sm">
+                <p className="font-bold text-[#327f7a]">{nextClass.title}</p>
+                <p className="text-xs mt-1 text-[var(--color-text-secondary)]">
+                  {new Date(nextClass.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {" - "}
+                  {nextClass.end
+                    ? new Date(nextClass.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                    : ""}
+                </p>
+                <p className="text-xs mt-1 font-semibold">Sala: {nextClass.extendedProps.room}</p>
+              </div>
+            ) : (
+              <p className="text-sm italic opacity-60">Brak zaplanowanych zajęć na resztę dnia.</p>
+            )}
+          </div>
+
+          {/* Daily Stats */}
+          <div className="pt-4 border-t border-[#327f7a]/30">
+            <h3 className="mb-3 text-sm font-semibold text-center text-[var(--color-text-secondary)]">
+              Podsumowanie dnia
+            </h3>
+            <div className="flex gap-4 text-center">
+              <div className="flex-1 bg-[rgba(50,127,122,0.1)] p-2 rounded border border-[#327f7a]/20">
+                <span className="block text-xl font-bold text-[#327f7a]">
+                  {classesToday.length}
+                </span>
+                <span className="text-xs text-[var(--color-text-secondary)]">Grup</span>
+              </div>
+              <div className="flex-1 bg-[rgba(50,127,122,0.1)] p-2 rounded border border-[#327f7a]/20">
+                <span className="block text-xl font-bold text-[#327f7a]">
+                  {totalHoursToday}h
+                </span>
+                <span className="text-xs text-[var(--color-text-secondary)]">Godzin</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sekcja aktualności */}
+      {/* Sekcja aktualności (Preserved from original file) */}
       <section className="mt-10">
         <h2 className="text-xl font-semibold text-center mb-2">Aktualności</h2>
         <div className="border-t-4 border-[#327f7a] w-1/3 mx-auto mb-4"></div>
