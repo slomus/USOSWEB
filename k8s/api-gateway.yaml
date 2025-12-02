@@ -30,10 +30,12 @@ spec:
       labels:
         app: api-gateway
     spec:
+      imagePullSecrets:
+      - name: registry-secret
       containers:
       - name: api-gateway
-        image: usosweb-api-gateway:latest
-        imagePullPolicy: Never
+        image: 91.237.68.221:5000/usosweb-api-gateway:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8083
           name: http

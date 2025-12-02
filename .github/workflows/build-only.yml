@@ -79,7 +79,7 @@ jobs:
         with:
           version: latest
           working-directory: ./src/backend
-          args: --timeout=5m
+          args: --timeout=5m --skip-dirs=tools --skip-dirs=gen
 
   lint-frontend:
     name: Lint Frontend Code

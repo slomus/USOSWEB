@@ -29,10 +29,12 @@ spec:
       labels:
         app: calendar
     spec:
+      imagePullSecrets:
+      - name: registry-secret
       containers:
       - name: calendar
-        image: usosweb-calendar:latest
-        imagePullPolicy: Never
+        image: 91.237.68.221:5000/usosweb-calendar:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3001
           name: grpc
