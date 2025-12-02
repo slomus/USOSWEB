@@ -30,10 +30,10 @@ spec:
         app: common
     spec:
       imagePullSecrets:
-      - name: registry-secret
+      - name: ghcr-secret
       containers:
       - name: common
-        image: 91.237.68.221:5000/usosweb-common:latest
+        image: ghcr.io/slomus/usosweb-common:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3003
