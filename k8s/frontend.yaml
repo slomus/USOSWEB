@@ -13,10 +13,12 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+      - name: registry-secret
       containers:
       - name: frontend
-        image: usosweb-frontend:latest
-        imagePullPolicy: Never  # Używamy lokalnego obrazu
+        image: 91.237.68.221:5000/usosweb-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         env:

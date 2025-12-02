@@ -29,10 +29,12 @@ spec:
       labels:
         app: messaging
     spec:
+      imagePullSecrets:
+      - name: registry-secret
       containers:
       - name: messaging
-        image: usosweb-messaging:latest
-        imagePullPolicy: Never
+        image: 91.237.68.221:5000/usosweb-messaging:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3002
           name: grpc
