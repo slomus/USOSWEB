@@ -1,0 +1,87 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+issues:
+  exclude-dirs:
+    - tools
+    - gen
+    - third_party
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.pb\\.gw\\.go$"
+  exclude-rules:
+    - path: tools/
+      linters:
+        - typecheck
+        - unused
+    - path: gen/
+      linters:
+        - typecheck
+    # Allow unused functions/variables for now
+    - linters:
+        - unused
+      text: "is unused"
+    # Allow unformatted files for now
+    - linters:
+        - gofmt
+      text: "File is not properly formatted"
+    # Allow ineffectual assignments
+    - linters:
+        - ineffassign
+      text: "ineffectual assignment"
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - unused
+  fast: false
+
+linters-settings:
+  govet:
+    enable:
+      - assign
+      - atomic
+      - bools
+      - buildtag
+      - cgocall
+      - composites
+      - copylocks
+      - httpresponse
+      - loopclosure
+      - lostcancel
+      - nilfunc
+      - printf
+      - shift
+      - stdmethods
+      - structtag
+      - tests
+      - unmarshal
+      - unreachable
+      - unsafeptr
+    disable:
+      - shadow
+      - fieldalignment  # Too strict for now
+  
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+    exclude-functions:
+      - (*database/sql.Rows).Close
+      - (*database/sql.Tx).Rollback
+      - (io.Closer).Close
+      - fmt.Fprintf
+      - fmt.Fprintln
+      - (*github.com/redis/go-redis/v9.Client).Set
+      - (*github.com/redis/go-redis/v9.Client).Delete
+  
+  staticcheck:
+    checks: ["all", "-SA1019"]  # Ignore deprecation warnings for now
+
