@@ -2,6 +2,14 @@ run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
+  skip-dirs:
+    - tools
+    - gen
+    - third_party
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.pb\\.gw\\.go$"
+    - "tools/.*"
 
 issues:
   exclude-dirs:
@@ -11,8 +19,17 @@ issues:
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*\\.pb\\.gw\\.go$"
+  exclude-rules:
+    - path: tools/
+      linters:
+        - typecheck
+        - unused
+    - path: gen/
+      linters:
+        - typecheck
 
 linters:
+  disable-all: true
   enable:
     - gofmt
     - govet
@@ -20,15 +37,13 @@ linters:
     - staticcheck
     - unused
     - gosimple
-    - structcheck
-    - varcheck
     - ineffassign
-    - deadcode
-    - typecheck
 
 linters-settings:
   govet:
-    check-shadowing: false
+    enable-all: true
+    disable:
+      - shadow
   errcheck:
     check-type-assertions: false
     check-blank: false
