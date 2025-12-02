@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: 91.237.68.221:5000
-  IMAGE_PREFIX: usosweb
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/usosweb
 
 jobs:
   build:

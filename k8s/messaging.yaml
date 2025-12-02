@@ -30,10 +30,10 @@ spec:
         app: messaging
     spec:
       imagePullSecrets:
-      - name: registry-secret
+      - name: ghcr-secret
       containers:
       - name: messaging
-        image: 91.237.68.221:5000/usosweb-messaging:latest
+        image: ghcr.io/slomus/usosweb-messaging:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3002
