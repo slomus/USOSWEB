@@ -22,6 +22,11 @@ type User = {
   role: UserRole;
 };
 
+type Faculty = {
+  facultyId: number;
+  name: string;
+};
+
 type UserForm = {
   name: string;
   surname: string;
@@ -33,11 +38,13 @@ type UserForm = {
   bank_account_nr: string;
   pesel: string;
   role: UserRole;
-  album_nr?: string;
+  // Pola dla wykładowcy
   degree?: string;
   title?: string;
   faculty_id?: number;
   email_app_password?: string;
+  // Pola dla admina
+  admin_role?: string;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -45,6 +52,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 export default function AdminAccountManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filtry
@@ -70,16 +78,34 @@ export default function AdminAccountManagementPage() {
     bank_account_nr: "",
     pesel: "",
     role: "student",
-    album_nr: "",
+    degree: "",
+    title: "",
+    faculty_id: 1,
+    admin_role: "",
   });
 
   useEffect(() => {
     fetchUsers();
+    fetchFaculties();
   }, []);
 
   useEffect(() => {
     filterUsers();
   }, [selectedRole, selectedStatus, searchTerm, albumSearch, users]);
+
+  const fetchFaculties = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/faculties`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFaculties(data.faculties || []);
+      }
+    } catch (error) {
+      console.error("Błąd pobierania wydziałów:", error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -91,7 +117,6 @@ export default function AdminAccountManagementPage() {
       if (response.ok) {
         const data = await response.json();
         console.log("Users data:", data);
-        console.log("First user:", data.users?.[0]);
         setUsers(data.users || []);
       } else {
         toast.error("Nie udało się pobrać użytkowników");
@@ -136,42 +161,59 @@ export default function AdminAccountManagementPage() {
   };
 
   const handleAddUser = async () => {
-    if (!userForm.name || !userForm.surname || !userForm.email || !userForm.password) {
-      toast.error("Wypełnij wszystkie wymagane pola");
+    // Walidacja podstawowych pól
+    if (!userForm.name || !userForm.surname || !userForm.email || !userForm.password || !userForm.pesel) {
+      toast.error("Wypełnij wszystkie wymagane pola (imię, nazwisko, email, hasło, PESEL)");
       return;
     }
 
-    // Walidacja dla studenta - wymagany numer albumu
-    if (userForm.role === "student" && !userForm.album_nr) {
-      toast.error("Numer albumu jest wymagany dla studenta");
-      return;
+    // Walidacja dla wykładowcy
+    if (userForm.role === "teacher") {
+      if (!userForm.degree || !userForm.title || !userForm.faculty_id) {
+        toast.error("Dla wykładowcy wymagane są: stopień naukowy, tytuł i wydział");
+        return;
+      }
+    }
+
+    // Walidacja dla admina
+    if (userForm.role === "admin") {
+      if (!userForm.admin_role || !userForm.faculty_id) {
+        toast.error("Dla administratora wymagane są: rola administracyjna i wydział");
+        return;
+      }
     }
 
     try {
-      const requestBody: any = {
+      // Budowanie ciała żądania zgodnie z API
+      const requestBody: Record<string, unknown> = {
         name: userForm.name,
         surname: userForm.surname,
         email: userForm.email,
         password: userForm.password,
-        phone_nr: userForm.phone_nr,
-        registration_address: userForm.registration_address,
-        postal_address: userForm.postal_address,
-        bank_account_nr: userForm.bank_account_nr,
         pesel: userForm.pesel,
+        phone_nr: userForm.phone_nr || "",
+        registration_address: userForm.registration_address || "",
+        postal_address: userForm.postal_address || "",
+        bank_account_nr: userForm.bank_account_nr || "",
         role: userForm.role,
-        faculty_id: userForm.faculty_id || 1,
       };
 
-      // Dodaj specyficzne pola w zależności od roli
-      if (userForm.role === "student" && userForm.album_nr) {
-        requestBody.album_nr = parseInt(userForm.album_nr);
-      } else if (userForm.role === "teacher") {
-        requestBody.degree = userForm.degree || "";
-        requestBody.title = userForm.title || "";
-        requestBody.email_app_password = userForm.email_app_password || "";
+      // Dodaj pola specyficzne dla roli
+      if (userForm.role === "teacher") {
+        requestBody.degree = userForm.degree;
+        requestBody.title = userForm.title;
+        requestBody.faculty_id = userForm.faculty_id;
+        if (userForm.email_app_password) {
+          requestBody.email_app_password = userForm.email_app_password;
+        }
       } else if (userForm.role === "admin") {
-        requestBody.admin_role = "admin";
+        requestBody.admin_role = userForm.admin_role;
+        requestBody.faculty_id = userForm.faculty_id;
       }
+      // Dla studenta - nie dodajemy żadnych specjalnych pól
+      // Backend automatycznie wygeneruje album_nr
+
+      console.log("Wysyłane dane rejestracji:", requestBody);
 
       const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
@@ -180,14 +222,25 @@ export default function AdminAccountManagementPage() {
         body: JSON.stringify(requestBody),
       });
 
-      if (response.ok) {
-        toast.success("Użytkownik został dodany pomyślnie!");
+      const responseData = await response.json();
+      console.log("Odpowiedź API:", responseData);
+
+      // Backend zwraca success: true/false w body, nie tylko status HTTP
+      if (responseData.success === true) {
+        let successMessage = "Użytkownik został dodany pomyślnie!";
+        
+        // Pokaż user_id dla nowego użytkownika
+        if (responseData.user_id) {
+          successMessage = `Użytkownik został dodany! ID: ${responseData.user_id}`;
+        }
+        
+        toast.success(successMessage);
         setShowAddModal(false);
         resetForm();
         fetchUsers();
       } else {
-        const errorData = await response.json();
-        toast.error(`Błąd: ${errorData.message || "Nie udało się dodać użytkownika"}`);
+        console.error("Błąd API:", responseData);
+        toast.error(`Błąd: ${responseData.message || "Nie udało się dodać użytkownika"}`);
       }
     } catch (error) {
       console.error("Błąd dodawania użytkownika:", error);
@@ -258,7 +311,6 @@ export default function AdminAccountManagementPage() {
 
   const openEditModal = async (user: User) => {
     try {
-      // Pobierz szczegółowe dane użytkownika
       const response = await fetch(`${API_BASE}/api/auth/edit/${user.userId}`, {
         credentials: "include",
       });
@@ -270,13 +322,17 @@ export default function AdminAccountManagementPage() {
           name: data.name || "",
           surname: data.surname || "",
           email: data.email || "",
-          password: "", // Nie pobieramy hasła
+          password: "",
           phone_nr: data.phoneNr || data.phone_nr || "",
           registration_address: data.registrationAddress || data.registration_address || "",
           postal_address: data.postalAddress || data.postal_address || "",
           bank_account_nr: data.bankAccountNr || data.bank_account_nr || "",
           pesel: "",
           role: user.role,
+          degree: "",
+          title: "",
+          faculty_id: 1,
+          admin_role: "",
         });
       } else {
         toast.error("Nie udało się pobrać danych użytkownika");
@@ -299,7 +355,10 @@ export default function AdminAccountManagementPage() {
       bank_account_nr: "",
       pesel: "",
       role: "student",
-      album_nr: "",
+      degree: "",
+      title: "",
+      faculty_id: 1,
+      admin_role: "",
     });
   };
 
@@ -362,62 +421,53 @@ export default function AdminAccountManagementPage() {
               <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
                 Wszyscy Użytkownicy
               </h3>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{totalUsers}</p>
+              <p className="text-3xl font-bold">{totalUsers}</p>
             </div>
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <div className="flex items-center gap-2 mb-1">
-                <FaUser className="text-[var(--color-accent)]" />
-                <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                  Studenci
-                </h3>
-              </div>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{studentCount}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1 flex items-center gap-2">
+                <FaUser /> Studenci
+              </h3>
+              <p className="text-3xl font-bold">{studentCount}</p>
             </div>
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <div className="flex items-center gap-2 mb-1">
-                <FaChalkboardTeacher className="text-[var(--color-accent)]" />
-                <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                  Wykładowcy
-                </h3>
-              </div>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{teacherCount}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1 flex items-center gap-2">
+                <FaChalkboardTeacher /> Wykładowcy
+              </h3>
+              <p className="text-3xl font-bold">{teacherCount}</p>
             </div>
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <div className="flex items-center gap-2 mb-1">
-                <FaUserShield className="text-[var(--color-accent)]" />
-                <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                  Administratorzy
-                </h3>
-              </div>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{adminCount}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1 flex items-center gap-2">
+                <FaUserShield /> Administratorzy
+              </h3>
+              <p className="text-3xl font-bold">{adminCount}</p>
             </div>
           </div>
 
-          {/* Filtry i Wyszukiwanie */}
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 border border-[var(--color-accent)]">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <FaSearch /> Filtry i Wyszukiwanie
-            </h2>
+          {/* Filtry */}
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 mb-6 border border-[var(--color-accent)]">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Wyszukaj po imieniu/nazwisku/email</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Szukaj..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
-                />
+                <label className="block text-sm font-medium mb-2">Szukaj</label>
+                <div className="relative">
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-secondary)]" />
+                  <input
+                    type="text"
+                    placeholder="Imię, nazwisko, email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Nr albumu</label>
                 <input
                   type="text"
+                  placeholder="Szukaj po albumie..."
                   value={albumSearch}
                   onChange={(e) => setAlbumSearch(e.target.value)}
-                  placeholder="Nr albumu..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
                 />
               </div>
 
@@ -453,68 +503,63 @@ export default function AdminAccountManagementPage() {
             </div>
           </div>
 
-          {/* Lista Użytkowników - KOMPAKTOWA */}
+          {/* Lista Użytkowników */}
           <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
             <div className="bg-[var(--color-accent)] text-white px-6 py-4">
               <h2 className="text-xl font-semibold">Lista Użytkowników</h2>
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
-                  Brak użytkowników
-                </h3>
-                <p className="text-[var(--color-text-secondary)]">
-                  Nie znaleziono użytkowników spełniających kryteria wyszukiwania
-                </p>
+              <div className="p-8 text-center text-[var(--color-text-secondary)]">
+                Brak użytkowników do wyświetlenia
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-[var(--color-accent)]/10">
+                  <thead className="bg-[var(--color-bg)] border-b border-[var(--color-accent)]">
                     <tr>
-                      <th className="text-left py-3 px-4 font-semibold">Użytkownik</th>
-                      <th className="text-left py-3 px-4 font-semibold">Email</th>
-                      <th className="text-center py-3 px-4 font-semibold">Rola</th>
-                      <th className="text-center py-3 px-4 font-semibold">Nr albumu/ID</th>
-                      <th className="text-center py-3 px-4 font-semibold">Status</th>
-                      <th className="text-center py-3 px-4 font-semibold">Akcje</th>
+                      <th className="px-4 py-3 text-left">ID</th>
+                      <th className="px-4 py-3 text-left">Imię i Nazwisko</th>
+                      <th className="px-4 py-3 text-left">Email</th>
+                      <th className="px-4 py-3 text-left">Rola</th>
+                      <th className="px-4 py-3 text-left">Status</th>
+                      <th className="px-4 py-3 text-right">Akcje</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user, index) => (
+                    {filteredUsers.map((user) => (
                       <tr
-                        key={user.userId || user.email || index}
-                        className="border-b border-[var(--color-accent)]/20 hover:bg-[var(--color-bg-hover)] transition"
+                        key={user.userId}
+                        className="border-b border-[var(--color-accent)]/20 hover:bg-[var(--color-bg)]"
                       >
-                        <td className="py-2 px-4">
-                          <div className="font-semibold">{user.name} {user.surname}</div>
-                        </td>
-                        <td className="py-2 px-4 text-[var(--color-text-secondary)]">
-                          {user.email}
-                        </td>
-                        <td className="py-2 px-4">
-                          <span className="text-xs">{getRoleLabel(user.role)}</span>
-                        </td>
-                        <td className="py-2 px-4 text-center text-xs">
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">
                           {getUserId(user)}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-3 font-medium">
+                          {user.name} {user.surname}
+                        </td>
+                        <td className="px-4 py-3">{user.email}</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded text-xs bg-[var(--color-accent)]/20">
+                            {getRoleLabel(user.role)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2 py-1 rounded text-xs ${
                               user.active
-                                ? "bg-[var(--color-accent)]/20 text-[var(--color-accent)]"
-                                : "bg-gray-100 text-gray-800"
+                                ? "bg-green-500/20 text-green-400"
+                                : "bg-red-500/20 text-red-400"
                             }`}
                           >
                             {user.active ? "Aktywny" : "Nieaktywny"}
                           </span>
                         </td>
-                        <td className="py-2 px-4">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
                             <button
                               onClick={() => openEditModal(user)}
-                              className="p-1.5 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 rounded transition"
+                              className="p-2 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 rounded"
                               title="Edytuj"
                             >
                               <FaEdit />
@@ -522,7 +567,7 @@ export default function AdminAccountManagementPage() {
                             <button
                               onClick={() => handleDeleteUser(user.userId)}
                               disabled={deletingUserId === user.userId}
-                              className="p-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] rounded transition disabled:opacity-50"
+                              className="p-2 text-red-500 hover:bg-red-500/20 rounded disabled:opacity-50"
                               title="Usuń"
                             >
                               <FaTrash />
@@ -540,9 +585,9 @@ export default function AdminAccountManagementPage() {
           {/* Modal Dodawania Użytkownika */}
           {showAddModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-semibold">Dodaj Użytkownika</h2>
+                  <h3 className="text-2xl font-bold">Dodaj Nowego Użytkownika</h3>
                   <button
                     onClick={() => {
                       setShowAddModal(false);
@@ -555,6 +600,7 @@ export default function AdminAccountManagementPage() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Podstawowe dane */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -637,99 +683,184 @@ export default function AdminAccountManagementPage() {
                     </select>
                   </div>
 
-                  {/* Pole dla numeru albumu - tylko dla studentów */}
+                  {/* Informacja dla studenta */}
                   {userForm.role === "student" && (
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Numer albumu <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={userForm.album_nr || ""}
-                        onChange={(e) => setUserForm({ ...userForm, album_nr: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                        placeholder="Wprowadź numer albumu"
-                        required
-                      />
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                      <p className="text-sm text-blue-400">
+                        Numer albumu zostanie wygenerowany automatycznie przez system.
+                      </p>
                     </div>
                   )}
 
                   {/* Pola dla wykładowcy */}
                   {userForm.role === "teacher" && (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Stopień naukowy</label>
-                          <input
-                            type="text"
-                            value={userForm.degree || ""}
-                            onChange={(e) => setUserForm({ ...userForm, degree: e.target.value })}
+                      <div className="border-t border-[var(--color-accent)]/30 pt-4 mt-4">
+                        <h4 className="font-semibold mb-4">Dane wykładowcy</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Stopień naukowy <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={userForm.degree || ""}
+                              onChange={(e) => setUserForm({ ...userForm, degree: e.target.value })}
+                              className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                              placeholder="np. dr, dr hab., prof."
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Tytuł <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={userForm.title || ""}
+                              onChange={(e) => setUserForm({ ...userForm, title: e.target.value })}
+                              className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                              placeholder="np. Adiunkt, Profesor"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium mb-2">
+                            Wydział <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={userForm.faculty_id || 1}
+                            onChange={(e) => setUserForm({ ...userForm, faculty_id: parseInt(e.target.value) })}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                            placeholder="np. dr, prof."
+                            required
+                          >
+                            {faculties.length > 0 ? (
+                              faculties.map((faculty) => (
+                                <option key={faculty.facultyId} value={faculty.facultyId}>
+                                  {faculty.name}
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value={1}>Wydział Informatyki</option>
+                                <option value={2}>Wydział Matematyki</option>
+                                <option value={3}>Wydział Fizyki</option>
+                                <option value={4}>Wydział Chemii</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium mb-2">Hasło aplikacji email</label>
+                          <input
+                            type="password"
+                            value={userForm.email_app_password || ""}
+                            onChange={(e) => setUserForm({ ...userForm, email_app_password: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                            placeholder="Opcjonalne - dla integracji email"
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Tytuł</label>
-                          <input
-                            type="text"
-                            value={userForm.title || ""}
-                            onChange={(e) => setUserForm({ ...userForm, title: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                            placeholder="np. inż., hab."
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Hasło aplikacji email</label>
-                        <input
-                          type="password"
-                          value={userForm.email_app_password || ""}
-                          onChange={(e) => setUserForm({ ...userForm, email_app_password: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                          placeholder="Hasło do aplikacji email (opcjonalne)"
-                        />
                       </div>
                     </>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Telefon</label>
-                    <input
-                      type="text"
-                      value={userForm.phone_nr}
-                      onChange={(e) => setUserForm({ ...userForm, phone_nr: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                    />
-                  </div>
+                  {/* Pola dla admina */}
+                  {userForm.role === "admin" && (
+                    <>
+                      <div className="border-t border-[var(--color-accent)]/30 pt-4 mt-4">
+                        <h4 className="font-semibold mb-4">Dane administratora</h4>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Rola administracyjna <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={userForm.admin_role || ""}
+                            onChange={(e) => setUserForm({ ...userForm, admin_role: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                            required
+                          >
+                            <option value="">Wybierz rolę...</option>
+                            <option value="Dziekan">Dziekan</option>
+                            <option value="Prodziekan">Prodziekan</option>
+                            <option value="Kierownik Dziekanatu">Kierownik Dziekanatu</option>
+                            <option value="Sekretarz">Sekretarz</option>
+                            <option value="Administrator IT">Administrator IT</option>
+                            <option value="coordinator">Koordynator</option>
+                          </select>
+                        </div>
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium mb-2">
+                            Wydział <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={userForm.faculty_id || 1}
+                            onChange={(e) => setUserForm({ ...userForm, faculty_id: parseInt(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                            required
+                          >
+                            {faculties.length > 0 ? (
+                              faculties.map((faculty) => (
+                                <option key={faculty.facultyId} value={faculty.facultyId}>
+                                  {faculty.name}
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value={1}>Wydział Informatyki</option>
+                                <option value={2}>Wydział Matematyki</option>
+                                <option value={3}>Wydział Fizyki</option>
+                                <option value={4}>Wydział Chemii</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Adres zameldowania</label>
-                    <input
-                      type="text"
-                      value={userForm.registration_address}
-                      onChange={(e) => setUserForm({ ...userForm, registration_address: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Adres korespondencyjny</label>
-                    <input
-                      type="text"
-                      value={userForm.postal_address}
-                      onChange={(e) => setUserForm({ ...userForm, postal_address: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Numer konta bankowego</label>
-                    <input
-                      type="text"
-                      value={userForm.bank_account_nr}
-                      onChange={(e) => setUserForm({ ...userForm, bank_account_nr: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                    />
+                  {/* Dodatkowe dane kontaktowe */}
+                  <div className="border-t border-[var(--color-accent)]/30 pt-4 mt-4">
+                    <h4 className="font-semibold mb-4">Dane kontaktowe (opcjonalne)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Telefon</label>
+                        <input
+                          type="text"
+                          value={userForm.phone_nr}
+                          onChange={(e) => setUserForm({ ...userForm, phone_nr: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                          placeholder="+48123456789"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Nr konta bankowego</label>
+                        <input
+                          type="text"
+                          value={userForm.bank_account_nr}
+                          onChange={(e) => setUserForm({ ...userForm, bank_account_nr: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium mb-2">Adres zameldowania</label>
+                      <input
+                        type="text"
+                        value={userForm.registration_address}
+                        onChange={(e) => setUserForm({ ...userForm, registration_address: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium mb-2">Adres korespondencyjny</label>
+                      <input
+                        type="text"
+                        value={userForm.postal_address}
+                        onChange={(e) => setUserForm({ ...userForm, postal_address: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -757,9 +888,9 @@ export default function AdminAccountManagementPage() {
           {/* Modal Edycji Użytkownika */}
           {editingUser && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-semibold">Edytuj Użytkownika</h2>
+                  <h3 className="text-2xl font-bold">Edytuj Użytkownika</h3>
                   <button
                     onClick={() => {
                       setEditingUser(null);
@@ -769,6 +900,12 @@ export default function AdminAccountManagementPage() {
                   >
                     <FaTimes size={24} />
                   </button>
+                </div>
+
+                <div className="mb-4 p-3 bg-[var(--color-accent)]/10 rounded-lg">
+                  <p className="text-sm">
+                    Edycja użytkownika: <strong>{editingUser.name} {editingUser.surname}</strong> ({getRoleLabel(editingUser.role)})
+                  </p>
                 </div>
 
                 <div className="space-y-4">
