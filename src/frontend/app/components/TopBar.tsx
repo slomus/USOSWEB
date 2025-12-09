@@ -9,25 +9,44 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "../wrappers/fetchWithAuth";
-import { User } from "../wrappers/fetchWithAuth";
+
+interface UserInfo {
+  username: string;
+  role: "student" | "teacher" | "admin";
+}
 
 const UserProfile = React.memo(() => {
-  const [user, setUser] = useState<User | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchUser = async () => {
+    const fetchUserInfo = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://localhost:8083/api/auth/username"
-        );
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          setUser(data);
+        // Pobierz nazwę użytkownika
+        const usernameResponse = await fetch(`${API_BASE}/api/auth/username`, {
+          credentials: "include",
+        });
+        
+        // Pobierz rolę użytkownika
+        const roleResponse = await fetch(`${API_BASE}/api/auth/role`, {
+          credentials: "include",
+        });
+
+        if (usernameResponse.ok && roleResponse.ok && isMounted) {
+          const usernameData = await usernameResponse.json();
+          const roleData = await roleResponse.json();
+          
+          setUserInfo({
+            username: usernameData.username,
+            role: roleData.role,
+          });
+        } else if (isMounted) {
+          setError("Błąd ładowania danych");
         }
       } catch (error) {
         if (isMounted) {
@@ -41,18 +60,50 @@ const UserProfile = React.memo(() => {
       }
     };
 
-    fetchUser();
+    fetchUserInfo();
 
     return () => {
       isMounted = false;
     };
-  }, []); // Pusta tablica - wykonuje się tylko raz
+  }, [API_BASE]);
 
-  if (loading) return <div>Ładowanie...</div>;
-  if (error) return <div>{error}</div>;
-  if (!user) return <div>Błąd ładowania użytkownika</div>;
+  const getRoleLabel = (role: string): string => {
+    switch (role) {
+      case "student":
+        return "Student";
+      case "teacher":
+        return "Wykładowca";
+      case "admin":
+        return "Administrator";
+      default:
+        return role;
+    }
+  };
 
-  return <div>Witaj, {user.username}!</div>;
+  if (loading) {
+    return (
+      <div className="text-sm text-[var(--color-text-secondary)]">
+        Ładowanie...
+      </div>
+    );
+  }
+
+  if (error || !userInfo) {
+    return (
+      <div className="text-sm text-[var(--color-text-secondary)]">
+        {error || "Błąd"}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-sm">
+      <span className="text-[var(--color-text-secondary)]">Zalogowany jako </span>
+      <span className="font-medium text-[var(--color-accent)]">{getRoleLabel(userInfo.role)}</span>
+      <span className="text-[var(--color-text-secondary)]">, </span>
+      <span className="font-medium text-[var(--color-text)]">{userInfo.username}</span>
+    </div>
+  );
 });
 
 UserProfile.displayName = "UserProfile";
@@ -141,7 +192,7 @@ export default function TopBar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen, openSearch]); // Dodajemy zależności
+  }, [searchOpen, openSearch]);
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
