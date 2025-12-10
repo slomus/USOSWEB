@@ -12,6 +12,15 @@ import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "../wrappers/fetchWithAuth";
 import { User } from "../wrappers/fetchWithAuth";
 
+// Typy odpowiedzi z API (bazując na PDF str. 43-44)
+interface SearchResult {
+  users: any[];
+  subjects: any[];
+  courses: any[];
+  // Dodajemy pola opcjonalne, gdyby backend zwrócił coś innego
+  [key: string]: any;
+}
+
 const UserProfile = React.memo(() => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +55,7 @@ const UserProfile = React.memo(() => {
     return () => {
       isMounted = false;
     };
-  }, []); // Pusta tablica - wykonuje się tylko raz
+  }, []);
 
   if (loading) return <div>Ładowanie...</div>;
   if (error) return <div>{error}</div>;
@@ -66,6 +75,11 @@ export default function TopBar({
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  
+  // Nowe stany do obsługi wyszukiwania
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -79,6 +93,7 @@ export default function TopBar({
   const handleClose = useCallback(() => {
     setSearchOpen(false);
     setInputValue("");
+    setSearchResults(null); // Czyścimy wyniki po zamknięciu
   }, []);
 
   const handleInputChange = useCallback(
@@ -87,6 +102,46 @@ export default function TopBar({
     },
     []
   );
+
+  // --- LOGIKA WYSZUKIWANIA (NOWE) ---
+  useEffect(() => {
+    // Debounce: czekamy 500ms po ostatnim wpisaniu znaku
+    const delayDebounceFn = setTimeout(async () => {
+      // Triggeruj tylko jeśli wpisano 3 lub więcej znaków
+      if (inputValue.length >= 3) {
+        setIsSearching(true);
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+
+        try {
+          console.log(`Wysyłam zapytanie: ${API_BASE}/api/search?query=${inputValue}`);
+          
+          // Używamy fetchWithAuth, zakładając, że endpoint może wymagać ciasteczek/tokena
+          // Jeśli endpoint jest publiczny, można zamienić na zwykły fetch
+          const response = await fetchWithAuth(
+            `${API_BASE}/api/search?query=${inputValue}`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Otrzymane dane:", data); // Log do konsoli
+            setSearchResults(data);
+          } else {
+            console.error("Błąd zapytania search:", response.status);
+            setSearchResults({ error: `Błąd API: ${response.status}`, users: [], subjects: [], courses: [] });
+          }
+        } catch (error) {
+          console.error("Błąd sieci podczas wyszukiwania:", error);
+          setSearchResults({ error: "Błąd połączenia", users: [], subjects: [], courses: [] });
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults(null); // Czyścimy wyniki jeśli < 3 znaki
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [inputValue]);
 
   const handleLogout = useCallback(async () => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -112,25 +167,17 @@ export default function TopBar({
     }
   }, [router]);
 
-  // Memoizujemy UserProfile aby nie renderował się przy każdej zmianie
   const memoizedUserProfile = useMemo(() => <UserProfile />, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (document.activeElement?.tagName || "").toLowerCase();
-
-      // Jeśli search jest już otwarty, nie reaguj na dodatkowe klawisze
       if (searchOpen) return;
-
-      // Ignoruj jeśli użytkownik pisze w innym input/textarea
       if (tag === "input" || tag === "textarea") return;
-
-      // Ignoruj kombinacje z Ctrl, Meta, Alt
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      // Reaguj tylko na pojedyncze znaki alfanumeryczne
       if (e.key.length === 1 && !e.repeat) {
-        e.preventDefault(); // Zapobiega wpisywaniu znaku w inne miejsca
+        e.preventDefault();
         openSearch(false);
         setTimeout(() => {
           setInputValue(e.key);
@@ -141,11 +188,11 @@ export default function TopBar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen, openSearch]); // Dodajemy zależności
+  }, [searchOpen, openSearch]);
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 relative">
         <div className="flex items-center gap-2">
           <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
           <span className="font-bold tracking-wide text-sm">
@@ -153,91 +200,127 @@ export default function TopBar({
           </span>
         </div>
 
-        {/* Search box */}
-        <motion.div
-          className="flex items-center"
-          initial={false}
-          animate={{
-            width: searchOpen ? 220 : 40,
-            backgroundColor: searchOpen ? "[var(--color-text)]" : "transparent",
-            borderRadius: searchOpen ? 24 : 999,
-            boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 32,
-            duration: 0.38,
-          }}
-          style={{
-            overflow: "hidden",
-            marginLeft: 9,
-            height: 41,
-            minWidth: 1,
-          }}
-        >
-          <AnimatePresence initial={false}>
-            {searchOpen && (
-              <motion.input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                placeholder="Szukaj..."
-                className="bg-transparent outline-none text-[var(--color-text)] px-3 py-1 text-sm w-full"
-                style={{ minWidth: 0 }}
-                key="search-input"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.18 }}
-                onBlur={handleClose}
-              />
-            )}
-          </AnimatePresence>
-          <motion.button
-            type="button"
-            aria-label="Szukaj"
-            tabIndex={1}
-            onClick={() =>
-              searchOpen ? inputRef.current?.focus() : openSearch()
-            }
+        {/* Search box wrapper */}
+        <div className="relative">
+          <motion.div
+            className="flex items-center"
             initial={false}
             animate={{
-              backgroundColor: searchOpen
-                ? "var(--color-accent)"
-                : "var(--color-bg)",
+              width: searchOpen ? 300 : 40, // Zwiększyłem nieco szerokość po otwarciu
+              backgroundColor: searchOpen ? "[var(--color-text)]" : "transparent",
+              borderRadius: searchOpen ? 24 : 999,
+              boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
             }}
-            transition={{ duration: 0.22 }}
-            className="rounded-full p-2 flex items-center justify-center"
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 32,
+              duration: 0.38,
+            }}
             style={{
-              cursor: "pointer",
-              border: "none",
-              outline: "none",
-              marginLeft: searchOpen ? 1 : 0,
+              overflow: "hidden",
+              marginLeft: 9,
+              height: 41,
+              minWidth: 1,
             }}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-5 h-5"
+            <AnimatePresence initial={false}>
+              {searchOpen && (
+                <motion.input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  placeholder="Szukaj (min. 3 znaki)..."
+                  className="bg-transparent outline-none text-[var(--color-text)] px-3 py-1 text-sm w-full"
+                  style={{ minWidth: 0 }}
+                  key="search-input"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.18 }}
+                  // Usunąłem onBlur={handleClose}, aby można było klikać w wyniki
+                  // Zamiast tego zamykanie można obsłużyć np. kliknięciem poza komponentem (clickOutside)
+                />
+              )}
+            </AnimatePresence>
+            <motion.button
+              type="button"
+              aria-label="Szukaj"
+              tabIndex={1}
+              onClick={() =>
+                searchOpen ? inputRef.current?.focus() : openSearch()
+              }
+              initial={false}
+              animate={{
+                backgroundColor: searchOpen
+                  ? "var(--color-accent)"
+                  : "var(--color-bg)",
+              }}
+              transition={{ duration: 0.22 }}
+              className="rounded-full p-2 flex items-center justify-center"
               style={{
-                color: searchOpen
-                  ? "var(--color-bg)"
-                  : "var(--color-text-secondary)",
+                cursor: "pointer",
+                border: "none",
+                outline: "none",
+                marginLeft: searchOpen ? 1 : 0,
               }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-              />
-            </svg>
-          </motion.button>
-        </motion.div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+                style={{
+                  color: searchOpen
+                    ? "var(--color-bg)"
+                    : "var(--color-text-secondary)",
+                }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                />
+              </svg>
+            </motion.button>
+          </motion.div>
+
+          {/* --- PANEL WYNIKÓW WYSZUKIWANIA (DEBUG VIEW) --- */}
+          <AnimatePresence>
+            {searchOpen && inputValue.length >= 3 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-[50px] left-[10px] w-[400px] bg-white text-black shadow-xl rounded-lg overflow-hidden border border-gray-200 z-[100]"
+              >
+                <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase text-gray-500">
+                    Wyniki API (Debug)
+                  </span>
+                  {isSearching && <span className="text-xs text-blue-500 animate-pulse">Szukanie...</span>}
+                  <button onClick={handleClose} className="text-xs text-red-500 hover:underline">Zamknij</button>
+                </div>
+                
+                <div className="max-h-[60vh] overflow-y-auto p-4 text-xs font-mono">
+                  {searchResults ? (
+                    <>
+                      {/* Wyświetlanie sformatowanego JSON-a */}
+                      <pre className="whitespace-pre-wrap break-all">
+                        {JSON.stringify(searchResults, null, 2)}
+                      </pre>
+                    </>
+                  ) : (
+                    !isSearching && <div className="text-gray-400 italic">Brak wyników lub błąd zapytania...</div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

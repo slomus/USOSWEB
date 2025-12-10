@@ -39,7 +39,6 @@ type EmailDetails = EmailSummary & {
 
 // --- POMOCNICZA FUNKCJA DO WYCIĄGANIA ID ---
 const getEmailId = (email: EmailSummary): string => {
-  // Priorytet ma emailUid (z Twoich logów), potem reszta
   const id = email.emailUid || email.email_uid || email.id || email.message_id || email.uid;
   return id ? String(id) : "";
 };
