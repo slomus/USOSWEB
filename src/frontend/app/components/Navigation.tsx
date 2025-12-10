@@ -76,7 +76,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Strona główna", href: "/StudentMainPage" },
     { label: "Moje zajęcia", href: "/teacher/subjects" },
     { label: "Oceny studentów", href: "/teacher/marks" },
-    { label: "Plan zajęć", href: "/teacher/x" },
+    { label: "Plan zajęć", href: "/teacher/scheduleLesson" },
     { label: "Kalendarz", href: "/teacher/calendar" },
     { label: "Wiadomości", href: "/messages" },
     { label: "Użytkownicy", href: "/teacher/users" },
