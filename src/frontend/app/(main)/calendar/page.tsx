@@ -5,7 +5,6 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import listPlugin from "@fullcalendar/list";
 import plLocale from "@fullcalendar/core/locales/pl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -201,7 +200,7 @@ export default function CalendarPage() {
         <div className="bg-[var(--color-bg-secondary)] p-6 rounded-xl shadow-md calendar-wrapper border border-[var(--color-accent)]/20">
           <FullCalendar
             ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             locale={plLocale}
             firstDay={1} // Poniedziałek
@@ -210,12 +209,11 @@ export default function CalendarPage() {
             headerToolbar={{
               left: "prev,next today",
               center: "title",
-              right: "dayGridMonth,listYear", // Widok miesiąca i lista roczna
+              right: "dayGridMonth", // Tylko widok miesiąca
             }}
             buttonText={{
               today: "Dziś",
               month: "Miesiąc",
-              list: "Lista",
             }}
             height="auto"
             contentHeight="auto"
@@ -323,14 +321,13 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Globalne style dla FullCalendar (skopiowane z Dashboard dla spójności) */}
+      {/* Globalne style dla FullCalendar (spójne z Dashboard) */}
       <style jsx global>{`
         .calendar-wrapper .fc {
           --fc-border-color: rgba(128, 128, 128, 0.3);
           --fc-page-bg-color: transparent;
           --fc-neutral-bg-color: rgba(128, 128, 128, 0.1);
           --fc-today-bg-color: rgba(var(--color-accent-rgb), 0.1) !important;
-          --fc-list-event-hover-bg-color: rgba(var(--color-accent-rgb), 0.1);
         }
         .calendar-wrapper .fc-col-header-cell {
           background-color: var(--color-bg);
@@ -379,12 +376,6 @@ export default function CalendarPage() {
         .calendar-wrapper .fc-button-active {
           background-color: var(--color-accent-hover) !important;
           border-color: var(--color-accent-hover) !important;
-        }
-        .calendar-wrapper .fc-list-day-cushion {
-            background-color: var(--color-bg) !important;
-        }
-        .calendar-wrapper .fc-list-event:hover td {
-            background-color: rgba(var(--color-accent-rgb), 0.1) !important;
         }
       `}</style>
     </main>
