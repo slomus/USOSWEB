@@ -19,20 +19,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Login_FullMethodName           = "/modules.common.api.AuthService/Login"
-	AuthService_Logout_FullMethodName          = "/modules.common.api.AuthService/Logout"
-	AuthService_Register_FullMethodName        = "/modules.common.api.AuthService/Register"
-	AuthService_RefreshToken_FullMethodName    = "/modules.common.api.AuthService/RefreshToken"
-	AuthService_ForgotPassword_FullMethodName  = "/modules.common.api.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName   = "/modules.common.api.AuthService/ResetPassword"
-	AuthService_GetUserName_FullMethodName     = "/modules.common.api.AuthService/GetUserName"
-	AuthService_GetUsers_FullMethodName        = "/modules.common.api.AuthService/GetUsers"
-	AuthService_GetUserData_FullMethodName     = "/modules.common.api.AuthService/GetUserData"
-	AuthService_GetUserRole_FullMethodName     = "/modules.common.api.AuthService/GetUserRole"
-	AuthService_GetUserEditData_FullMethodName = "/modules.common.api.AuthService/GetUserEditData"
-	AuthService_UpdateUserData_FullMethodName  = "/modules.common.api.AuthService/UpdateUserData"
-	AuthService_SearchUsers_FullMethodName     = "/modules.common.api.AuthService/SearchUsers"
-	AuthService_DeleteUser_FullMethodName      = "/modules.common.api.AuthService/DeleteUser"
+	AuthService_Login_FullMethodName              = "/modules.common.api.AuthService/Login"
+	AuthService_Logout_FullMethodName             = "/modules.common.api.AuthService/Logout"
+	AuthService_Register_FullMethodName           = "/modules.common.api.AuthService/Register"
+	AuthService_RefreshToken_FullMethodName       = "/modules.common.api.AuthService/RefreshToken"
+	AuthService_ForgotPassword_FullMethodName     = "/modules.common.api.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName      = "/modules.common.api.AuthService/ResetPassword"
+	AuthService_GetUserName_FullMethodName        = "/modules.common.api.AuthService/GetUserName"
+	AuthService_GetUsers_FullMethodName           = "/modules.common.api.AuthService/GetUsers"
+	AuthService_GetUserData_FullMethodName        = "/modules.common.api.AuthService/GetUserData"
+	AuthService_GetUserRole_FullMethodName        = "/modules.common.api.AuthService/GetUserRole"
+	AuthService_GetUserEditData_FullMethodName    = "/modules.common.api.AuthService/GetUserEditData"
+	AuthService_UpdateUserData_FullMethodName     = "/modules.common.api.AuthService/UpdateUserData"
+	AuthService_SearchUsers_FullMethodName        = "/modules.common.api.AuthService/SearchUsers"
+	AuthService_DeleteUser_FullMethodName         = "/modules.common.api.AuthService/DeleteUser"
+	AuthService_UploadProfilePhoto_FullMethodName = "/modules.common.api.AuthService/UploadProfilePhoto"
+	AuthService_GetProfilePhoto_FullMethodName    = "/modules.common.api.AuthService/GetProfilePhoto"
+	AuthService_GetMyStudents_FullMethodName      = "/modules.common.api.AuthService/GetMyStudents"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -53,6 +56,9 @@ type AuthServiceClient interface {
 	UpdateUserData(ctx context.Context, in *UpdateUserDataRequest, opts ...grpc.CallOption) (*UpdateUserDataResponse, error)
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
+	UploadProfilePhoto(ctx context.Context, in *UploadProfilePhotoRequest, opts ...grpc.CallOption) (*UploadProfilePhotoResponse, error)
+	GetProfilePhoto(ctx context.Context, in *GetProfilePhotoRequest, opts ...grpc.CallOption) (*GetProfilePhotoResponse, error)
+	GetMyStudents(ctx context.Context, in *GetMyStudentsRequest, opts ...grpc.CallOption) (*GetMyStudentsResponse, error)
 }
 
 type authServiceClient struct {
@@ -203,6 +209,36 @@ func (c *authServiceClient) DeleteUser(ctx context.Context, in *DeleteUserReques
 	return out, nil
 }
 
+func (c *authServiceClient) UploadProfilePhoto(ctx context.Context, in *UploadProfilePhotoRequest, opts ...grpc.CallOption) (*UploadProfilePhotoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UploadProfilePhotoResponse)
+	err := c.cc.Invoke(ctx, AuthService_UploadProfilePhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetProfilePhoto(ctx context.Context, in *GetProfilePhotoRequest, opts ...grpc.CallOption) (*GetProfilePhotoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProfilePhotoResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetProfilePhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetMyStudents(ctx context.Context, in *GetMyStudentsRequest, opts ...grpc.CallOption) (*GetMyStudentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyStudentsResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetMyStudents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -221,6 +257,9 @@ type AuthServiceServer interface {
 	UpdateUserData(context.Context, *UpdateUserDataRequest) (*UpdateUserDataResponse, error)
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
+	UploadProfilePhoto(context.Context, *UploadProfilePhotoRequest) (*UploadProfilePhotoResponse, error)
+	GetProfilePhoto(context.Context, *GetProfilePhotoRequest) (*GetProfilePhotoResponse, error)
+	GetMyStudents(context.Context, *GetMyStudentsRequest) (*GetMyStudentsResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -272,6 +311,15 @@ func (UnimplementedAuthServiceServer) SearchUsers(context.Context, *SearchUsersR
 }
 func (UnimplementedAuthServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedAuthServiceServer) UploadProfilePhoto(context.Context, *UploadProfilePhotoRequest) (*UploadProfilePhotoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadProfilePhoto not implemented")
+}
+func (UnimplementedAuthServiceServer) GetProfilePhoto(context.Context, *GetProfilePhotoRequest) (*GetProfilePhotoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProfilePhoto not implemented")
+}
+func (UnimplementedAuthServiceServer) GetMyStudents(context.Context, *GetMyStudentsRequest) (*GetMyStudentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyStudents not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -546,6 +594,60 @@ func _AuthService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_UploadProfilePhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadProfilePhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UploadProfilePhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UploadProfilePhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UploadProfilePhoto(ctx, req.(*UploadProfilePhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetProfilePhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProfilePhotoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetProfilePhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetProfilePhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetProfilePhoto(ctx, req.(*GetProfilePhotoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetMyStudents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyStudentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetMyStudents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetMyStudents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetMyStudents(ctx, req.(*GetMyStudentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +710,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUser",
 			Handler:    _AuthService_DeleteUser_Handler,
+		},
+		{
+			MethodName: "UploadProfilePhoto",
+			Handler:    _AuthService_UploadProfilePhoto_Handler,
+		},
+		{
+			MethodName: "GetProfilePhoto",
+			Handler:    _AuthService_GetProfilePhoto_Handler,
+		},
+		{
+			MethodName: "GetMyStudents",
+			Handler:    _AuthService_GetMyStudents_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
