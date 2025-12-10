@@ -116,10 +116,10 @@ func (s *GradesServer) ListGrades(ctx context.Context, req *pb.ListGradesRequest
 			continue
 		}
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
-		g.SubjectName = subjectName
-		g.AddedByName = addedByName
-		g.StudentName = studentName
-		g.ClassType = classType
+		g.SubjectName = &subjectName
+		g.AddedByName = &addedByName
+		g.StudentName = &studentName
+		g.ClassType = &classType
 		if comment.Valid {
 			g.Comment = comment.String
 		}
@@ -227,8 +227,38 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 		CreatedAt:              createdAt.Format("2006-01-02 15:04:05"),
 	}
 
+
+	var subjectName, addedByName, studentName, classType string
+	enrichQuery := `
+			SELECT 
+					COALESCE(s.name, '') as subject_name,
+					COALESCE(CONCAT(ts.degree, ' ', u.name, ' ', u.surname), '') as added_by_name,
+					COALESCE(CONCAT(u2.name, ' ', u2.surname), '') as student_name,
+					c.class_type
+			FROM grades g
+			LEFT JOIN classes c ON g.class_id = c.class_id
+			LEFT JOIN subjects s ON g.subject_id = s.subject_id
+			LEFT JOIN teaching_staff ts ON g.added_by_teaching_staff_id = ts.teaching_staff_id
+			LEFT JOIN users u ON ts.user_id = u.user_id
+			LEFT JOIN students st ON g.album_nr = st.album_nr
+			LEFT JOIN users u2 ON st.user_id = u2.user_id
+			WHERE g.grade_id = $1
+	`
+
+	err = s.db.QueryRowContext(ctx, enrichQuery, gradeID).Scan(&subjectName, &addedByName, &studentName, &classType)
+	if err != nil {
+			gradesLog.LogError("Failed to enrich grade data", err)
+	}
+
+	g.SubjectName = &subjectName
+	g.AddedByName = &addedByName
+	g.StudentName = &studentName
+	g.ClassType = &classType
+
 	return &pb.AddGradeResponse{Grade: g, Message: "Grade added"}, nil
 }
+
+
 func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGradesRequest) (albumNr int32, role string, teachingStaffID int64, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -408,11 +438,11 @@ func (s *GradesServer) GetRecentGrades(ctx context.Context, req *pb.GetRecentGra
 		}
 		
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
-		g.SubjectName = subjectName
-		g.AddedByName = addedByName
+		g.SubjectName = &subjectName
+		g.AddedByName = &addedByName
 		if comment.Valid {
 			g.Comment = comment.String
-		}
+		} 
 		
 		result = append(result, g)
 	}
@@ -536,8 +566,8 @@ func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeReque
 	}
 
 	g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
-	g.SubjectName = subjectName
-	g.AddedByName = addedByName
+	g.SubjectName = &subjectName
+	g.AddedByName = &addedByName
 	if comment.Valid {
 		g.Comment = comment.String
 	}
@@ -689,6 +719,192 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 		Message: "Teacher classes retrieved successfully",
 	}, nil
 }
+
+
+func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdminGradeOptionsRequest) (*pb.GetAdminGradeOptionsResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "no metadata")
+	}
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return nil, status.Error(codes.Unauthenticated, "no user_id")
+	}
+	var userID int64
+	fmt.Sscanf(userIDs[0], "%d", &userID)
+
+	role, _, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to resolve user role")
+	}
+
+	if role != "admin" {
+		return nil, status.Error(codes.PermissionDenied, "only admins can access this endpoint")
+	}
+
+	studentsQuery := `
+		SELECT s.album_nr, CONCAT(u.name, ' ', u.surname) as name, COALESCE(c.name, 'Brak kursu') as course_name
+		FROM students s
+		JOIN users u ON s.user_id = u.user_id
+		LEFT JOIN courses c ON s.course_id = c.course_id
+		ORDER BY u.surname, u.name
+	`
+	studentsRows, err := s.db.QueryContext(ctx, studentsQuery)
+	if err != nil {
+		gradesLog.LogError("Failed to query students", err)
+		return nil, status.Error(codes.Internal, "failed to fetch students")
+	}
+	defer studentsRows.Close()
+
+	var students []*pb.StudentOption
+	for studentsRows.Next() {
+		so := &pb.StudentOption{}
+		if err := studentsRows.Scan(&so.AlbumNr, &so.Name, &so.CourseName); err != nil {
+			gradesLog.LogError("Failed to scan student", err)
+			continue
+		}
+		students = append(students, so)
+	}
+
+	teachersQuery := `
+		SELECT DISTINCT ts.teaching_staff_id, CONCAT(ts.degree, ' ', u.name, ' ', u.surname) as name
+		FROM teaching_staff ts
+		JOIN users u ON ts.user_id = u.user_id
+		ORDER BY 2 
+	`
+	teachersRows, err := s.db.QueryContext(ctx, teachersQuery)
+	if err != nil {
+		gradesLog.LogError("Failed to query teachers", err)
+		return nil, status.Error(codes.Internal, "failed to fetch teachers")
+	}
+	defer teachersRows.Close()
+
+	var teachers []*pb.TeacherOption
+	
+	for teachersRows.Next() {
+		to := &pb.TeacherOption{}
+		if err := teachersRows.Scan(&to.TeachingStaffId, &to.Name); err != nil {
+			gradesLog.LogError("Failed to scan teacher", err)
+			continue
+		}
+		teachers = append(teachers, to)
+	}
+
+	for _, teacher := range teachers {
+		subjectsQuery := `
+			SELECT DISTINCT c.subject_id
+			FROM course_instructors ci
+			JOIN classes c ON ci.class_id = c.class_id
+			WHERE ci.teaching_staff_id = $1
+		`
+		subRows, err := s.db.QueryContext(ctx, subjectsQuery, teacher.TeachingStaffId)
+		if err != nil {
+			continue
+		}
+		for subRows.Next() {
+			var subjectID int32
+			if err := subRows.Scan(&subjectID); err == nil {
+				teacher.SubjectIds = append(teacher.SubjectIds, subjectID)
+			}
+		}
+		subRows.Close()
+	}
+
+	subjectsQuery := `
+		SELECT subject_id, name, alias
+		FROM subjects
+		ORDER BY name
+	`
+	subjectsRows, err := s.db.QueryContext(ctx, subjectsQuery)
+	if err != nil {
+		gradesLog.LogError("Failed to query subjects", err)
+		return nil, status.Error(codes.Internal, "failed to fetch subjects")
+	}
+	defer subjectsRows.Close()
+
+	var subjects []*pb.SubjectOption
+	for subjectsRows.Next() {
+		so := &pb.SubjectOption{}
+		if err := subjectsRows.Scan(&so.SubjectId, &so.Name, &so.Alias); err != nil {
+			gradesLog.LogError("Failed to scan subject", err)
+			continue
+		}
+		subjects = append(subjects, so)
+	}
+
+	classesQuery := `
+		SELECT c.class_id, c.subject_id, s.name as subject_name, c.class_type, c.group_nr
+		FROM classes c
+		JOIN subjects s ON c.subject_id = s.subject_id
+		ORDER BY s.name, c.class_type, c.group_nr
+	`
+	classesRows, err := s.db.QueryContext(ctx, classesQuery)
+	if err != nil {
+		gradesLog.LogError("Failed to query classes", err)
+		return nil, status.Error(codes.Internal, "failed to fetch classes")
+	}
+	defer classesRows.Close()
+
+	var classes []*pb.ClassOption
+	for classesRows.Next() {
+		co := &pb.ClassOption{}
+		if err := classesRows.Scan(&co.ClassId, &co.SubjectId, &co.SubjectName, &co.ClassType, &co.GroupNr); err != nil {
+			gradesLog.LogError("Failed to scan class", err)
+			continue
+		}
+
+		teachersQuery := `
+			SELECT teaching_staff_id
+			FROM course_instructors
+			WHERE class_id = $1
+		`
+		teachRows, err := s.db.QueryContext(ctx, teachersQuery, co.ClassId)
+		if err == nil {
+			for teachRows.Next() {
+				var teacherID int32
+				if err := teachRows.Scan(&teacherID); err == nil {
+					co.TeacherIds = append(co.TeacherIds, teacherID)
+				}
+			}
+			teachRows.Close()
+		}
+
+		studentsQuery := `
+			SELECT album_nr
+			FROM student_classes
+			WHERE class_id = $1
+		`
+		studRows, err := s.db.QueryContext(ctx, studentsQuery, co.ClassId)
+		if err == nil {
+			for studRows.Next() {
+				var albumNr int32
+				if err := studRows.Scan(&albumNr); err == nil {
+					co.StudentAlbumNrs = append(co.StudentAlbumNrs, albumNr)
+				}
+			}
+			studRows.Close()
+		}
+
+		classes = append(classes, co)
+	}
+
+	gradesLog.LogInfo(fmt.Sprintf("Admin grade options: %d students, %d teachers, %d subjects, %d classes", 
+		len(students), len(teachers), len(subjects), len(classes)))
+
+	return &pb.GetAdminGradeOptionsResponse{
+		Students: students,
+		Teachers: teachers,
+		Subjects: subjects,
+		Classes:  classes,
+		Message:  "Admin grade options retrieved successfully",
+	}, nil
+}
+
+
+
+
+
+
 func getUserIDFromContext(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -708,3 +924,5 @@ func getUserIDFromContext(ctx context.Context) (int64, error) {
 	
 	return userID, nil
 }
+
+

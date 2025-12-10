@@ -237,6 +237,27 @@ func local_request_GradesService_GetTeacherClasses_0(ctx context.Context, marsha
 	return msg, metadata, err
 }
 
+func request_GradesService_GetAdminGradeOptions_0(ctx context.Context, marshaler runtime.Marshaler, client GradesServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetAdminGradeOptionsRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetAdminGradeOptions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_GradesService_GetAdminGradeOptions_0(ctx context.Context, marshaler runtime.Marshaler, server GradesServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetAdminGradeOptionsRequest
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.GetAdminGradeOptions(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterGradesServiceHandlerServer registers the http handlers for service GradesService to "mux".
 // UnaryRPC     :call GradesServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -362,6 +383,26 @@ func RegisterGradesServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 			return
 		}
 		forward_GradesService_GetTeacherClasses_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_GradesService_GetAdminGradeOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/grades.GradesService/GetAdminGradeOptions", runtime.WithHTTPPathPattern("/api/admin/grade-options"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_GradesService_GetAdminGradeOptions_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_GradesService_GetAdminGradeOptions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -505,23 +546,42 @@ func RegisterGradesServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_GradesService_GetTeacherClasses_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_GradesService_GetAdminGradeOptions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/grades.GradesService/GetAdminGradeOptions", runtime.WithHTTPPathPattern("/api/admin/grade-options"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_GradesService_GetAdminGradeOptions_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_GradesService_GetAdminGradeOptions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
 var (
-	pattern_GradesService_ListGrades_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "grades"}, ""))
-	pattern_GradesService_AddGrade_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "grades"}, ""))
-	pattern_GradesService_GetRecentGrades_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "student", "grades", "recent"}, ""))
-	pattern_GradesService_UpdateGrade_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "grades", "grade_id"}, ""))
-	pattern_GradesService_DeleteGrade_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "grades", "grade_id"}, ""))
-	pattern_GradesService_GetTeacherClasses_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "teacher", "classes"}, ""))
+	pattern_GradesService_ListGrades_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "grades"}, ""))
+	pattern_GradesService_AddGrade_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api", "grades"}, ""))
+	pattern_GradesService_GetRecentGrades_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "student", "grades", "recent"}, ""))
+	pattern_GradesService_UpdateGrade_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "grades", "grade_id"}, ""))
+	pattern_GradesService_DeleteGrade_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"api", "grades", "grade_id"}, ""))
+	pattern_GradesService_GetTeacherClasses_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "teacher", "classes"}, ""))
+	pattern_GradesService_GetAdminGradeOptions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "admin", "grade-options"}, ""))
 )
 
 var (
-	forward_GradesService_ListGrades_0        = runtime.ForwardResponseMessage
-	forward_GradesService_AddGrade_0          = runtime.ForwardResponseMessage
-	forward_GradesService_GetRecentGrades_0   = runtime.ForwardResponseMessage
-	forward_GradesService_UpdateGrade_0       = runtime.ForwardResponseMessage
-	forward_GradesService_DeleteGrade_0       = runtime.ForwardResponseMessage
-	forward_GradesService_GetTeacherClasses_0 = runtime.ForwardResponseMessage
+	forward_GradesService_ListGrades_0           = runtime.ForwardResponseMessage
+	forward_GradesService_AddGrade_0             = runtime.ForwardResponseMessage
+	forward_GradesService_GetRecentGrades_0      = runtime.ForwardResponseMessage
+	forward_GradesService_UpdateGrade_0          = runtime.ForwardResponseMessage
+	forward_GradesService_DeleteGrade_0          = runtime.ForwardResponseMessage
+	forward_GradesService_GetTeacherClasses_0    = runtime.ForwardResponseMessage
+	forward_GradesService_GetAdminGradeOptions_0 = runtime.ForwardResponseMessage
 )
