@@ -5,23 +5,52 @@ import { useState, useEffect, useRef } from "react";
 // --- KONFIGURACJA API ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// --- TYPY DANYCH (Zgodne z PDF/Postman) ---
+// --- TYPY DANYCH ---
 type Folder = "inbox" | "sent" | "trash";
 
+// Zaktualizowany typ obsługujący camelCase (z logów) i snake_case (z dok)
 type EmailSummary = {
-  email_uid: string;
-  sender_email: string;
-  sender_name: string;
+  // ID
+  emailUid?: string;    // camelCase (widoczne w Twoich logach)
+  email_uid?: string;   // snake_case
+  id?: string | number; 
+  message_id?: string;
+  uid?: string;
+
+  // Nadawca
+  senderEmail?: string; // camelCase
+  sender_email?: string; // snake_case
+  senderName?: string;
+  sender_name?: string;
+
+  // Inne pola
   title: string;
-  send_date: string;
-  is_read: boolean;
+  sendDate?: string;    // camelCase
+  send_date?: string;   // snake_case
+  isRead?: boolean;     // camelCase
+  is_read?: boolean;    // snake_case
+
+  [key: string]: any;   // Pozostałe pola
 };
 
 type EmailDetails = EmailSummary & {
-  content: string; // Treść dostępna tylko w szczegółach
+  content: string;
 };
 
-// --- KOMPONENT: Sugestie Email (Reusable) ---
+// --- POMOCNICZA FUNKCJA DO WYCIĄGANIA ID ---
+const getEmailId = (email: EmailSummary): string => {
+  // Priorytet ma emailUid (z Twoich logów), potem reszta
+  const id = email.emailUid || email.email_uid || email.id || email.message_id || email.uid;
+  return id ? String(id) : "";
+};
+
+// --- POMOCNICZE FUNKCJE DO PÓL (Adaptery camelCase/snake_case) ---
+const getSenderEmail = (e: EmailSummary) => e.senderEmail || e.sender_email || "";
+const getSenderName = (e: EmailSummary) => e.senderName || e.sender_name || "";
+const getSendDate = (e: EmailSummary) => e.sendDate || e.send_date || "";
+const getIsRead = (e: EmailSummary) => (e.isRead !== undefined ? e.isRead : e.is_read);
+
+// --- KOMPONENT: Sugestie Email ---
 function EmailSuggestInput({
   value,
   onChange,
@@ -35,7 +64,6 @@ function EmailSuggestInput({
   const [visible, setVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Debounce logic simple implementation
   useEffect(() => {
     const timer = setTimeout(() => {
       if (value.length >= 2) {
@@ -49,17 +77,14 @@ function EmailSuggestInput({
 
   const fetchSuggestions = async (query: string) => {
     try {
-      // Endpoint z PDF: GET api/messaging/suggest-email?q=X&limit=Y&scope=Z
       const res = await fetch(
         `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(
           query
         )}&limit=5&scope=all`,
         {
           method: "GET",
-          credentials: "include", // Kluczowe dla ciasteczek
-          headers: {
-            "Content-Type": "application/json",
-          },
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
         }
       );
       if (res.ok) {
@@ -72,7 +97,6 @@ function EmailSuggestInput({
     }
   };
 
-  // Zamykanie listy po kliknięciu poza
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -122,24 +146,19 @@ function EmailSuggestInput({
 
 // --- GŁÓWNY KOMPONENT STRONY ---
 export default function MessagesPage() {
-  // State
   const [folder, setFolder] = useState<Folder>("inbox");
   const [emails, setEmails] = useState<EmailSummary[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<EmailDetails | null>(null);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
-  // Compose Modal State
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [composeData, setComposeData] = useState({ to: "", subject: "", body: "" });
   const [isSending, setIsSending] = useState(false);
 
-  // Pagination
   const [offset, setOffset] = useState(0);
   const limit = 20;
   const [totalCount, setTotalCount] = useState(0);
-
-  // --- FUNKCJE POMOCNICZE ---
 
   const formatHeaders = {
     "Content-Type": "application/json",
@@ -149,11 +168,8 @@ export default function MessagesPage() {
     if (!dateString) return "Brak daty";
     try {
       return new Date(dateString).toLocaleString("pl-PL", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
       });
     } catch (e) {
       return dateString;
@@ -166,10 +182,9 @@ export default function MessagesPage() {
   const fetchEmails = async () => {
     setIsLoadingList(true);
     try {
-      // Endpoint: POST /api/messaging/get_all_emails
       const res = await fetch(`${API_BASE}/api/messaging/get_all_emails`, {
         method: "POST",
-        credentials: "include", // Używa cookies
+        credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({ limit, offset, folder }),
       });
@@ -177,11 +192,12 @@ export default function MessagesPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setEmails(data.emails || []);
+          const fetchedEmails = data.emails || [];
+          setEmails(fetchedEmails);
           setTotalCount(data.total_count || 0);
         }
       } else {
-        console.error("Błąd pobierania listy maili");
+        console.error("Błąd pobierania listy maili", res.status);
       }
     } catch (err) {
       console.error(err);
@@ -192,40 +208,49 @@ export default function MessagesPage() {
 
   // 2. Pobieranie szczegółów maila
   const openEmail = async (summary: EmailSummary) => {
+    const uid = getEmailId(summary);
+    
+    if (!uid) {
+      console.error("❌ BŁĄD: Brak ID wiadomości. Otrzymany obiekt:", summary);
+      alert("Błąd integracji: Nie znaleziono ID wiadomości (sprawdź konsolę).");
+      return;
+    }
+
     setSelectedEmail(null);
     setIsLoadingDetails(true);
     
     try {
-      // Endpoint: POST /api/messaging/get_email
       const res = await fetch(`${API_BASE}/api/messaging/get_email`, {
         method: "POST",
-        credentials: "include", // Używa cookies
+        credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({
-          email_uid: summary.email_uid,
+          email_uid: uid, // Wysyłamy poprawne ID wyciągnięte helperem
           folder: folder,
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          const fullEmail = {
-            ...summary,
-            ...data,
-            content: data.content || "Brak treści wiadomości.",
-          };
-          setSelectedEmail(fullEmail);
+      const data = await res.json();
 
-          // Jeśli nieprzeczytany, oznacz jako przeczytany
-          if (!fullEmail.is_read) {
-            markAsRead(fullEmail.email_uid);
-          }
+      if (res.ok && data.success) {
+        const fullEmail = {
+          ...summary,
+          ...data,
+          content: data.content || "Brak treści wiadomości.",
+        };
+        setSelectedEmail(fullEmail);
+
+        // Oznacz jako przeczytane
+        if (!getIsRead(fullEmail)) {
+          markAsRead(uid);
         }
+      } else {
+        console.error("Błąd API:", data);
+        alert("Błąd serwera: " + (data.message || "Nie udało się pobrać treści."));
       }
     } catch (err) {
       console.error(err);
-      alert("Nie udało się pobrać treści wiadomości.");
+      alert("Błąd połączenia.");
     } finally {
       setIsLoadingDetails(false);
     }
@@ -236,13 +261,13 @@ export default function MessagesPage() {
     try {
       await fetch(`${API_BASE}/api/messaging/set_email_read`, {
         method: "POST",
-        credentials: "include", // Używa cookies
+        credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({ email_uid: uid, folder: folder }),
       });
       
       setEmails((prev) =>
-        prev.map((e) => (e.email_uid === uid ? { ...e, is_read: true } : e))
+        prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: true, is_read: true } : e))
       );
     } catch (e) {
       console.error(e);
@@ -255,10 +280,9 @@ export default function MessagesPage() {
     setIsSending(true);
 
     try {
-      // Endpoint: POST /api/messaging/send-email
       const res = await fetch(`${API_BASE}/api/messaging/send-email`, {
         method: "POST",
-        credentials: "include", // Używa cookies
+        credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({
             to: composeData.to,
@@ -288,15 +312,18 @@ export default function MessagesPage() {
   // 5. Usuwanie maila
   const handleDelete = async () => {
     if (!selectedEmail) return;
+    const uid = getEmailId(selectedEmail);
+    if (!uid) return;
+
     if (!confirm("Czy na pewno chcesz usunąć tę wiadomość?")) return;
 
     try {
       const res = await fetch(`${API_BASE}/api/messaging/delete_email`, {
         method: "POST",
-        credentials: "include", // Używa cookies
+        credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({ 
-            email_uid: selectedEmail.email_uid,
+            email_uid: uid,
             folder: folder
         }),
       });
@@ -312,8 +339,6 @@ export default function MessagesPage() {
     }
   };
 
-  // --- EFEKTY ---
-
   useEffect(() => {
     fetchEmails();
     setSelectedEmail(null);
@@ -323,17 +348,14 @@ export default function MessagesPage() {
     setOffset(0);
   }, [folder]);
 
-
   // --- RENDER ---
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col font-sans pt-24 pb-12">
       
-      {/* Kontener Główny */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 h-[calc(100vh-8rem)] flex gap-6">
         
-        {/* LEWA KOLUMNA: Nawigacja i Foldery */}
+        {/* LEWA KOLUMNA */}
         <aside className="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
-            {/* Przycisk Nowa Wiadomość */}
             <button
                 onClick={() => setIsComposeOpen(true)}
                 className="w-full py-3 px-4 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
@@ -344,7 +366,6 @@ export default function MessagesPage() {
                 Nowa wiadomość
             </button>
 
-            {/* Lista Folderów */}
             <nav className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden p-2 flex flex-col gap-1">
                 {[
                     { id: "inbox", label: "Odebrane", icon: "📥" },
@@ -367,7 +388,7 @@ export default function MessagesPage() {
             </nav>
         </aside>
 
-        {/* ŚRODKOWA KOLUMNA: Lista Maili */}
+        {/* ŚRODKOWA KOLUMNA */}
         <div className={`flex-1 flex flex-col bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden ${selectedEmail ? 'hidden md:flex md:w-1/3 md:flex-none' : 'w-full'}`}>
             <div className="p-4 border-b border-[var(--color-text-secondary)]/10 flex justify-between items-center bg-[var(--color-bg)]/5">
                 <h2 className="text-xl font-bold">
@@ -386,33 +407,40 @@ export default function MessagesPage() {
                 ) : emails.length === 0 ? (
                     <div className="text-center p-10 opacity-60">Brak wiadomości w tym folderze.</div>
                 ) : (
-                    emails.map((email) => (
-                        <div
-                            key={email.email_uid}
-                            onClick={() => openEmail(email)}
-                            className={`p-4 rounded-xl cursor-pointer transition-all border border-transparent ${
-                                selectedEmail?.email_uid === email.email_uid
-                                    ? "bg-[var(--color-bg)] border-[var(--color-accent)] shadow-md"
-                                    : email.is_read
-                                    ? "bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)]/60"
-                                    : "bg-[var(--color-bg)] border-l-4 border-l-[var(--color-accent)] font-semibold shadow-sm"
-                            }`}
-                        >
-                            <div className="flex justify-between items-start mb-1">
-                                <span className="text-sm font-bold truncate pr-2" title={email.sender_email}>
-                                    {email.sender_name || email.sender_email}
-                                </span>
-                                <span className="text-xs whitespace-nowrap opacity-70">
-                                    {formatDate(email.send_date).split(',')[0]}
-                                </span>
-                            </div>
-                            <h3 className="text-md truncate mb-1 text-[var(--color-accent)]">{email.title}</h3>
-                        </div>
-                    ))
+                    emails.map((email, idx) => {
+                        const uid = getEmailId(email) || idx;
+                        const isRead = getIsRead(email);
+                        const senderName = getSenderName(email);
+                        const senderEmail = getSenderEmail(email);
+                        const date = getSendDate(email);
+
+                        return (
+                          <div
+                              key={uid}
+                              onClick={() => openEmail(email)}
+                              className={`p-4 rounded-xl cursor-pointer transition-all border border-transparent ${
+                                  selectedEmail && getEmailId(selectedEmail) === getEmailId(email)
+                                      ? "bg-[var(--color-bg)] border-[var(--color-accent)] shadow-md"
+                                      : isRead
+                                      ? "bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)]/60"
+                                      : "bg-[var(--color-bg)] border-l-4 border-l-[var(--color-accent)] font-semibold shadow-sm"
+                              }`}
+                          >
+                              <div className="flex justify-between items-start mb-1">
+                                  <span className="text-sm font-bold truncate pr-2" title={senderEmail}>
+                                      {senderName || senderEmail}
+                                  </span>
+                                  <span className="text-xs whitespace-nowrap opacity-70">
+                                      {formatDate(date).split(',')[0]}
+                                  </span>
+                              </div>
+                              <h3 className="text-md truncate mb-1 text-[var(--color-accent)]">{email.title}</h3>
+                          </div>
+                        )
+                    })
                 )}
             </div>
 
-            {/* Paginacja */}
             <div className="p-3 border-t border-[var(--color-text-secondary)]/10 flex justify-between items-center text-sm bg-[var(--color-bg)]/5">
                 <button 
                     disabled={offset === 0}
@@ -432,11 +460,10 @@ export default function MessagesPage() {
             </div>
         </div>
 
-        {/* PRAWA KOLUMNA: Podgląd Maila */}
+        {/* PRAWA KOLUMNA */}
         <div className={`flex-[1.5] bg-[var(--color-bg)] border border-[var(--color-bg-secondary)] rounded-2xl shadow-xl overflow-hidden flex flex-col ${!selectedEmail ? 'hidden md:flex justify-center items-center bg-opacity-50' : ''}`}>
             {selectedEmail ? (
                 <>
-                    {/* Header Podglądu */}
                     <div className="p-6 border-b border-[var(--color-accent)]/20 bg-[var(--color-bg-secondary)]/10">
                         <div className="flex justify-between items-start mb-4">
                             <h1 className="text-2xl font-bold leading-tight">{selectedEmail.title}</h1>
@@ -449,7 +476,7 @@ export default function MessagesPage() {
                                     🗑️
                                 </button>
                                 <button 
-                                    onClick={() => setSelectedEmail(null)} // Powrót na mobile
+                                    onClick={() => setSelectedEmail(null)}
                                     className="md:hidden p-2 bg-gray-200 rounded-lg"
                                 >
                                     ✕
@@ -459,21 +486,20 @@ export default function MessagesPage() {
                         
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-lg">
-                                {(selectedEmail.sender_name || selectedEmail.sender_email).charAt(0).toUpperCase()}
+                                {(getSenderName(selectedEmail) || getSenderEmail(selectedEmail) || "?").charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <div className="font-semibold text-sm">
-                                    {selectedEmail.sender_name} 
-                                    <span className="font-normal opacity-70 ml-1">&lt;{selectedEmail.sender_email}&gt;</span>
+                                    {getSenderName(selectedEmail)} 
+                                    <span className="font-normal opacity-70 ml-1">&lt;{getSenderEmail(selectedEmail)}&gt;</span>
                                 </div>
                                 <div className="text-xs opacity-60">
-                                    {formatDate(selectedEmail.send_date)}
+                                    {formatDate(getSendDate(selectedEmail))}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Treść */}
                     <div className="flex-1 p-8 overflow-y-auto whitespace-pre-wrap leading-relaxed">
                         {isLoadingDetails ? (
                             <div className="flex gap-2 items-center text-[var(--color-accent)]">
@@ -499,15 +525,12 @@ export default function MessagesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="bg-[var(--color-bg)] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
                 
-                {/* Modal Header */}
                 <div className="px-6 py-4 border-b border-[var(--color-accent)] flex justify-between items-center bg-[var(--color-accent)] text-white rounded-t-2xl">
                     <h3 className="font-bold text-lg">Nowa wiadomość</h3>
                     <button onClick={() => setIsComposeOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors">✕</button>
                 </div>
 
-                {/* Modal Form */}
                 <form onSubmit={handleSend} className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
-                    
                     <div>
                         <label className="block text-sm font-semibold mb-1 opacity-70">Odbiorca:</label>
                         <EmailSuggestInput 
