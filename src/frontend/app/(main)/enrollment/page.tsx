@@ -43,11 +43,12 @@ type AvailableClass = {
   instructors: Instructor[];
 };
 
-// Typ dla okresu rejestracji
+// ZMIANA 1: Dodano pole 'isActive' do definicji typu zgodnie z Twoim JSON-em
 type RegistrationPeriod = {
-  id: number;
+  id?: number; // Oznaczyłem jako opcjonalne, bo w Twoim JSON-ie go nie było, ale może wracać z backendu
   startDate: string;
   endDate: string;
+  isActive: boolean; 
 } | null;
 
 type AvailableSubject = {
@@ -259,9 +260,9 @@ export default function EnrollmentPage() {
     }
   };
 
+  // ZMIANA 2: Sprawdzenie, czy registrationPeriod istnieje ORAZ czy flaga isActive jest true
   const isRegistrationActive = (subject: AvailableSubject) => {
-    // Jeśli registrationPeriod jest null -> zapisy zamknięte
-    return !!subject.registrationPeriod;
+    return subject.registrationPeriod?.isActive === true;
   };
 
   const formatDate = (dateString: string) =>
