@@ -66,7 +66,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: " DLA WSZYSTKICH ", href: "#", disabled: true },
     { label: "Wiadomości", href: "/messages" },
     { label: "Plan zajęć", href: "#" },
-    { label: "Kalendarz", href: "#" },
+    { label: "Kalendarz", href: "/admin/calendar" },
     { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },
   ];
