@@ -129,9 +129,40 @@ export default function TopBar({
   // Nowe stany do obsługi wyszukiwania
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // --- OBSŁUGA AVATARA ---
+  const DEFAULT_AVATAR = "/userPicture.jpg";
+  const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // Pobranie userId w celu skonstruowania linku do zdjęcia
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/user`, {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Jeśli mamy userId, ustawiamy URL do zdjęcia z API
+          // Dodajemy parametr czasu (?t=...), aby uniknąć cache'owania po zmianie zdjęcia
+          if (data?.user?.userId) {
+            setAvatarUrl(`${API_BASE}/api/users/${data.user.userId}/photo?t=${new Date().getTime()}`);
+          }
+        }
+      } catch (err) {
+        console.error("Nie udało się pobrać ID użytkownika do zdjęcia:", err);
+      }
+    };
+
+    fetchUserId();
+  }, []);
 
   const openSearch = useCallback((withFocus = true) => {
     setSearchOpen(true);
@@ -165,10 +196,10 @@ export default function TopBar({
         try {
           console.log(`Wysyłam zapytanie: ${API_BASE}/api/search?query=${inputValue}`);
           
-          // Używamy fetchWithAuth, zakładając, że endpoint może wymagać ciasteczek/tokena
-          // Jeśli endpoint jest publiczny, można zamienić na zwykły fetch
-          const response = await fetchWithAuth(
-            `${API_BASE}/api/search?query=${inputValue}`
+          // Fetch bezpośredni (zakładamy, że credentials include obsłuży sesję)
+          const response = await fetch(
+            `${API_BASE}/api/search?query=${inputValue}`,
+            { credentials: "include" }
           );
 
           if (response.ok) {
@@ -256,7 +287,7 @@ export default function TopBar({
             className="flex items-center"
             initial={false}
             animate={{
-              width: searchOpen ? 300 : 40, // Zwiększyłem nieco szerokość po otwarciu
+              width: searchOpen ? 300 : 40,
               backgroundColor: searchOpen ? "[var(--color-text)]" : "transparent",
               borderRadius: searchOpen ? 24 : 999,
               boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
@@ -289,8 +320,6 @@ export default function TopBar({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.18 }}
-                  // Usunąłem onBlur={handleClose}, aby można było klikać w wyniki
-                  // Zamiast tego zamykanie można obsłużyć np. kliknięciem poza komponentem (clickOutside)
                 />
               )}
             </AnimatePresence>
@@ -338,7 +367,7 @@ export default function TopBar({
             </motion.button>
           </motion.div>
 
-          {/* --- PANEL WYNIKÓW WYSZUKIWANIA (DEBUG VIEW) --- */}
+          {/* --- PANEL WYNIKÓW WYSZUKIWANIA --- */}
           <AnimatePresence>
             {searchOpen && inputValue.length >= 3 && (
               <motion.div
@@ -358,7 +387,6 @@ export default function TopBar({
                 <div className="max-h-[60vh] overflow-y-auto p-4 text-xs font-mono">
                   {searchResults ? (
                     <>
-                      {/* Wyświetlanie sformatowanego JSON-a */}
                       <pre className="whitespace-pre-wrap break-all">
                         {JSON.stringify(searchResults, null, 2)}
                       </pre>
@@ -387,12 +415,22 @@ export default function TopBar({
         >
           Wyloguj
         </button>
-        <Image
-          src="/userPicture.jpg"
+        
+        {/* AVATAR UŻYTKOWNIKA */}
+        <img
+          src={avatarUrl}
           alt="Avatar"
           width={50}
           height={50}
-          className="rounded-full border border-[#9C9793]"
+          className="rounded-full border border-[#9C9793] object-cover w-[50px] h-[50px]"
+          onError={(e) => {
+            // Jeśli obrazek się nie załaduje (np. 404), podmień na domyślny
+            // Zapobiega to nieskończonej pętli, sprawdzając czy src jest już domyślny
+            const target = e.target as HTMLImageElement;
+            if (target.src.indexOf(DEFAULT_AVATAR) === -1) {
+              target.src = DEFAULT_AVATAR;
+            }
+          }}
         />
       </div>
     </header>
