@@ -254,6 +254,19 @@ message GetMyStudentsResponse {
 }
 
 
+message GetUserInfoRequest {
+  int64 user_id = 1;
+}
+
+message GetUserInfoResponse {
+  int64 user_id = 1;
+  string name = 2;
+  string surname = 3;
+  string email = 4;
+  bool active = 5;
+  string profile_photo_path = 6;
+}
+
 
 // Serwis
 
@@ -368,6 +381,13 @@ service AuthService {
     get : "/api/teacher/students"
   };
 }
+
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
+
+    option (google.api.http) = {
+      get: "/api/info/user/{user_id}"
+    };
+  }
 }
 
 service AuthHello {

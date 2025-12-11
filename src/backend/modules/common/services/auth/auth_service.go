@@ -2254,3 +2254,53 @@ func (s *AuthServer) GetMyStudents(ctx context.Context, req *pb.GetMyStudentsReq
         Message:  "Students retrieved successfully",
     }, nil
 }
+
+func (s *AuthServer) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest) (*pb.GetUserInfoResponse, error) {
+	authLog.LogInfo(fmt.Sprintf("GetUserInfo request received for user_id: %d", req.UserId))
+
+	_, err := getUserIDFromContext(ctx)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "unauthorized")
+		}
+
+	if req.UserId <= 0 {
+		authLog.LogWarn("Invalid user_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+
+	query := `
+		SELECT 
+			user_id,
+			COALESCE(name, '') as name,
+			COALESCE(surname, '') as surname,
+			email,
+			active,
+			COALESCE(profile_photo_path, '') as profile_photo_path
+		FROM users
+		WHERE user_id = $1
+	`
+
+	var response pb.GetUserInfoResponse
+	err = s.db.QueryRow(query, req.UserId).Scan(
+		&response.UserId,
+		&response.Name,
+		&response.Surname,
+		&response.Email,
+		&response.Active,
+		&response.ProfilePhotoPath,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			authLog.LogWarn(fmt.Sprintf("User not found: %d", req.UserId))
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		authLog.LogError("Failed to fetch user info", err)
+		return nil, status.Error(codes.Internal, "failed to fetch user info")
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Successfully fetched info for user_id: %d", req.UserId))
+	return &response, nil
+}
+
+

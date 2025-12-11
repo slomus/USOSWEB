@@ -333,7 +333,7 @@ func (s *SearchServer) searchClasses(ctx context.Context, query string, limit in
 		LIMIT $2
 	`
 
-	rows, err := s.db.QueryContext(ctx, sqlQuery, limit)
+	rows, err := s.db.QueryContext(ctx, sqlQuery, query, limit)
 	if err != nil {
 		searchLog.LogError("Failed to search classes", err)
 		return []*pb.ClassSearchResult{}

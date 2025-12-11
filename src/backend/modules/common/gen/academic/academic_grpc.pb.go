@@ -25,6 +25,8 @@ const (
 	SubjectsService_CreateSubject_FullMethodName        = "/academic.SubjectsService/CreateSubject"
 	SubjectsService_UpdateSubject_FullMethodName        = "/academic.SubjectsService/UpdateSubject"
 	SubjectsService_DeleteSubject_FullMethodName        = "/academic.SubjectsService/DeleteSubject"
+	SubjectsService_GetSubjectInfo_FullMethodName       = "/academic.SubjectsService/GetSubjectInfo"
+	SubjectsService_GetClassInfo_FullMethodName         = "/academic.SubjectsService/GetClassInfo"
 )
 
 // SubjectsServiceClient is the client API for SubjectsService service.
@@ -37,6 +39,8 @@ type SubjectsServiceClient interface {
 	CreateSubject(ctx context.Context, in *CreateSubjectRequest, opts ...grpc.CallOption) (*CreateSubjectResponse, error)
 	UpdateSubject(ctx context.Context, in *UpdateSubjectRequest, opts ...grpc.CallOption) (*UpdateSubjectResponse, error)
 	DeleteSubject(ctx context.Context, in *DeleteSubjectRequest, opts ...grpc.CallOption) (*DeleteSubjectResponse, error)
+	GetSubjectInfo(ctx context.Context, in *GetSubjectInfoRequest, opts ...grpc.CallOption) (*GetSubjectInfoResponse, error)
+	GetClassInfo(ctx context.Context, in *GetClassInfoRequest, opts ...grpc.CallOption) (*GetClassInfoResponse, error)
 }
 
 type subjectsServiceClient struct {
@@ -107,6 +111,26 @@ func (c *subjectsServiceClient) DeleteSubject(ctx context.Context, in *DeleteSub
 	return out, nil
 }
 
+func (c *subjectsServiceClient) GetSubjectInfo(ctx context.Context, in *GetSubjectInfoRequest, opts ...grpc.CallOption) (*GetSubjectInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSubjectInfoResponse)
+	err := c.cc.Invoke(ctx, SubjectsService_GetSubjectInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *subjectsServiceClient) GetClassInfo(ctx context.Context, in *GetClassInfoRequest, opts ...grpc.CallOption) (*GetClassInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClassInfoResponse)
+	err := c.cc.Invoke(ctx, SubjectsService_GetClassInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SubjectsServiceServer is the server API for SubjectsService service.
 // All implementations must embed UnimplementedSubjectsServiceServer
 // for forward compatibility.
@@ -117,6 +141,8 @@ type SubjectsServiceServer interface {
 	CreateSubject(context.Context, *CreateSubjectRequest) (*CreateSubjectResponse, error)
 	UpdateSubject(context.Context, *UpdateSubjectRequest) (*UpdateSubjectResponse, error)
 	DeleteSubject(context.Context, *DeleteSubjectRequest) (*DeleteSubjectResponse, error)
+	GetSubjectInfo(context.Context, *GetSubjectInfoRequest) (*GetSubjectInfoResponse, error)
+	GetClassInfo(context.Context, *GetClassInfoRequest) (*GetClassInfoResponse, error)
 	mustEmbedUnimplementedSubjectsServiceServer()
 }
 
@@ -144,6 +170,12 @@ func (UnimplementedSubjectsServiceServer) UpdateSubject(context.Context, *Update
 }
 func (UnimplementedSubjectsServiceServer) DeleteSubject(context.Context, *DeleteSubjectRequest) (*DeleteSubjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSubject not implemented")
+}
+func (UnimplementedSubjectsServiceServer) GetSubjectInfo(context.Context, *GetSubjectInfoRequest) (*GetSubjectInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubjectInfo not implemented")
+}
+func (UnimplementedSubjectsServiceServer) GetClassInfo(context.Context, *GetClassInfoRequest) (*GetClassInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClassInfo not implemented")
 }
 func (UnimplementedSubjectsServiceServer) mustEmbedUnimplementedSubjectsServiceServer() {}
 func (UnimplementedSubjectsServiceServer) testEmbeddedByValue()                         {}
@@ -274,6 +306,42 @@ func _SubjectsService_DeleteSubject_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SubjectsService_GetSubjectInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubjectInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubjectsServiceServer).GetSubjectInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubjectsService_GetSubjectInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubjectsServiceServer).GetSubjectInfo(ctx, req.(*GetSubjectInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SubjectsService_GetClassInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClassInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubjectsServiceServer).GetClassInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubjectsService_GetClassInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubjectsServiceServer).GetClassInfo(ctx, req.(*GetClassInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SubjectsService_ServiceDesc is the grpc.ServiceDesc for SubjectsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var SubjectsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSubject",
 			Handler:    _SubjectsService_DeleteSubject_Handler,
+		},
+		{
+			MethodName: "GetSubjectInfo",
+			Handler:    _SubjectsService_GetSubjectInfo_Handler,
+		},
+		{
+			MethodName: "GetClassInfo",
+			Handler:    _SubjectsService_GetClassInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

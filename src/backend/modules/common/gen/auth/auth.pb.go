@@ -2550,6 +2550,134 @@ func (x *GetMyStudentsResponse) GetMessage() string {
 	return ""
 }
 
+type GetUserInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserInfoRequest) Reset() {
+	*x = GetUserInfoRequest{}
+	mi := &file_auth_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoRequest) ProtoMessage() {}
+
+func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GetUserInfoRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type GetUserInfoResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	UserId           int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Surname          string                 `protobuf:"bytes,3,opt,name=surname,proto3" json:"surname,omitempty"`
+	Email            string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	Active           bool                   `protobuf:"varint,5,opt,name=active,proto3" json:"active,omitempty"`
+	ProfilePhotoPath string                 `protobuf:"bytes,6,opt,name=profile_photo_path,json=profilePhotoPath,proto3" json:"profile_photo_path,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetUserInfoResponse) Reset() {
+	*x = GetUserInfoResponse{}
+	mi := &file_auth_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoResponse) ProtoMessage() {}
+
+func (x *GetUserInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetUserInfoResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *GetUserInfoResponse) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetUserInfoResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *GetUserInfoResponse) GetProfilePhotoPath() string {
+	if x != nil {
+		return x.ProfilePhotoPath
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -2789,7 +2917,16 @@ const file_auth_proto_rawDesc = "" +
 	"\x15GetMyStudentsResponse\x124\n" +
 	"\bstudents\x18\x01 \x03(\v2\x18.modules.common.api.UserR\bstudents\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\x95\x11\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"-\n" +
+	"\x12GetUserInfoRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\xb8\x01\n" +
+	"\x13GetUserInfoResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\x03 \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12\x16\n" +
+	"\x06active\x18\x05 \x01(\bR\x06active\x12,\n" +
+	"\x12profile_photo_path\x18\x06 \x01(\tR\x10profilePhotoPath2\x98\x12\n" +
 	"\vAuthService\x12h\n" +
 	"\x05Login\x12 .modules.common.api.LoginRequest\x1a!.modules.common.api.LoginResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/auth/login\x12l\n" +
 	"\x06Logout\x12!.modules.common.api.LogoutRequest\x1a\".modules.common.api.LogoutResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/auth/logout\x12t\n" +
@@ -2808,7 +2945,8 @@ const file_auth_proto_rawDesc = "" +
 	"DeleteUser\x12%.modules.common.api.DeleteUserRequest\x1a&.modules.common.api.DeleteUserResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/auth/user/{user_id}\x12\x90\x01\n" +
 	"\x12UploadProfilePhoto\x12-.modules.common.api.UploadProfilePhotoRequest\x1a..modules.common.api.UploadProfilePhotoResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/users/photo\x12\x8e\x01\n" +
 	"\x0fGetProfilePhoto\x12*.modules.common.api.GetProfilePhotoRequest\x1a+.modules.common.api.GetProfilePhotoResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/users/{user_id}/photo\x12\x83\x01\n" +
-	"\rGetMyStudents\x12(.modules.common.api.GetMyStudentsRequest\x1a).modules.common.api.GetMyStudentsResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/teacher/students2p\n" +
+	"\rGetMyStudents\x12(.modules.common.api.GetMyStudentsRequest\x1a).modules.common.api.GetMyStudentsResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/teacher/students\x12\x80\x01\n" +
+	"\vGetUserInfo\x12&.modules.common.api.GetUserInfoRequest\x1a'.modules.common.api.GetUserInfoResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/info/user/{user_id}2p\n" +
 	"\tAuthHello\x12c\n" +
 	"\bSayHello\x12 .modules.common.api.HelloRequest\x1a!.modules.common.api.HelloResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/api/helloB<Z:github.com/slomus/USOSWEB/src/backend/common/gen/auth;authb\x06proto3"
@@ -2825,7 +2963,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_auth_proto_goTypes = []any{
 	(*LoginRequest)(nil),               // 0: modules.common.api.LoginRequest
 	(*LoginResponse)(nil),              // 1: modules.common.api.LoginResponse
@@ -2867,6 +3005,8 @@ var file_auth_proto_goTypes = []any{
 	(*GetProfilePhotoResponse)(nil),    // 37: modules.common.api.GetProfilePhotoResponse
 	(*GetMyStudentsRequest)(nil),       // 38: modules.common.api.GetMyStudentsRequest
 	(*GetMyStudentsResponse)(nil),      // 39: modules.common.api.GetMyStudentsResponse
+	(*GetUserInfoRequest)(nil),         // 40: modules.common.api.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),        // 41: modules.common.api.GetUserInfoResponse
 }
 var file_auth_proto_depIdxs = []int32{
 	6,  // 0: modules.common.api.RegisterResponse.user_data:type_name -> modules.common.api.UserData
@@ -2892,27 +3032,29 @@ var file_auth_proto_depIdxs = []int32{
 	34, // 20: modules.common.api.AuthService.UploadProfilePhoto:input_type -> modules.common.api.UploadProfilePhotoRequest
 	36, // 21: modules.common.api.AuthService.GetProfilePhoto:input_type -> modules.common.api.GetProfilePhotoRequest
 	38, // 22: modules.common.api.AuthService.GetMyStudents:input_type -> modules.common.api.GetMyStudentsRequest
-	15, // 23: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
-	1,  // 24: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
-	3,  // 25: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
-	5,  // 26: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
-	8,  // 27: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
-	10, // 28: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
-	12, // 29: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
-	14, // 30: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
-	20, // 31: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
-	22, // 32: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
-	24, // 33: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
-	26, // 34: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
-	28, // 35: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
-	30, // 36: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
-	33, // 37: modules.common.api.AuthService.DeleteUser:output_type -> modules.common.api.DeleteUserResponse
-	35, // 38: modules.common.api.AuthService.UploadProfilePhoto:output_type -> modules.common.api.UploadProfilePhotoResponse
-	37, // 39: modules.common.api.AuthService.GetProfilePhoto:output_type -> modules.common.api.GetProfilePhotoResponse
-	39, // 40: modules.common.api.AuthService.GetMyStudents:output_type -> modules.common.api.GetMyStudentsResponse
-	16, // 41: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
-	24, // [24:42] is the sub-list for method output_type
-	6,  // [6:24] is the sub-list for method input_type
+	40, // 23: modules.common.api.AuthService.GetUserInfo:input_type -> modules.common.api.GetUserInfoRequest
+	15, // 24: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
+	1,  // 25: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
+	3,  // 26: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
+	5,  // 27: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
+	8,  // 28: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
+	10, // 29: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
+	12, // 30: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
+	14, // 31: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
+	20, // 32: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
+	22, // 33: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
+	24, // 34: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
+	26, // 35: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
+	28, // 36: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
+	30, // 37: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
+	33, // 38: modules.common.api.AuthService.DeleteUser:output_type -> modules.common.api.DeleteUserResponse
+	35, // 39: modules.common.api.AuthService.UploadProfilePhoto:output_type -> modules.common.api.UploadProfilePhotoResponse
+	37, // 40: modules.common.api.AuthService.GetProfilePhoto:output_type -> modules.common.api.GetProfilePhotoResponse
+	39, // 41: modules.common.api.AuthService.GetMyStudents:output_type -> modules.common.api.GetMyStudentsResponse
+	41, // 42: modules.common.api.AuthService.GetUserInfo:output_type -> modules.common.api.GetUserInfoResponse
+	16, // 43: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
+	25, // [25:44] is the sub-list for method output_type
+	6,  // [6:25] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -2932,7 +3074,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   40,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
