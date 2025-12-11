@@ -1530,10 +1530,36 @@ func updateStudentsWithCourseAndModule(db *sql.DB) error {
 
 func generateSchedules(db *sql.DB) error {
 
+	_, err := db.Exec("DELETE FROM schedules")
+	if err != nil {
+		return fmt.Errorf("failed to clear schedules: %w", err)
+	}
+
+	type TimeBlock struct {
+		startTime string
+		endTime   string
+	}
+
+	type TimeSlot struct {
+		day       int
+		startTime string
+		endTime   string
+	}
+
+	type ScheduleSlot struct {
+		day       int
+		startTime string
+		endTime   string
+	}
+
 	type Class struct {
 		classID   int
 		classType string
 	}
+
+	studentSchedule := make(map[int][]ScheduleSlot)
+	roomSchedule := make(map[string][]ScheduleSlot)
+	teacherSchedule := make(map[int][]ScheduleSlot)
 
 	var classes []Class
 	rows, err := db.Query("SELECT class_id, class_type FROM classes")
@@ -1547,12 +1573,7 @@ func generateSchedules(db *sql.DB) error {
 	}
 	rows.Close()
 
-	log.Printf("Found %d classes", len(classes))
-
-	type TimeBlock struct {
-		startTime string
-		endTime   string
-	}
+	log.Printf("Found %d classes to schedule", len(classes))
 
 	lectureBlocks := []TimeBlock{
 		{"08:00", "10:00"},
@@ -1575,10 +1596,96 @@ func generateSchedules(db *sql.DB) error {
 	days := []int{1, 2, 3, 4, 5}
 	
 	rooms := []string{
-		"A-101", "A-102", "A-201", "A-202", "A-301",
-		"B-101", "B-102", "B-201", "B-202",
-		"C-101", "C-102", "C-201", "C-301",
+		"A-101", "A-102", "A-103", "A-201", "A-202", "A-203", "A-301", "A-302",
+		"B-101", "B-102", "B-103", "B-201", "B-202", "B-203",
+		"C-101", "C-102", "C-103", "C-201", "C-202", "C-301",
+		"D-101", "D-102", "D-201", "D-202",
 	}
+
+	buildings := []string{"Budynek A", "Budynek B", "Budynek C", "Laboratorium", "Aula"}
+
+	currentYear := time.Now().Year()
+	if time.Now().Month() < 10 {
+		currentYear--
+	}
+	validFrom := time.Date(currentYear, 10, 1, 0, 0, 0, 0, time.UTC)
+	validTo := time.Date(currentYear+1, 6, 30, 0, 0, 0, 0, time.UTC)
+
+	isSlotFreeForStudents := func(students []int, slot TimeSlot) bool {
+		for _, albumNr := range students {
+			if studentSchedule[albumNr] == nil {
+				continue
+			}
+			for _, existingSlot := range studentSchedule[albumNr] {
+				if existingSlot.day != slot.day {
+					continue
+				}
+				if slot.startTime < existingSlot.endTime && slot.endTime > existingSlot.startTime {
+					return false
+				}
+			}
+		}
+		return true
+	}
+
+	isRoomFree := func(room string, slot TimeSlot) bool {
+		if roomSchedule[room] == nil {
+			return true
+		}
+		for _, existingSlot := range roomSchedule[room] {
+			if existingSlot.day != slot.day {
+				continue
+			}
+			if slot.startTime < existingSlot.endTime && slot.endTime > existingSlot.startTime {
+				return false
+			}
+		}
+		return true
+	}
+
+	isTeacherFree := func(teacherID int, slot TimeSlot) bool {
+		if teacherSchedule[teacherID] == nil {
+			return true
+		}
+		for _, existingSlot := range teacherSchedule[teacherID] {
+			if existingSlot.day != slot.day {
+				continue
+			}
+			if slot.startTime < existingSlot.endTime && slot.endTime > existingSlot.startTime {
+				return false
+			}
+		}
+		return true
+	}
+
+	markSlotForStudents := func(students []int, slot TimeSlot) {
+		for _, albumNr := range students {
+			studentSchedule[albumNr] = append(studentSchedule[albumNr], ScheduleSlot{
+				day:       slot.day,
+				startTime: slot.startTime,
+				endTime:   slot.endTime,
+			})
+		}
+	}
+
+	markSlotForRoom := func(room string, slot TimeSlot) {
+		roomSchedule[room] = append(roomSchedule[room], ScheduleSlot{
+			day:       slot.day,
+			startTime: slot.startTime,
+			endTime:   slot.endTime,
+		})
+	}
+
+	markSlotForTeacher := func(teacherID int, slot TimeSlot) {
+		teacherSchedule[teacherID] = append(teacherSchedule[teacherID], ScheduleSlot{
+			day:       slot.day,
+			startTime: slot.startTime,
+			endTime:   slot.endTime,
+		})
+	}
+
+	successCount := 0
+	failureCount := 0
 
 	for _, class := range classes {
 		var blocks []TimeBlock
@@ -1587,73 +1694,158 @@ func generateSchedules(db *sql.DB) error {
 		switch class.classType {
 		case "lecture", "wykład":
 			blocks = lectureBlocks
-			numSlots = 1 
+			numSlots = 1
 		case "exercise", "ćwiczenia":
 			blocks = exerciseBlocks
-			numSlots = 1 + rand.Intn(2) 
+			numSlots = 1
 		case "lab", "laboratorium":
 			blocks = labBlocks
-			numSlots = 1 
+			numSlots = 1
 		default:
 			blocks = exerciseBlocks
 			numSlots = 1
 		}
 
-		currentYear := time.Now().Year()
-		if time.Now().Month() < 10 {
-				currentYear-- 
+		var students []int
+		studentRows, err := db.Query("SELECT album_nr FROM student_classes WHERE class_id = $1", class.classID)
+		if err != nil {
+			log.Printf("Warning: failed to fetch students for class %d: %v", class.classID, err)
+			continue
 		}
-		validFrom := time.Date(currentYear, 10, 1, 0, 0, 0, 0, time.UTC)
-		validTo := time.Date(currentYear+1, 6, 30, 0, 0, 0, 0, time.UTC)   
+		for studentRows.Next() {
+			var albumNr int
+			studentRows.Scan(&albumNr)
+			students = append(students, albumNr)
+		}
+		studentRows.Close()
 
-		buildings := []string{"Budynek A", "Budynek B", "Budynek C", "Laboratorium", "Aula"}
-
-		for i := 0; i < numSlots; i++ {
-			dayOfWeek := days[rand.Intn(len(days))]
-			block := blocks[rand.Intn(len(blocks))]
-			room := rooms[rand.Intn(len(rooms))]
-			building := buildings[rand.Intn(len(buildings))]
-
-			_, err := db.Exec(`
-				INSERT INTO schedules (class_id, day_of_week, start_time, end_time, room, building, frequency, valid_from, valid_to)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			`, class.classID, dayOfWeek, block.startTime, block.endTime, room, building, "weekly", validFrom, validTo)
-
-			if err != nil {
-				log.Printf("Warning: failed to insert schedule for class %d: %v", class.classID, err)
-				continue
+		var teacherIDs []int
+		teacherRows, err := db.Query("SELECT teaching_staff_id FROM course_instructors WHERE class_id = $1", class.classID)
+		if err == nil {
+			for teacherRows.Next() {
+				var tID int
+				teacherRows.Scan(&tID)
+				teacherIDs = append(teacherIDs, tID)
 			}
+			teacherRows.Close()
+		}
+
+		slotsAssigned := 0
+		for slotsAssigned < numSlots {
+			slotFound := false
+
+			for _, day := range days {
+				for _, block := range blocks {
+					for _, room := range rooms {
+						slot := TimeSlot{
+							day:       day,
+							startTime: block.startTime,
+							endTime:   block.endTime,
+						}
+
+						if !isSlotFreeForStudents(students, slot) {
+							continue
+						}
+
+						if !isRoomFree(room, slot) {
+							continue
+						}
+
+						teachersFree := true
+						for _, tID := range teacherIDs {
+							if !isTeacherFree(tID, slot) {
+								teachersFree = false
+								break
+							}
+						}
+						if !teachersFree {
+							continue
+						}
+
+						building := buildings[rand.Intn(len(buildings))]
+
+						_, err := db.Exec(`
+							INSERT INTO schedules (class_id, day_of_week, start_time, end_time, room, building, frequency, valid_from, valid_to)
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+						`, class.classID, day, block.startTime, block.endTime, room, building, "weekly", validFrom, validTo)
+
+						if err != nil {
+							log.Printf("Warning: failed to insert schedule: %v", err)
+							continue
+						}
+
+						markSlotForStudents(students, slot)
+						markSlotForRoom(room, slot)
+						for _, tID := range teacherIDs {
+							markSlotForTeacher(tID, slot)
+						}
+
+						slotsAssigned++
+						slotFound = true
+						break
+					}
+					if slotFound {
+						break
+					}
+				}
+				if slotFound {
+					break
+				}
+			}
+
+			if !slotFound {
+				log.Printf("Warning: Could not find free slot for class %d (assigned %d/%d slots)", class.classID, slotsAssigned, numSlots)
+				failureCount++
+				break
+			}
+		}
+
+		if slotsAssigned == numSlots {
+			successCount++
 		}
 	}
 
-	log.Printf(" Successfully generated schedules for %d classes", len(classes))
+	log.Printf("Successfully scheduled %d classes", successCount)
+	if failureCount > 0 {
+		log.Printf("Failed to fully schedule %d classes", failureCount)
+	}
+	
 	return nil
 }
+
 
 func generateClassCancellations(db *sql.DB) error {
 	log.Println("Generating class cancellations...")
 
-	var scheduleIDs []int
-	rows, err := db.Query("SELECT id FROM schedules")
+	type Schedule struct {
+		id        int
+		classID   int
+		dayOfWeek int
+		validFrom time.Time
+		validTo   time.Time
+	}
+
+	var schedules []Schedule
+	rows, err := db.Query("SELECT id, class_id, day_of_week, valid_from, valid_to FROM schedules")
 	if err != nil {
 		return fmt.Errorf("failed to fetch schedules: %w", err)
 	}
 	for rows.Next() {
-		var id int
-		rows.Scan(&id)
-		scheduleIDs = append(scheduleIDs, id)
+		var s Schedule
+		rows.Scan(&s.id, &s.classID, &s.dayOfWeek, &s.validFrom, &s.validTo)
+		schedules = append(schedules, s)
 	}
 	rows.Close()
 
-	numCancellations := len(scheduleIDs) * 5 / 100
+	numCancellations := len(schedules) * 5 / 100
 	if numCancellations < 1 {
 		numCancellations = 1
 	}
 
-	log.Printf("Generating %d cancellations (5%% of %d schedules)", numCancellations, len(scheduleIDs))
+	log.Printf("Generating %d cancellations", numCancellations)
 
-	shuffled := make([]int, len(scheduleIDs))
-	copy(shuffled, scheduleIDs)
+	shuffled := make([]Schedule, len(schedules))
+	copy(shuffled, schedules)
 	rand.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
@@ -1667,26 +1859,63 @@ func generateClassCancellations(db *sql.DB) error {
 		"Urlop szkoleniowy prowadzącego",
 	}
 
+	cancelledDates := make(map[int]map[string]bool)
+
+	generateValidCancellationDate := func(schedule Schedule) *time.Time {
+		current := schedule.validFrom
+		attempts := 0
+		maxAttempts := 100
+
+		for attempts < maxAttempts {
+			if current.After(schedule.validTo) {
+				return nil
+			}
+
+			if int(current.Weekday()) == schedule.dayOfWeek || (schedule.dayOfWeek == 7 && current.Weekday() == time.Sunday) {
+				dateStr := current.Format("2006-01-02")
+				
+				if cancelledDates[schedule.id] == nil {
+					cancelledDates[schedule.id] = make(map[string]bool)
+				}
+				
+				if !cancelledDates[schedule.id][dateStr] {
+					cancelledDates[schedule.id][dateStr] = true
+					return &current
+				}
+			}
+
+			current = current.AddDate(0, 0, 1)
+			attempts++
+		}
+		return nil
+	}
+
+	successCount := 0
 	for i := 0; i < numCancellations && i < len(shuffled); i++ {
-		scheduleID := shuffled[i]
+		schedule := shuffled[i]
 		
-		daysOffset := rand.Intn(90) - 60
-		cancelledDate := time.Now().AddDate(0, 0, daysOffset)
+		cancelledDate := generateValidCancellationDate(schedule)
+		if cancelledDate == nil {
+			log.Printf("Warning: Could not find valid cancellation date for schedule %d", schedule.id)
+			continue
+		}
 		
 		reason := reasons[rand.Intn(len(reasons))]
 
 		_, err = db.Exec(`
 			INSERT INTO class_cancellations (schedule_id, cancelled_date, reason)
 			VALUES ($1, $2, $3)
-		`, scheduleID, cancelledDate, reason)
+		`, schedule.id, *cancelledDate, reason)
 
 		if err != nil {
-			log.Printf("Warning: failed to insert cancellation for schedule %d: %v", scheduleID, err)
+			log.Printf("Warning: failed to insert cancellation for schedule %d: %v", schedule.id, err)
 			continue
 		}
+
+		successCount++
 	}
 
-	log.Printf(" Successfully generated %d class cancellations", numCancellations)
+	log.Printf("Successfully generated %d class cancellations", successCount)
 	return nil
 }
 
@@ -1698,6 +1927,11 @@ func generateExams(db *sql.DB) error {
 		subjectID   int
 		subjectName string
 		classType   string
+	}
+
+	type ExamSlot struct {
+		dateTime time.Time
+		location string
 	}
 
 	var examClasses []ExamClass
@@ -1717,107 +1951,201 @@ func generateExams(db *sql.DB) error {
 	}
 	rows.Close()
 
-
 	if len(examClasses) == 0 {
-		log.Println("No classes with exam credit found, skipping exam generation")
+		log.Println("No classes with exam credit found")
 		return nil
 	}
 
 	examLocations := []string{
 		"Aula Magna",
-		"Sala A-401",
-		"Sala B-301",
-		"Sala C-201",
-		"Laboratorium E-101",
+		"Sala A-401", "Sala A-402", "Sala A-403",
+		"Sala B-301", "Sala B-302", "Sala B-303",
+		"Sala C-201", "Sala C-202", "Sala C-203",
+		"Laboratorium E-101", "Laboratorium E-102",
 		"Sala wykładowa A-100",
 		"Sala konferencyjna B-250",
 	}
 
-	
+	studentExamSchedule := make(map[int]map[time.Time]bool)
+	locationExamSchedule := make(map[string]map[time.Time]bool)
 
-	examDescriptions := map[string]string{
-		"final":      "Egzamin końcowy z przedmiotu",
-		"retake":     "Egzamin poprawkowy",
-		"commission": "Egzamin komisyjny",
+	isExamSlotFreeForStudents := func(students []int, examTime time.Time, duration int) bool {
+		endTime := examTime.Add(time.Duration(duration) * time.Minute)
+		for _, albumNr := range students {
+			if studentExamSchedule[albumNr] == nil {
+				studentExamSchedule[albumNr] = make(map[time.Time]bool)
+			}
+			for existingExam := range studentExamSchedule[albumNr] {
+				if (examTime.Before(existingExam.Add(2*time.Hour)) && examTime.After(existingExam.Add(-2*time.Hour))) ||
+					(endTime.Before(existingExam.Add(2*time.Hour)) && endTime.After(existingExam.Add(-2*time.Hour))) {
+					return false
+				}
+			}
+		}
+		return true
 	}
 
+	isLocationFree := func(location string, examTime time.Time, duration int) bool {
+		if locationExamSchedule[location] == nil {
+			locationExamSchedule[location] = make(map[time.Time]bool)
+		}
+		endTime := examTime.Add(time.Duration(duration) * time.Minute)
+		for existingExam := range locationExamSchedule[location] {
+			if (examTime.Before(existingExam.Add(2*time.Hour)) && examTime.After(existingExam.Add(-2*time.Hour))) ||
+				(endTime.Before(existingExam.Add(2*time.Hour)) && endTime.After(existingExam.Add(-2*time.Hour))) {
+				return false
+			}
+		}
+		return true
+	}
+
+	markExamForStudents := func(students []int, examTime time.Time) {
+		for _, albumNr := range students {
+			if studentExamSchedule[albumNr] == nil {
+				studentExamSchedule[albumNr] = make(map[time.Time]bool)
+			}
+			studentExamSchedule[albumNr][examTime] = true
+		}
+	}
+
+	markExamForLocation := func(location string, examTime time.Time) {
+		if locationExamSchedule[location] == nil {
+			locationExamSchedule[location] = make(map[time.Time]bool)
+		}
+		locationExamSchedule[location][examTime] = true
+	}
+
+	generateExamSlots := func(sessionStart time.Time, sessionEnd time.Time) []ExamSlot {
+		var slots []ExamSlot
+		current := sessionStart
+		for current.Before(sessionEnd) || current.Equal(sessionEnd) {
+			if current.Weekday() != time.Saturday && current.Weekday() != time.Sunday {
+				for _, hour := range []int{8, 10, 12, 14, 16} {
+					for _, location := range examLocations {
+						examDateTime := time.Date(current.Year(), current.Month(), current.Day(), hour, 0, 0, 0, time.UTC)
+						slots = append(slots, ExamSlot{
+							dateTime: examDateTime,
+							location: location,
+						})
+					}
+				}
+			}
+			current = current.AddDate(0, 0, 1)
+		}
+		return slots
+	}
+
+	winterSessionStart := time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)
+	winterSessionEnd := time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC)
+	summerSessionStart := time.Date(2025, 6, 10, 0, 0, 0, 0, time.UTC)
+	summerSessionEnd := time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)
+	retakeSessionStart := time.Date(2025, 9, 1, 0, 0, 0, 0, time.UTC)
+	retakeSessionEnd := time.Date(2025, 9, 14, 0, 0, 0, 0, time.UTC)
+
+	allSlots := append(generateExamSlots(winterSessionStart, winterSessionEnd), generateExamSlots(summerSessionStart, summerSessionEnd)...)
+
 	for _, class := range examClasses {
-		numExams := 1
-		if rand.Float32() < 0.20 { 
-			numExams = 2
+		var students []int
+		studentRows, err := db.Query("SELECT album_nr FROM student_classes WHERE class_id = $1", class.classID)
+		if err != nil {
+			log.Printf("Warning: failed to fetch students for exam class %d: %v", class.classID, err)
+			continue
+		}
+		for studentRows.Next() {
+			var albumNr int
+			studentRows.Scan(&albumNr)
+			students = append(students, albumNr)
+		}
+		studentRows.Close()
+
+		durationMinutes := 90
+		switch class.classType {
+		case "wykład":
+			durationMinutes = 120
+		case "laboratorium", "projekt":
+			durationMinutes = 90
+		case "ćwiczenia", "seminarium":
+			durationMinutes = 60
+		default:
+			durationMinutes = 90
 		}
 
-		for i := 0; i < numExams; i++ {
-			var examDateTime time.Time
-			var examType string
-			
-			if i == 0 {
-				examType = "final"
-				
-				if rand.Float32() < 0.5 {
-					month := 1 + rand.Intn(2) 
-					day := 10 + rand.Intn(20)
-					hour := 8 + (rand.Intn(4) * 2) 
-					examDateTime = time.Date(2025, time.Month(month), day, hour, 0, 0, 0, time.UTC)
-				} else {
-					month := 6 + rand.Intn(2) 
-					day := 1 + rand.Intn(28)
-					hour := 8 + (rand.Intn(4) * 2) 
-					examDateTime = time.Date(2025, time.Month(month), day, hour, 0, 0, 0, time.UTC)
-				}
-			} else {
-				examType = "retake"
-				
-				var firstExamDate time.Time
-				err := db.QueryRow(`
-					SELECT exam_date FROM exams WHERE class_id = $1 ORDER BY exam_date LIMIT 1
-				`, class.classID).Scan(&firstExamDate)
-				
-				if err != nil {
-					examDateTime = time.Date(2025, 2, 20, 10, 0, 0, 0, time.UTC)
-				} else {
-					examDateTime = firstExamDate.AddDate(0, 0, 14)
-				}
+		var maxStudents int
+		err = db.QueryRow("SELECT capacity FROM classes WHERE class_id = $1", class.classID).Scan(&maxStudents)
+		if err != nil || maxStudents == 0 {
+			maxStudents = 50
+		}
+
+		examAssigned := false
+		for _, slot := range allSlots {
+			if !isExamSlotFreeForStudents(students, slot.dateTime, durationMinutes) {
+				continue
 			}
 
-			durationMinutes := 90 
-			switch class.classType {
-			case "wykład":
-				durationMinutes = 120 
-			case "laboratorium", "projekt":
-				durationMinutes = 90
-			case "ćwiczenia", "seminarium":
-				durationMinutes = 60
-			default:
-				durationMinutes = 90
+			if !isLocationFree(slot.location, slot.dateTime, durationMinutes) {
+				continue
 			}
 
-			location := examLocations[rand.Intn(len(examLocations))]
-			description := examDescriptions[examType]
-			
-			var maxStudents int
-			err := db.QueryRow(`SELECT capacity FROM classes WHERE class_id = $1`, class.classID).Scan(&maxStudents)
-			if err != nil || maxStudents == 0 {
-				maxStudents = 50 
-			}
+			description := fmt.Sprintf("Egzamin końcowy z przedmiotu %s", class.subjectName)
 
 			_, err = db.Exec(`
 				INSERT INTO exams (class_id, exam_date, location, duration_minutes, description, exam_type, max_students)
 				VALUES ($1, $2, $3, $4, $5, $6, $7)
-			`, class.classID, examDateTime, location, durationMinutes, description, examType, maxStudents)
+			`, class.classID, slot.dateTime, slot.location, durationMinutes, description, "final", maxStudents)
 
 			if err != nil {
-				log.Printf("Warning: failed to insert exam for class %d: %v", class.classID, err)
+				log.Printf("Warning: failed to insert exam: %v", err)
 				continue
+			}
+
+			markExamForStudents(students, slot.dateTime)
+			markExamForLocation(slot.location, slot.dateTime)
+
+			examAssigned = true
+			break
+		}
+
+		if !examAssigned {
+			log.Printf("Warning: Could not find free slot for exam in class %d", class.classID)
+		}
+
+		if examAssigned && rand.Float32() < 0.20 {
+			retakeSlots := generateExamSlots(retakeSessionStart, retakeSessionEnd)
+			
+			for _, slot := range retakeSlots {
+				if !isExamSlotFreeForStudents(students, slot.dateTime, durationMinutes) {
+					continue
+				}
+
+				if !isLocationFree(slot.location, slot.dateTime, durationMinutes) {
+					continue
+				}
+
+				description := fmt.Sprintf("Egzamin poprawkowy z przedmiotu %s", class.subjectName)
+
+				_, err = db.Exec(`
+					INSERT INTO exams (class_id, exam_date, location, duration_minutes, description, exam_type, max_students)
+					VALUES ($1, $2, $3, $4, $5, $6, $7)
+				`, class.classID, slot.dateTime, slot.location, durationMinutes, description, "retake", maxStudents)
+
+				if err != nil {
+					log.Printf("Warning: failed to insert retake exam: %v", err)
+					continue
+				}
+
+				markExamForStudents(students, slot.dateTime)
+				markExamForLocation(slot.location, slot.dateTime)
+				break
 			}
 		}
 	}
 
 	var totalExams int
 	db.QueryRow("SELECT COUNT(*) FROM exams").Scan(&totalExams)
-	log.Printf(" Successfully generated %d exams for classes with credit='egzamin'", totalExams)
+	log.Printf("Successfully generated %d exams", totalExams)
 	return nil
 }
+
 
 func printSummary(db *sql.DB) {
 	tables := []string{"faculties", "buildings", "subjects", "courses", "modules", "classes",
