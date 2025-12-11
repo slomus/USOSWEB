@@ -2246,6 +2246,310 @@ func (x *DeleteUserResponse) GetMessage() string {
 	return ""
 }
 
+type UploadProfilePhotoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PhotoData     string                 `protobuf:"bytes,10,opt,name=photo_data,json=photoData,proto3" json:"photo_data,omitempty"`
+	MimeType      string                 `protobuf:"bytes,11,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadProfilePhotoRequest) Reset() {
+	*x = UploadProfilePhotoRequest{}
+	mi := &file_auth_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadProfilePhotoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadProfilePhotoRequest) ProtoMessage() {}
+
+func (x *UploadProfilePhotoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadProfilePhotoRequest.ProtoReflect.Descriptor instead.
+func (*UploadProfilePhotoRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *UploadProfilePhotoRequest) GetPhotoData() string {
+	if x != nil {
+		return x.PhotoData
+	}
+	return ""
+}
+
+func (x *UploadProfilePhotoRequest) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+type UploadProfilePhotoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,10,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,11,opt,name=message,proto3" json:"message,omitempty"`
+	PhotoUrl      string                 `protobuf:"bytes,12,opt,name=photo_url,json=photoUrl,proto3" json:"photo_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadProfilePhotoResponse) Reset() {
+	*x = UploadProfilePhotoResponse{}
+	mi := &file_auth_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadProfilePhotoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadProfilePhotoResponse) ProtoMessage() {}
+
+func (x *UploadProfilePhotoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadProfilePhotoResponse.ProtoReflect.Descriptor instead.
+func (*UploadProfilePhotoResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *UploadProfilePhotoResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *UploadProfilePhotoResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *UploadProfilePhotoResponse) GetPhotoUrl() string {
+	if x != nil {
+		return x.PhotoUrl
+	}
+	return ""
+}
+
+type GetProfilePhotoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int32                  `protobuf:"varint,10,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProfilePhotoRequest) Reset() {
+	*x = GetProfilePhotoRequest{}
+	mi := &file_auth_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProfilePhotoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProfilePhotoRequest) ProtoMessage() {}
+
+func (x *GetProfilePhotoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProfilePhotoRequest.ProtoReflect.Descriptor instead.
+func (*GetProfilePhotoRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetProfilePhotoRequest) GetUserId() int32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type GetProfilePhotoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PhotoData     []byte                 `protobuf:"bytes,10,opt,name=photo_data,json=photoData,proto3" json:"photo_data,omitempty"`
+	MimeType      string                 `protobuf:"bytes,11,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProfilePhotoResponse) Reset() {
+	*x = GetProfilePhotoResponse{}
+	mi := &file_auth_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProfilePhotoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProfilePhotoResponse) ProtoMessage() {}
+
+func (x *GetProfilePhotoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProfilePhotoResponse.ProtoReflect.Descriptor instead.
+func (*GetProfilePhotoResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *GetProfilePhotoResponse) GetPhotoData() []byte {
+	if x != nil {
+		return x.PhotoData
+	}
+	return nil
+}
+
+func (x *GetProfilePhotoResponse) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+type GetMyStudentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyStudentsRequest) Reset() {
+	*x = GetMyStudentsRequest{}
+	mi := &file_auth_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyStudentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyStudentsRequest) ProtoMessage() {}
+
+func (x *GetMyStudentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyStudentsRequest.ProtoReflect.Descriptor instead.
+func (*GetMyStudentsRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{38}
+}
+
+type GetMyStudentsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Students      []*User                `protobuf:"bytes,1,rep,name=students,proto3" json:"students,omitempty"`
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyStudentsResponse) Reset() {
+	*x = GetMyStudentsResponse{}
+	mi := &file_auth_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyStudentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyStudentsResponse) ProtoMessage() {}
+
+func (x *GetMyStudentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyStudentsResponse.ProtoReflect.Descriptor instead.
+func (*GetMyStudentsResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *GetMyStudentsResponse) GetStudents() []*User {
+	if x != nil {
+		return x.Students
+	}
+	return nil
+}
+
+func (x *GetMyStudentsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GetMyStudentsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -2462,7 +2766,30 @@ const file_auth_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\"H\n" +
 	"\x12DeleteUserResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xeb\r\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"W\n" +
+	"\x19UploadProfilePhotoRequest\x12\x1d\n" +
+	"\n" +
+	"photo_data\x18\n" +
+	" \x01(\tR\tphotoData\x12\x1b\n" +
+	"\tmime_type\x18\v \x01(\tR\bmimeType\"m\n" +
+	"\x1aUploadProfilePhotoResponse\x12\x18\n" +
+	"\asuccess\x18\n" +
+	" \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\v \x01(\tR\amessage\x12\x1b\n" +
+	"\tphoto_url\x18\f \x01(\tR\bphotoUrl\"1\n" +
+	"\x16GetProfilePhotoRequest\x12\x17\n" +
+	"\auser_id\x18\n" +
+	" \x01(\x05R\x06userId\"U\n" +
+	"\x17GetProfilePhotoResponse\x12\x1d\n" +
+	"\n" +
+	"photo_data\x18\n" +
+	" \x01(\fR\tphotoData\x12\x1b\n" +
+	"\tmime_type\x18\v \x01(\tR\bmimeType\"\x16\n" +
+	"\x14GetMyStudentsRequest\"\x81\x01\n" +
+	"\x15GetMyStudentsResponse\x124\n" +
+	"\bstudents\x18\x01 \x03(\v2\x18.modules.common.api.UserR\bstudents\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\x95\x11\n" +
 	"\vAuthService\x12h\n" +
 	"\x05Login\x12 .modules.common.api.LoginRequest\x1a!.modules.common.api.LoginResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/auth/login\x12l\n" +
 	"\x06Logout\x12!.modules.common.api.LogoutRequest\x1a\".modules.common.api.LogoutResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/auth/logout\x12t\n" +
@@ -2478,7 +2805,10 @@ const file_auth_proto_rawDesc = "" +
 	"\x0eUpdateUserData\x12).modules.common.api.UpdateUserDataRequest\x1a*.modules.common.api.UpdateUserDataResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/api/auth/edit/{user_id}\x12x\n" +
 	"\vSearchUsers\x12&.modules.common.api.SearchUsersRequest\x1a'.modules.common.api.SearchUsersResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/auth/search\x12}\n" +
 	"\n" +
-	"DeleteUser\x12%.modules.common.api.DeleteUserRequest\x1a&.modules.common.api.DeleteUserResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/auth/user/{user_id}2p\n" +
+	"DeleteUser\x12%.modules.common.api.DeleteUserRequest\x1a&.modules.common.api.DeleteUserResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/auth/user/{user_id}\x12\x90\x01\n" +
+	"\x12UploadProfilePhoto\x12-.modules.common.api.UploadProfilePhotoRequest\x1a..modules.common.api.UploadProfilePhotoResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/users/photo\x12\x8e\x01\n" +
+	"\x0fGetProfilePhoto\x12*.modules.common.api.GetProfilePhotoRequest\x1a+.modules.common.api.GetProfilePhotoResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/users/{user_id}/photo\x12\x83\x01\n" +
+	"\rGetMyStudents\x12(.modules.common.api.GetMyStudentsRequest\x1a).modules.common.api.GetMyStudentsResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/teacher/students2p\n" +
 	"\tAuthHello\x12c\n" +
 	"\bSayHello\x12 .modules.common.api.HelloRequest\x1a!.modules.common.api.HelloResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/api/helloB<Z:github.com/slomus/USOSWEB/src/backend/common/gen/auth;authb\x06proto3"
@@ -2495,42 +2825,48 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_auth_proto_goTypes = []any{
-	(*LoginRequest)(nil),            // 0: modules.common.api.LoginRequest
-	(*LoginResponse)(nil),           // 1: modules.common.api.LoginResponse
-	(*LogoutRequest)(nil),           // 2: modules.common.api.LogoutRequest
-	(*LogoutResponse)(nil),          // 3: modules.common.api.LogoutResponse
-	(*RegisterRequest)(nil),         // 4: modules.common.api.RegisterRequest
-	(*RegisterResponse)(nil),        // 5: modules.common.api.RegisterResponse
-	(*UserData)(nil),                // 6: modules.common.api.UserData
-	(*RefreshTokenRequest)(nil),     // 7: modules.common.api.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),    // 8: modules.common.api.RefreshTokenResponse
-	(*ForgotPasswordRequest)(nil),   // 9: modules.common.api.ForgotPasswordRequest
-	(*ForgotPasswordResponse)(nil),  // 10: modules.common.api.ForgotPasswordResponse
-	(*ResetPasswordRequest)(nil),    // 11: modules.common.api.ResetPasswordRequest
-	(*ResetPasswordResponse)(nil),   // 12: modules.common.api.ResetPasswordResponse
-	(*GetUserNameRequest)(nil),      // 13: modules.common.api.GetUserNameRequest
-	(*GetUserNameResponse)(nil),     // 14: modules.common.api.GetUserNameResponse
-	(*HelloRequest)(nil),            // 15: modules.common.api.HelloRequest
-	(*HelloResponse)(nil),           // 16: modules.common.api.HelloResponse
-	(*UserSubject)(nil),             // 17: modules.common.api.UserSubject
-	(*User)(nil),                    // 18: modules.common.api.User
-	(*GetUsersRequest)(nil),         // 19: modules.common.api.GetUsersRequest
-	(*GetUsersResponse)(nil),        // 20: modules.common.api.GetUsersResponse
-	(*GetUserDataRequest)(nil),      // 21: modules.common.api.GetUserDataRequest
-	(*GetUserDataResponse)(nil),     // 22: modules.common.api.GetUserDataResponse
-	(*GetUserRoleRequest)(nil),      // 23: modules.common.api.GetUserRoleRequest
-	(*GetUserRoleResponse)(nil),     // 24: modules.common.api.GetUserRoleResponse
-	(*GetUserEditDataRequest)(nil),  // 25: modules.common.api.GetUserEditDataRequest
-	(*GetUserEditDataResponse)(nil), // 26: modules.common.api.GetUserEditDataResponse
-	(*UpdateUserDataRequest)(nil),   // 27: modules.common.api.UpdateUserDataRequest
-	(*UpdateUserDataResponse)(nil),  // 28: modules.common.api.UpdateUserDataResponse
-	(*SearchUsersRequest)(nil),      // 29: modules.common.api.SearchUsersRequest
-	(*SearchUsersResponse)(nil),     // 30: modules.common.api.SearchUsersResponse
-	(*UserSearchResult)(nil),        // 31: modules.common.api.UserSearchResult
-	(*DeleteUserRequest)(nil),       // 32: modules.common.api.DeleteUserRequest
-	(*DeleteUserResponse)(nil),      // 33: modules.common.api.DeleteUserResponse
+	(*LoginRequest)(nil),               // 0: modules.common.api.LoginRequest
+	(*LoginResponse)(nil),              // 1: modules.common.api.LoginResponse
+	(*LogoutRequest)(nil),              // 2: modules.common.api.LogoutRequest
+	(*LogoutResponse)(nil),             // 3: modules.common.api.LogoutResponse
+	(*RegisterRequest)(nil),            // 4: modules.common.api.RegisterRequest
+	(*RegisterResponse)(nil),           // 5: modules.common.api.RegisterResponse
+	(*UserData)(nil),                   // 6: modules.common.api.UserData
+	(*RefreshTokenRequest)(nil),        // 7: modules.common.api.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),       // 8: modules.common.api.RefreshTokenResponse
+	(*ForgotPasswordRequest)(nil),      // 9: modules.common.api.ForgotPasswordRequest
+	(*ForgotPasswordResponse)(nil),     // 10: modules.common.api.ForgotPasswordResponse
+	(*ResetPasswordRequest)(nil),       // 11: modules.common.api.ResetPasswordRequest
+	(*ResetPasswordResponse)(nil),      // 12: modules.common.api.ResetPasswordResponse
+	(*GetUserNameRequest)(nil),         // 13: modules.common.api.GetUserNameRequest
+	(*GetUserNameResponse)(nil),        // 14: modules.common.api.GetUserNameResponse
+	(*HelloRequest)(nil),               // 15: modules.common.api.HelloRequest
+	(*HelloResponse)(nil),              // 16: modules.common.api.HelloResponse
+	(*UserSubject)(nil),                // 17: modules.common.api.UserSubject
+	(*User)(nil),                       // 18: modules.common.api.User
+	(*GetUsersRequest)(nil),            // 19: modules.common.api.GetUsersRequest
+	(*GetUsersResponse)(nil),           // 20: modules.common.api.GetUsersResponse
+	(*GetUserDataRequest)(nil),         // 21: modules.common.api.GetUserDataRequest
+	(*GetUserDataResponse)(nil),        // 22: modules.common.api.GetUserDataResponse
+	(*GetUserRoleRequest)(nil),         // 23: modules.common.api.GetUserRoleRequest
+	(*GetUserRoleResponse)(nil),        // 24: modules.common.api.GetUserRoleResponse
+	(*GetUserEditDataRequest)(nil),     // 25: modules.common.api.GetUserEditDataRequest
+	(*GetUserEditDataResponse)(nil),    // 26: modules.common.api.GetUserEditDataResponse
+	(*UpdateUserDataRequest)(nil),      // 27: modules.common.api.UpdateUserDataRequest
+	(*UpdateUserDataResponse)(nil),     // 28: modules.common.api.UpdateUserDataResponse
+	(*SearchUsersRequest)(nil),         // 29: modules.common.api.SearchUsersRequest
+	(*SearchUsersResponse)(nil),        // 30: modules.common.api.SearchUsersResponse
+	(*UserSearchResult)(nil),           // 31: modules.common.api.UserSearchResult
+	(*DeleteUserRequest)(nil),          // 32: modules.common.api.DeleteUserRequest
+	(*DeleteUserResponse)(nil),         // 33: modules.common.api.DeleteUserResponse
+	(*UploadProfilePhotoRequest)(nil),  // 34: modules.common.api.UploadProfilePhotoRequest
+	(*UploadProfilePhotoResponse)(nil), // 35: modules.common.api.UploadProfilePhotoResponse
+	(*GetProfilePhotoRequest)(nil),     // 36: modules.common.api.GetProfilePhotoRequest
+	(*GetProfilePhotoResponse)(nil),    // 37: modules.common.api.GetProfilePhotoResponse
+	(*GetMyStudentsRequest)(nil),       // 38: modules.common.api.GetMyStudentsRequest
+	(*GetMyStudentsResponse)(nil),      // 39: modules.common.api.GetMyStudentsResponse
 }
 var file_auth_proto_depIdxs = []int32{
 	6,  // 0: modules.common.api.RegisterResponse.user_data:type_name -> modules.common.api.UserData
@@ -2538,41 +2874,48 @@ var file_auth_proto_depIdxs = []int32{
 	18, // 2: modules.common.api.GetUserDataResponse.user:type_name -> modules.common.api.User
 	26, // 3: modules.common.api.UpdateUserDataResponse.updated_data:type_name -> modules.common.api.GetUserEditDataResponse
 	31, // 4: modules.common.api.SearchUsersResponse.users:type_name -> modules.common.api.UserSearchResult
-	0,  // 5: modules.common.api.AuthService.Login:input_type -> modules.common.api.LoginRequest
-	2,  // 6: modules.common.api.AuthService.Logout:input_type -> modules.common.api.LogoutRequest
-	4,  // 7: modules.common.api.AuthService.Register:input_type -> modules.common.api.RegisterRequest
-	7,  // 8: modules.common.api.AuthService.RefreshToken:input_type -> modules.common.api.RefreshTokenRequest
-	9,  // 9: modules.common.api.AuthService.ForgotPassword:input_type -> modules.common.api.ForgotPasswordRequest
-	11, // 10: modules.common.api.AuthService.ResetPassword:input_type -> modules.common.api.ResetPasswordRequest
-	13, // 11: modules.common.api.AuthService.GetUserName:input_type -> modules.common.api.GetUserNameRequest
-	19, // 12: modules.common.api.AuthService.GetUsers:input_type -> modules.common.api.GetUsersRequest
-	21, // 13: modules.common.api.AuthService.GetUserData:input_type -> modules.common.api.GetUserDataRequest
-	23, // 14: modules.common.api.AuthService.GetUserRole:input_type -> modules.common.api.GetUserRoleRequest
-	25, // 15: modules.common.api.AuthService.GetUserEditData:input_type -> modules.common.api.GetUserEditDataRequest
-	27, // 16: modules.common.api.AuthService.UpdateUserData:input_type -> modules.common.api.UpdateUserDataRequest
-	29, // 17: modules.common.api.AuthService.SearchUsers:input_type -> modules.common.api.SearchUsersRequest
-	32, // 18: modules.common.api.AuthService.DeleteUser:input_type -> modules.common.api.DeleteUserRequest
-	15, // 19: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
-	1,  // 20: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
-	3,  // 21: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
-	5,  // 22: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
-	8,  // 23: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
-	10, // 24: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
-	12, // 25: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
-	14, // 26: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
-	20, // 27: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
-	22, // 28: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
-	24, // 29: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
-	26, // 30: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
-	28, // 31: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
-	30, // 32: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
-	33, // 33: modules.common.api.AuthService.DeleteUser:output_type -> modules.common.api.DeleteUserResponse
-	16, // 34: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
-	20, // [20:35] is the sub-list for method output_type
-	5,  // [5:20] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	18, // 5: modules.common.api.GetMyStudentsResponse.students:type_name -> modules.common.api.User
+	0,  // 6: modules.common.api.AuthService.Login:input_type -> modules.common.api.LoginRequest
+	2,  // 7: modules.common.api.AuthService.Logout:input_type -> modules.common.api.LogoutRequest
+	4,  // 8: modules.common.api.AuthService.Register:input_type -> modules.common.api.RegisterRequest
+	7,  // 9: modules.common.api.AuthService.RefreshToken:input_type -> modules.common.api.RefreshTokenRequest
+	9,  // 10: modules.common.api.AuthService.ForgotPassword:input_type -> modules.common.api.ForgotPasswordRequest
+	11, // 11: modules.common.api.AuthService.ResetPassword:input_type -> modules.common.api.ResetPasswordRequest
+	13, // 12: modules.common.api.AuthService.GetUserName:input_type -> modules.common.api.GetUserNameRequest
+	19, // 13: modules.common.api.AuthService.GetUsers:input_type -> modules.common.api.GetUsersRequest
+	21, // 14: modules.common.api.AuthService.GetUserData:input_type -> modules.common.api.GetUserDataRequest
+	23, // 15: modules.common.api.AuthService.GetUserRole:input_type -> modules.common.api.GetUserRoleRequest
+	25, // 16: modules.common.api.AuthService.GetUserEditData:input_type -> modules.common.api.GetUserEditDataRequest
+	27, // 17: modules.common.api.AuthService.UpdateUserData:input_type -> modules.common.api.UpdateUserDataRequest
+	29, // 18: modules.common.api.AuthService.SearchUsers:input_type -> modules.common.api.SearchUsersRequest
+	32, // 19: modules.common.api.AuthService.DeleteUser:input_type -> modules.common.api.DeleteUserRequest
+	34, // 20: modules.common.api.AuthService.UploadProfilePhoto:input_type -> modules.common.api.UploadProfilePhotoRequest
+	36, // 21: modules.common.api.AuthService.GetProfilePhoto:input_type -> modules.common.api.GetProfilePhotoRequest
+	38, // 22: modules.common.api.AuthService.GetMyStudents:input_type -> modules.common.api.GetMyStudentsRequest
+	15, // 23: modules.common.api.AuthHello.SayHello:input_type -> modules.common.api.HelloRequest
+	1,  // 24: modules.common.api.AuthService.Login:output_type -> modules.common.api.LoginResponse
+	3,  // 25: modules.common.api.AuthService.Logout:output_type -> modules.common.api.LogoutResponse
+	5,  // 26: modules.common.api.AuthService.Register:output_type -> modules.common.api.RegisterResponse
+	8,  // 27: modules.common.api.AuthService.RefreshToken:output_type -> modules.common.api.RefreshTokenResponse
+	10, // 28: modules.common.api.AuthService.ForgotPassword:output_type -> modules.common.api.ForgotPasswordResponse
+	12, // 29: modules.common.api.AuthService.ResetPassword:output_type -> modules.common.api.ResetPasswordResponse
+	14, // 30: modules.common.api.AuthService.GetUserName:output_type -> modules.common.api.GetUserNameResponse
+	20, // 31: modules.common.api.AuthService.GetUsers:output_type -> modules.common.api.GetUsersResponse
+	22, // 32: modules.common.api.AuthService.GetUserData:output_type -> modules.common.api.GetUserDataResponse
+	24, // 33: modules.common.api.AuthService.GetUserRole:output_type -> modules.common.api.GetUserRoleResponse
+	26, // 34: modules.common.api.AuthService.GetUserEditData:output_type -> modules.common.api.GetUserEditDataResponse
+	28, // 35: modules.common.api.AuthService.UpdateUserData:output_type -> modules.common.api.UpdateUserDataResponse
+	30, // 36: modules.common.api.AuthService.SearchUsers:output_type -> modules.common.api.SearchUsersResponse
+	33, // 37: modules.common.api.AuthService.DeleteUser:output_type -> modules.common.api.DeleteUserResponse
+	35, // 38: modules.common.api.AuthService.UploadProfilePhoto:output_type -> modules.common.api.UploadProfilePhotoResponse
+	37, // 39: modules.common.api.AuthService.GetProfilePhoto:output_type -> modules.common.api.GetProfilePhotoResponse
+	39, // 40: modules.common.api.AuthService.GetMyStudents:output_type -> modules.common.api.GetMyStudentsResponse
+	16, // 41: modules.common.api.AuthHello.SayHello:output_type -> modules.common.api.HelloResponse
+	24, // [24:42] is the sub-list for method output_type
+	6,  // [6:24] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_auth_proto_init() }
@@ -2589,7 +2932,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   34,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
