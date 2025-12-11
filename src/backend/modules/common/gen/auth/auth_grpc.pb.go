@@ -36,6 +36,7 @@ const (
 	AuthService_UploadProfilePhoto_FullMethodName = "/modules.common.api.AuthService/UploadProfilePhoto"
 	AuthService_GetProfilePhoto_FullMethodName    = "/modules.common.api.AuthService/GetProfilePhoto"
 	AuthService_GetMyStudents_FullMethodName      = "/modules.common.api.AuthService/GetMyStudents"
+	AuthService_GetUserInfo_FullMethodName        = "/modules.common.api.AuthService/GetUserInfo"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -59,6 +60,7 @@ type AuthServiceClient interface {
 	UploadProfilePhoto(ctx context.Context, in *UploadProfilePhotoRequest, opts ...grpc.CallOption) (*UploadProfilePhotoResponse, error)
 	GetProfilePhoto(ctx context.Context, in *GetProfilePhotoRequest, opts ...grpc.CallOption) (*GetProfilePhotoResponse, error)
 	GetMyStudents(ctx context.Context, in *GetMyStudentsRequest, opts ...grpc.CallOption) (*GetMyStudentsResponse, error)
+	GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error)
 }
 
 type authServiceClient struct {
@@ -239,6 +241,16 @@ func (c *authServiceClient) GetMyStudents(ctx context.Context, in *GetMyStudents
 	return out, nil
 }
 
+func (c *authServiceClient) GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserInfoResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUserInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -260,6 +272,7 @@ type AuthServiceServer interface {
 	UploadProfilePhoto(context.Context, *UploadProfilePhotoRequest) (*UploadProfilePhotoResponse, error)
 	GetProfilePhoto(context.Context, *GetProfilePhotoRequest) (*GetProfilePhotoResponse, error)
 	GetMyStudents(context.Context, *GetMyStudentsRequest) (*GetMyStudentsResponse, error)
+	GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -320,6 +333,9 @@ func (UnimplementedAuthServiceServer) GetProfilePhoto(context.Context, *GetProfi
 }
 func (UnimplementedAuthServiceServer) GetMyStudents(context.Context, *GetMyStudentsRequest) (*GetMyStudentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMyStudents not implemented")
+}
+func (UnimplementedAuthServiceServer) GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -648,6 +664,24 @@ func _AuthService_GetMyStudents_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetUserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetUserInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetUserInfo(ctx, req.(*GetUserInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -722,6 +756,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMyStudents",
 			Handler:    _AuthService_GetMyStudents_Handler,
+		},
+		{
+			MethodName: "GetUserInfo",
+			Handler:    _AuthService_GetUserInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
