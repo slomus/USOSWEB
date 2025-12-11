@@ -2103,19 +2103,19 @@ func (s *AuthServer) GetProfilePhoto(ctx context.Context, req *pb.GetProfilePhot
 
 	_ = callerID
 
-	var photoPath, mimeType string
+	var photoPath, mimeType sql.NullString 
 	err = s.db.QueryRowContext(ctx, 
 		"SELECT profile_photo_path, profile_photo_mime_type FROM users WHERE user_id = $1",
 		req.UserId).Scan(&photoPath, &mimeType)
 	
-	if err == sql.ErrNoRows {
+	if err == sql.ErrNoRows || !photoPath.Valid {
 		return nil, status.Error(codes.NotFound, "user not found or no photo")
 	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, "database error")
 	}
 
-	photoData, err := os.ReadFile(photoPath)
+	photoData, err := os.ReadFile(photoPath.String)
 	if err != nil {
 		authLog.LogError("Failed to read photo file", err)
 		return nil, status.Error(codes.NotFound, "photo file not found")
@@ -2123,7 +2123,7 @@ func (s *AuthServer) GetProfilePhoto(ctx context.Context, req *pb.GetProfilePhot
 
 	return &pb.GetProfilePhotoResponse{
 		PhotoData: photoData,
-		MimeType:  mimeType,
+		MimeType:  mimeType.String,
 	}, nil
 }
 
