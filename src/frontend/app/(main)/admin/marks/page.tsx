@@ -48,8 +48,8 @@ type GradeOptionClass = {
   subjectName: string;
   classType: string;
   groupNr: number;
-  teacherIds: number[];        // lista teachingStaffId (backend używa teacherIds)
-  studentAlbumNrs: number[];   // lista albumNr (backend używa studentAlbumNrs)
+  teacherIds: number[];
+  studentAlbumNrs: number[];
 };
 
 type GradeOptions = {
@@ -60,13 +60,13 @@ type GradeOptions = {
 };
 
 type NewMarkForm = {
-  albumNr: string;
   classId: string;
+  as_teaching_staff_id: string;
+  albumNr: string;
   value: string;
   weight: string;
   attempt: string;
   comment: string;
-  as_teaching_staff_id: string;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -89,15 +89,18 @@ export default function AdminMarksManagementPage() {
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [deletingMarkId, setDeletingMarkId] = useState<number | null>(null);
 
+  // Wyszukiwanie zajęć w formularzu
+  const [classSearchTerm, setClassSearchTerm] = useState("");
+
   // Formularz dodawania/edycji
   const [markForm, setMarkForm] = useState<NewMarkForm>({
-    albumNr: "",
     classId: "",
+    as_teaching_staff_id: "",
+    albumNr: "",
     value: "",
     weight: "1",
     attempt: "1",
     comment: "",
-    as_teaching_staff_id: "",
   });
 
   // ==================== EFEKTY ====================
@@ -134,19 +137,6 @@ export default function AdminMarksManagementPage() {
 
       if (optionsRes.ok) {
         const optionsData = await optionsRes.json();
-        
-        // Debug - loguj surowe dane z API
-        console.log("=== DEBUG: Odpowiedź z /api/admin/grade-options ===");
-        console.log("Cała odpowiedź:", optionsData);
-        console.log("Students:", optionsData.students);
-        console.log("Teachers:", optionsData.teachers);
-        console.log("Subjects:", optionsData.subjects);
-        console.log("Classes:", optionsData.classes);
-        if (optionsData.classes?.length > 0) {
-          console.log("Przykładowa klasa - wszystkie pola:", Object.keys(optionsData.classes[0]));
-          console.log("Przykładowa klasa - wartości:", optionsData.classes[0]);
-        }
-        
         setGradeOptions({
           students: optionsData.students || [],
           teachers: optionsData.teachers || [],
@@ -196,90 +186,85 @@ export default function AdminMarksManagementPage() {
 
   // ==================== LOGIKA FORMULARZA (NOWY WORKFLOW) ====================
 
-  // Krok 1: Po wybraniu studenta → pokaż tylko klasy, na które jest zapisany
-  const getClassesForStudent = (): GradeOptionClass[] => {
-    if (!gradeOptions || !markForm.albumNr) return [];
+  // Filtrowanie zajęć po wyszukiwarce
+  const getFilteredClasses = (): GradeOptionClass[] => {
+    if (!gradeOptions) return [];
     
-    const albumNr = Number(markForm.albumNr);
-    
-    // Debug - sprawdź strukturę danych
-    console.log("=== DEBUG getClassesForStudent ===");
-    console.log("albumNr:", albumNr);
-    console.log("Wszystkie klasy:", gradeOptions.classes);
-    if (gradeOptions.classes.length > 0) {
-      console.log("Przykładowa klasa:", gradeOptions.classes[0]);
-      console.log("Pola klasy:", Object.keys(gradeOptions.classes[0]));
+    if (!classSearchTerm.trim()) {
+      return gradeOptions.classes;
     }
     
-    return gradeOptions.classes.filter((cls) => {
-      // Backend używa studentAlbumNrs
-      const studentsList = cls.studentAlbumNrs || [];
-      return Array.isArray(studentsList) && studentsList.includes(albumNr);
-    });
+    const term = classSearchTerm.toLowerCase();
+    return gradeOptions.classes.filter((cls) =>
+      cls.subjectName.toLowerCase().includes(term) ||
+      cls.classType.toLowerCase().includes(term)
+    );
   };
 
-  // Krok 2: Po wybraniu klasy → pokaż tylko nauczycieli przypisanych do tej klasy
+  // Krok 2: Po wybraniu zajęć → pokaż prowadzących przypisanych do tych zajęć
   const getTeachersForClass = (): GradeOptionTeacher[] => {
     if (!gradeOptions || !markForm.classId) return [];
 
     const cls = gradeOptions.classes.find((c) => c.classId === Number(markForm.classId));
     if (!cls) return [];
 
-    // Backend używa teacherIds
     const teachersList = cls.teacherIds || [];
     if (!Array.isArray(teachersList)) return [];
     
     return gradeOptions.teachers.filter((t) => teachersList.includes(t.teachingStaffId));
   };
 
-  // Pomocnicza: pobierz wybraną klasę (do wyświetlenia nazwy przedmiotu)
+  // Krok 3: Po wybraniu zajęć → pokaż studentów zapisanych na te zajęcia
+  const getStudentsForClass = (): GradeOptionStudent[] => {
+    if (!gradeOptions || !markForm.classId) return [];
+
+    const cls = gradeOptions.classes.find((c) => c.classId === Number(markForm.classId));
+    if (!cls) return [];
+
+    const studentsList = cls.studentAlbumNrs || [];
+    if (!Array.isArray(studentsList)) return [];
+    
+    return gradeOptions.students.filter((s) => studentsList.includes(s.albumNr));
+  };
+
+  // Pomocnicza: pobierz wybraną klasę
   const getSelectedClass = (): GradeOptionClass | undefined => {
     if (!gradeOptions || !markForm.classId) return undefined;
     return gradeOptions.classes.find((c) => c.classId === Number(markForm.classId));
   };
 
-  // Handler zmiany studenta - resetuje klasę i nauczyciela
-  const onStudentChange = (albumNr: string) => {
-    setMarkForm({
-      ...markForm,
-      albumNr,
-      classId: "",
-      as_teaching_staff_id: "",
-    });
-  };
-
-  // Handler zmiany klasy - resetuje nauczyciela
+  // Handler zmiany zajęć - resetuje prowadzącego i studenta
   const onClassChange = (classId: string) => {
     setMarkForm({
       ...markForm,
       classId,
       as_teaching_staff_id: "",
+      albumNr: "",
     });
   };
 
   // Reset formularza
   const resetForm = () => {
     setMarkForm({
-      albumNr: "",
       classId: "",
+      as_teaching_staff_id: "",
+      albumNr: "",
       value: "",
       weight: "1",
       attempt: "1",
       comment: "",
-      as_teaching_staff_id: "",
     });
+    setClassSearchTerm("");
   };
 
   // ==================== OPERACJE CRUD ====================
 
   const handleAddMark = async () => {
-    // Walidacja
-    if (!markForm.albumNr || !markForm.classId || !markForm.value || !markForm.as_teaching_staff_id) {
+    if (!markForm.classId || !markForm.as_teaching_staff_id || !markForm.albumNr || !markForm.value) {
       toast.error("Wypełnij wszystkie wymagane pola");
       return;
     }
 
-    // Pobierz subject_id z wybranej klasy
     const selectedClass = getSelectedClass();
     if (!selectedClass) {
       toast.error("Nie można znaleźć wybranej klasy");
@@ -288,7 +273,7 @@ export default function AdminMarksManagementPage() {
 
     const requestBody = {
       album_nr: Number(markForm.albumNr),
-      subject_id: selectedClass.subjectId,  // automatycznie z klasy
+      subject_id: selectedClass.subjectId,
       class_id: Number(markForm.classId),
       value: markForm.value,
       weight: Number(markForm.weight),
@@ -387,8 +372,9 @@ export default function AdminMarksManagementPage() {
     );
   }
 
-  const classesForStudent = getClassesForStudent();
+  const filteredClasses = getFilteredClasses();
   const teachersForClass = getTeachersForClass();
+  const studentsForClass = getStudentsForClass();
   const selectedClass = getSelectedClass();
 
   return (
@@ -435,7 +421,6 @@ export default function AdminMarksManagementPage() {
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 mb-6 border border-[var(--color-accent)]">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               
-              {/* Szukaj tekstowo */}
               <div>
                 <label className="block text-sm font-medium mb-2">Szukaj</label>
                 <div className="relative">
@@ -450,7 +435,6 @@ export default function AdminMarksManagementPage() {
                 </div>
               </div>
 
-              {/* ID oceny */}
               <div>
                 <label className="block text-sm font-medium mb-2">ID oceny</label>
                 <input
@@ -462,7 +446,6 @@ export default function AdminMarksManagementPage() {
                 />
               </div>
 
-              {/* Filtr studenta */}
               <div>
                 <label className="block text-sm font-medium mb-2">Student</label>
                 <select
@@ -479,7 +462,6 @@ export default function AdminMarksManagementPage() {
                 </select>
               </div>
 
-              {/* Filtr przedmiotu */}
               <div>
                 <label className="block text-sm font-medium mb-2">Przedmiot</label>
                 <select
@@ -527,7 +509,6 @@ export default function AdminMarksManagementPage() {
 
                   <tbody>
                     {filteredMarks.map((mark) => {
-                      // Znajdź imię studenta
                       const student = gradeOptions?.students.find((s) => s.albumNr === mark.albumNr);
                       const studentName = student?.name || `Album: ${mark.albumNr}`;
 
@@ -543,14 +524,13 @@ export default function AdminMarksManagementPage() {
                           <td className="px-4 py-3">{mark.createdAt?.split(" ")[0]}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
-                              {/* Edycja */}
                               <button
                                 onClick={() => {
                                   setEditingMark(mark);
                                   setMarkForm({
-                                    albumNr: mark.albumNr.toString(),
                                     classId: mark.classId.toString(),
                                     as_teaching_staff_id: mark.addedByTeachingStaffId?.toString() || "",
+                                    albumNr: mark.albumNr.toString(),
                                     value: mark.value,
                                     weight: mark.weight.toString(),
                                     attempt: mark.attempt.toString(),
@@ -563,7 +543,6 @@ export default function AdminMarksManagementPage() {
                                 <FaEdit />
                               </button>
 
-                              {/* Usuwanie */}
                               <button
                                 onClick={() => setDeletingMarkId(mark.gradeId)}
                                 className="p-2 text-red-600 hover:bg-red-600/20 rounded"
@@ -587,7 +566,6 @@ export default function AdminMarksManagementPage() {
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 
-                {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-semibold">Dodaj Ocenę</h2>
                   <button onClick={() => setShowAddModal(false)}>
@@ -595,70 +573,59 @@ export default function AdminMarksManagementPage() {
                   </button>
                 </div>
 
-                {/* Info o workflow */}
                 <div className="mb-4 p-3 bg-blue-600/20 border border-blue-600 rounded text-blue-200 text-sm">
-                  <strong>Workflow:</strong> Wybierz studenta → System pokaże tylko zajęcia, na które jest zapisany → Wybierz zajęcia → Wybierz prowadzącego
+                  <strong>Workflow:</strong> Wybierz zajęcia → Wybierz prowadzącego → Wybierz studenta z listy zapisanych
                 </div>
 
                 <div className="space-y-4">
 
-                  {/* ===== KROK 1: STUDENT ===== */}
+                  {/* ===== KROK 1: ZAJĘCIA ===== */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
-                      1. Student <span className="text-red-500">*</span>
+                      1. Zajęcia <span className="text-red-500">*</span>
                     </label>
+                    
+                    {/* Wyszukiwarka zajęć */}
+                    <div className="relative mb-2">
+                      <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+                      <input
+                        type="text"
+                        placeholder="Szukaj zajęć (nazwa przedmiotu, typ)..."
+                        value={classSearchTerm}
+                        onChange={(e) => setClassSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      />
+                    </div>
+
                     <select
-                      value={markForm.albumNr}
-                      onChange={(e) => onStudentChange(e.target.value)}
+                      value={markForm.classId}
+                      onChange={(e) => onClassChange(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                      size={5}
                     >
-                      <option value="">Wybierz studenta...</option>
-                      {gradeOptions?.students.map((s) => (
-                        <option key={s.albumNr} value={s.albumNr}>
-                          {s.name} (Album: {s.albumNr}) - {s.course}
+                      <option value="">Wybierz zajęcia...</option>
+                      {filteredClasses.map((c) => (
+                        <option key={c.classId} value={c.classId}>
+                          {c.subjectName} — {c.classType} — Grupa {c.groupNr} ({c.studentAlbumNrs?.length || 0} studentów)
                         </option>
                       ))}
                     </select>
-                  </div>
+                    
+                    <div className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                      Pokazano {filteredClasses.length} z {gradeOptions?.classes.length || 0} zajęć
+                    </div>
 
-                  {/* ===== KROK 2: ZAJĘCIA (filtrowane po studencie) ===== */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      2. Zajęcia <span className="text-red-500">*</span>
-                    </label>
-
-                    {markForm.albumNr && classesForStudent.length === 0 ? (
-                      <div className="p-3 bg-yellow-600/20 border border-yellow-600 rounded text-yellow-200">
-                        Ten student nie jest zapisany na żadne zajęcia.
-                      </div>
-                    ) : (
-                      <select
-                        value={markForm.classId}
-                        onChange={(e) => onClassChange(e.target.value)}
-                        disabled={!markForm.albumNr || classesForStudent.length === 0}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] disabled:opacity-50"
-                      >
-                        <option value="">Wybierz zajęcia...</option>
-                        {classesForStudent.map((c) => (
-                          <option key={c.classId} value={c.classId}>
-                            {c.subjectName} — {c.classType} — Grupa {c.groupNr}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-
-                    {/* Pokaż nazwę przedmiotu po wybraniu klasy */}
                     {selectedClass && (
-                      <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        Przedmiot: <strong>{selectedClass.subjectName}</strong> (ID: {selectedClass.subjectId})
+                      <div className="mt-2 text-sm text-green-400">
+                        ✓ Wybrano: <strong>{selectedClass.subjectName}</strong> — {selectedClass.classType} — Grupa {selectedClass.groupNr}
                       </div>
                     )}
                   </div>
 
-                  {/* ===== KROK 3: PROWADZĄCY (filtrowany po klasie) ===== */}
+                  {/* ===== KROK 2: PROWADZĄCY ===== */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
-                      3. Prowadzący <span className="text-red-500">*</span>
+                      2. Prowadzący <span className="text-red-500">*</span>
                     </label>
 
                     {markForm.classId && teachersForClass.length === 0 ? (
@@ -669,20 +636,53 @@ export default function AdminMarksManagementPage() {
                       <select
                         value={markForm.as_teaching_staff_id}
                         onChange={(e) => setMarkForm({ ...markForm, as_teaching_staff_id: e.target.value })}
-                        disabled={!markForm.classId || teachersForClass.length === 0}
+                        disabled={!markForm.classId}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] disabled:opacity-50"
                       >
                         <option value="">Wybierz prowadzącego...</option>
                         {teachersForClass.map((t) => (
                           <option key={t.teachingStaffId} value={t.teachingStaffId}>
-                            {t.name} (ID: {t.teachingStaffId})
+                            {t.name}
                           </option>
                         ))}
                       </select>
                     )}
                   </div>
 
-                  {/* ===== OCENA I WAGA ===== */}
+                  {/* ===== KROK 3: STUDENT ===== */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      3. Student <span className="text-red-500">*</span>
+                    </label>
+
+                    {markForm.classId && studentsForClass.length === 0 ? (
+                      <div className="p-3 bg-yellow-600/20 border border-yellow-600 rounded text-yellow-200">
+                        Brak studentów zapisanych na te zajęcia.
+                      </div>
+                    ) : (
+                      <select
+                        value={markForm.albumNr}
+                        onChange={(e) => setMarkForm({ ...markForm, albumNr: e.target.value })}
+                        disabled={!markForm.classId}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] disabled:opacity-50"
+                      >
+                        <option value="">Wybierz studenta...</option>
+                        {studentsForClass.map((s) => (
+                          <option key={s.albumNr} value={s.albumNr}>
+                            {s.name} (Album: {s.albumNr}) - {s.course}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    
+                    {markForm.classId && studentsForClass.length > 0 && (
+                      <div className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                        {studentsForClass.length} studentów zapisanych na te zajęcia
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ===== OCENA, WAGA, PODEJŚCIE ===== */}
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">
@@ -748,9 +748,9 @@ export default function AdminMarksManagementPage() {
                   <button
                     onClick={handleAddMark}
                     disabled={
-                      !markForm.albumNr ||
                       !markForm.classId ||
                       !markForm.as_teaching_staff_id ||
+                      !markForm.albumNr ||
                       !markForm.value
                     }
                     className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"

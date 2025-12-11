@@ -41,7 +41,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
 
   // Menu dla studentów
   const studentMenuItems: MenuItem[] = [
-    { label: "Strona główna", href: "/StudentMainPage" },
+    { label: "Strona główna", href: "/MainPage" },
     { label: "Plan zajęć", href: "/scheduleLesson" },
     { label: "Wiadomości", href: "/messages" },
     { label: "Kalendarz", href: "/calendar" },
@@ -57,7 +57,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
 
   // Menu dla adminów
   const adminMenuItems: MenuItem[] = [
-    { label: "Strona główna", href: "/StudentMainPage" },
+    { label: "Strona główna", href: "/MainPage" },
     { label: " ZARZĄDZANIE ", href: "#", disabled: true },
     { label: "Użytkownicy", href: "/admin/users" },
     { label: "Oceny", href: "/admin/marks" },
@@ -73,7 +73,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
 
   // Menu dla wykładowców
   const teacherMenuItems: MenuItem[] = [
-    { label: "Strona główna", href: "/StudentMainPage" },
+    { label: "Strona główna", href: "/MainPage" },
     { label: "Moje zajęcia", href: "/teacher/subjects" },
     { label: "Oceny studentów", href: "/teacher/marks" },
     { label: "Plan zajęć", href: "/teacher/scheduleLesson" },
