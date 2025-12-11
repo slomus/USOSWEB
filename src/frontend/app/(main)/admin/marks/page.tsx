@@ -36,6 +36,16 @@ type Subject = {
   ects: number;
 };
 
+type ClassWithInstructors = {
+  classId: number;
+  subjectId: number;
+  subjectName: string;
+  classType: string;
+  groupNr: number;
+  instructors: { teachingStaffId: number; name: string }[];
+  enrolledStudents: number[];
+};
+
 type NewMarkForm = {
   albumNr: string;
   subjectId: string;
@@ -54,30 +64,23 @@ export default function AdminMarksManagementPage() {
   const [filteredMarks, setFilteredMarks] = useState<Mark[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
+  const [classes, setClasses] = useState<ClassWithInstructors[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Filtry
+
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [gradeIdSearch, setGradeIdSearch] = useState("");
-  
-  // Modalne okna
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [deletingMarkId, setDeletingMarkId] = useState<number | null>(null);
-  
-  // Search states for modal dropdowns
   const [studentSearch, setStudentSearch] = useState("");
-  const [subjectSearch, setSubjectSearch] = useState("");
-  const [teacherSearch, setTeacherSearch] = useState("");
-  
-  // Formularz nowej/edytowanej oceny
+
   const [markForm, setMarkForm] = useState<NewMarkForm>({
     albumNr: "",
     subjectId: "",
-    classId: "1",
+    classId: "",
     value: "",
     weight: "1",
     attempt: "1",
@@ -85,7 +88,6 @@ export default function AdminMarksManagementPage() {
     as_teaching_staff_id: "",
   });
 
-  // Pobieranie wszystkich danych
   useEffect(() => {
     fetchData();
   }, []);
@@ -94,49 +96,47 @@ export default function AdminMarksManagementPage() {
     try {
       setLoading(true);
 
-      // Pobierz wszystkie oceny (dla wszystkich studentów)
       const marksRes = await fetch(`${API_BASE}/api/grades?all_students=true`, {
         credentials: "include",
       });
+
       if (marksRes.ok) {
         const marksData = await marksRes.json();
-        console.log("Grades data:", marksData);
-        console.log("First grade:", marksData.grades?.[0]);
         setMarks(marksData.grades || []);
         setFilteredMarks(marksData.grades || []);
       }
 
-      // Pobierz listę studentów
-      const studentsRes = await fetch(`${API_BASE}/api/auth/users`, {
+      const usersRes = await fetch(`${API_BASE}/api/auth/users`, {
         credentials: "include",
       });
-      if (studentsRes.ok) {
-        const studentsData = await studentsRes.json();
-        const studentsList = studentsData.users?.filter((u: any) => u.role === "student") || [];
-        setStudents(studentsList);
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        const users = usersData.users || [];
+
+        const studentsNorm = users
+          .filter((u: any) => u.role === "student")
+          .map((s: any) => ({
+            userId: s.userId ?? s.user_id,
+            name: s.name,
+            surname: s.surname,
+            email: s.email,
+            albumNr: Number(s.albumNr ?? s.album_nr),
+          }));
+
+        setStudents(studentsNorm);
       }
 
-      // Pobierz przedmioty
       const subjectsRes = await fetch(`${API_BASE}/api/subjects`, {
         credentials: "include",
       });
+
       if (subjectsRes.ok) {
         const subjectsData = await subjectsRes.json();
         setSubjects(subjectsData.subjects || []);
       }
 
-      // Pobierz listę wykładowców
-      const teachersRes = await fetch(`${API_BASE}/api/auth/users`, {
-        credentials: "include",
-      });
-      if (teachersRes.ok) {
-        const teachersData = await teachersRes.json();
-        const teachersList = teachersData.users?.filter((u: any) => u.role === "teacher") || [];
-        console.log("Teachers data:", teachersList);
-        console.log("First teacher:", teachersList[0]);
-        setTeachers(teachersList);
-      }
-
+      await fetchClassesWithInstructors();
     } catch (err) {
       console.error("Błąd pobierania danych:", err);
       toast.error("Nie udało się pobrać danych");
@@ -145,181 +145,206 @@ export default function AdminMarksManagementPage() {
     }
   };
 
-  // Filtrowanie ocen
+  const fetchClassesWithInstructors = async () => {
+    const subjectsRes = await fetch(`${API_BASE}/api/subjects`, { credentials: "include" });
+    if (!subjectsRes.ok) return;
+    const subjectsData = await subjectsRes.json();
+
+    const usersRes = await fetch(`${API_BASE}/api/auth/users`, { credentials: "include" });
+    const usersData = usersRes.ok ? await usersRes.json() : { users: [] };
+    const users = usersData.users || [];
+
+    const resolveTeacherId = (u: any) =>
+      u.teachingStaffId ?? u.teaching_staff_id ?? u.userId ?? u.user_id ?? u.id ?? null;
+
+    const list: ClassWithInstructors[] = [];
+
+    for (const subject of subjectsData.subjects || []) {
+      const detailsRes = await fetch(`${API_BASE}/api/subjects/${subject.subjectId}`, {
+        credentials: "include",
+      });
+      if (!detailsRes.ok) continue;
+
+      const detailsData = await detailsRes.json();
+      const subjectClasses = detailsData.subject?.classes || [];
+
+      for (const cls of subjectClasses) {
+        const instructors: { teachingStaffId: number; name: string }[] = [];
+
+        if (Array.isArray(cls.instructors)) {
+          cls.instructors.forEach((name: string) => {
+            const found = users.find((u: any) => `${u.name} ${u.surname}` === name);
+            const tid = found ? resolveTeacherId(found) : 0;
+
+            instructors.push({
+              teachingStaffId: Number(tid || 0),
+              name,
+            });
+          });
+        }
+
+        list.push({
+          classId: cls.classId,
+          subjectId: subject.subjectId,
+          subjectName: subject.name,
+          classType: cls.classType,
+          groupNr: cls.groupNr,
+          instructors,
+          enrolledStudents: [],
+        });
+      }
+    }
+
+    const enrollmentsRes = await fetch(`${API_BASE}/api/enrollments?all_students=true`, {
+      credentials: "include",
+    });
+
+    if (enrollmentsRes.ok) {
+      const enrollmentsData = await enrollmentsRes.json();
+      for (const enr of enrollmentsData.enrollments || []) {
+        const album = Number(enr.albumNr ?? enr.album_nr);
+        for (const ec of enr.enrolledClasses || []) {
+          const classId = Number(ec.classId);
+          const cls = list.find((c) => c.classId === classId);
+          if (cls && album && !cls.enrolledStudents.includes(album)) {
+            cls.enrolledStudents.push(album);
+          }
+        }
+      }
+    }
+
+    setClasses(list);
+  };
+
   useEffect(() => {
-    let filtered = [...marks];
+    let f = [...marks];
 
-    if (selectedStudent) {
-      filtered = filtered.filter(m => m.albumNr.toString() === selectedStudent);
-    }
-
-    if (selectedSubject) {
-      filtered = filtered.filter(m => m.subjectId.toString() === selectedSubject);
-    }
+    if (selectedStudent) f = f.filter((m) => String(m.albumNr) === selectedStudent);
+    if (selectedSubject) f = f.filter((m) => String(m.subjectId) === selectedSubject);
 
     if (searchTerm) {
-      filtered = filtered.filter(m => 
-        m.subjectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.comment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getStudentName(m.albumNr).toLowerCase().includes(searchTerm.toLowerCase())
+      const t = searchTerm.toLowerCase();
+      f = f.filter(
+        (m) =>
+          m.subjectName?.toLowerCase().includes(t) ||
+          m.value.toLowerCase().includes(t) ||
+          m.comment?.toLowerCase().includes(t)
       );
     }
 
-    if (gradeIdSearch && gradeIdSearch.trim() !== "") {
-      filtered = filtered.filter(m => 
-        m.gradeId.toString().includes(gradeIdSearch)
-      );
+    if (gradeIdSearch) {
+      f = f.filter((m) => m.gradeId.toString().includes(gradeIdSearch));
     }
 
-    setFilteredMarks(filtered);
+    setFilteredMarks(f);
   }, [selectedStudent, selectedSubject, searchTerm, gradeIdSearch, marks]);
 
-  // Dodawanie nowej oceny
+  const getClassesForSubject = () =>
+    classes.filter((c) => c.subjectId.toString() === markForm.subjectId);
+
+  const getInstructorsForClass = () => {
+    const cls = classes.find((c) => c.classId.toString() === markForm.classId);
+    return cls?.instructors || [];
+  };
+
+  const getStudentsForClass = () => {
+    const cls = classes.find((c) => c.classId.toString() === markForm.classId);
+    if (!cls) return [];
+
+    // 🟩 OPCJA B — brak zapisanych → zwracamy pustą listę
+    return cls.enrolledStudents.length === 0
+      ? []
+      : students.filter((s) => cls.enrolledStudents.includes(Number(s.albumNr)));
+  };
+
+  const onSubjectChange = (subjectId: string) =>
+    setMarkForm({
+      ...markForm,
+      subjectId,
+      classId: "",
+      as_teaching_staff_id: "",
+      albumNr: "",
+    });
+
+  const onClassChange = (classId: string) =>
+    setMarkForm({
+      ...markForm,
+      classId,
+      as_teaching_staff_id: "",
+      albumNr: "",
+    });
   const handleAddMark = async () => {
-    if (!markForm.albumNr || !markForm.subjectId || !markForm.value) {
-      toast.error("Wypełnij wymagane pola: student, przedmiot, ocena");
+    if (!markForm.subjectId || !markForm.classId || !markForm.value || !markForm.as_teaching_staff_id) {
+      toast.error("Wypełnij wszystkie wymagane pola");
       return;
     }
 
-    if (!markForm.as_teaching_staff_id) {
-      toast.error("Wybierz wykładowcę prowadzącego");
+    // ❗ NIE pozwalamy na dodanie oceny bez studenta (OPCJA B)
+    if (!markForm.albumNr) {
+      toast.error("Wybierz studenta zapisane­go na te zajęcia");
       return;
     }
+
+    const requestBody = {
+      album_nr: Number(markForm.albumNr),
+      subject_id: Number(markForm.subjectId),
+      class_id: Number(markForm.classId),
+      value: markForm.value,
+      weight: Number(markForm.weight),
+      attempt: Number(markForm.attempt),
+      comment: markForm.comment || undefined,
+      as_teaching_staff_id: Number(markForm.as_teaching_staff_id),
+    };
 
     try {
-      const response = await fetch(`${API_BASE}/api/grades`, {
+      const res = await fetch(`${API_BASE}/api/grades`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          album_nr: parseInt(markForm.albumNr),
-          subject_id: parseInt(markForm.subjectId),
-          class_id: parseInt(markForm.classId),
-          value: markForm.value,
-          weight: parseInt(markForm.weight),
-          attempt: parseInt(markForm.attempt),
-          comment: markForm.comment,
-          as_teaching_staff_id: parseInt(markForm.as_teaching_staff_id),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (response.ok) {
-        toast.success("Ocena dodana pomyślnie!");
-        setShowAddModal(false);
-        resetForm();
-        fetchData();
-      } else {
-        const errorData = await response.json();
-        toast.error(`Błąd: ${errorData.message || "Nie udało się dodać oceny"}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Nie udało się dodać oceny");
+        return;
       }
-    } catch (err) {
-      console.error("Błąd dodawania oceny:", err);
-      toast.error("Wystąpił błąd podczas dodawania oceny");
+
+      toast.success("Ocena dodana!");
+      setShowAddModal(false);
+      fetchData();
+
+    } catch (e) {
+      console.error(e);
+      toast.error("Błąd podczas dodawania oceny");
     }
   };
 
-  // Edycja oceny
   const handleEditMark = async () => {
     if (!editingMark) return;
 
-    try {
-      const response = await fetch(`${API_BASE}/api/grades/${editingMark.gradeId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          grade_id: editingMark.gradeId,
-          value: markForm.value,
-          weight: parseInt(markForm.weight),
-          comment: markForm.comment,
-        }),
-      });
+    const res = await fetch(`${API_BASE}/api/grades/${editingMark.gradeId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        value: markForm.value,
+        weight: Number(markForm.weight),
+        comment: markForm.comment,
+      }),
+    });
 
-      if (response.ok) {
-        toast.success("Ocena zaktualizowana pomyślnie!");
-        setEditingMark(null);
-        resetForm();
-        fetchData();
-      } else {
-        const errorData = await response.json();
-        toast.error(`Błąd: ${errorData.message || "Nie udało się zaktualizować oceny"}`);
-      }
-    } catch (err) {
-      console.error("Błąd edycji oceny:", err);
-      toast.error("Wystąpił błąd podczas edycji oceny");
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast.error(data.message || "Nie udało się edytować oceny");
+      return;
     }
-  };
 
-  // Usuwanie oceny
-  const handleDeleteMark = async (gradeId: number) => {
-    if (!confirm("Czy na pewno chcesz usunąć tę ocenę?")) return;
-
-    setDeletingMarkId(gradeId);
-    try {
-      const response = await fetch(`${API_BASE}/api/grades/${gradeId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        toast.success("Ocena usunięta pomyślnie!");
-        setMarks(marks.filter(m => m.gradeId !== gradeId));
-      } else {
-        const errorData = await response.json();
-        toast.error(`Błąd: ${errorData.message || "Nie udało się usunąć oceny"}`);
-      }
-    } catch (err) {
-      console.error("Błąd usuwania oceny:", err);
-      toast.error("Wystąpił błąd podczas usuwania oceny");
-    } finally {
-      setDeletingMarkId(null);
-    }
-  };
-
-  const resetForm = () => {
-    setMarkForm({
-      albumNr: "",
-      subjectId: "",
-      classId: "1",
-      value: "",
-      weight: "1",
-      attempt: "1",
-      comment: "",
-      as_teaching_staff_id: "",
-    });
-    setStudentSearch("");
-    setSubjectSearch("");
-    setTeacherSearch("");
-  };
-
-  const openEditModal = (mark: Mark) => {
-    setEditingMark(mark);
-    setMarkForm({
-      albumNr: mark.albumNr.toString(),
-      subjectId: mark.subjectId.toString(),
-      classId: mark.classId.toString(),
-      as_teaching_staff_id: mark.addedByTeachingStaffId?.toString() || "",
-      value: mark.value,
-      weight: mark.weight.toString(),
-      attempt: mark.attempt.toString(),
-      comment: mark.comment,
-    });
-  };
-
-  const getStudentName = (albumNr: number) => {
-    const student = students.find(s => s.albumNr === albumNr);
-    return student ? `${student.name} ${student.surname} (${albumNr})` : `Album: ${albumNr}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pl-PL", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    toast.success("Ocena zaktualizowana!");
+    setEditingMark(null);
+    fetchData();
   };
 
   if (loading) {
@@ -333,12 +358,16 @@ export default function AdminMarksManagementPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <div className="flex-1 flex flex-col">
+
+        {/* ---------------- MAIN ---------------- */}
         <main className="p-6 max-w-7xl mx-auto w-full pt-24">
+
           {/* Nagłówek */}
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold border-b border-[var(--color-accent)] pb-4">
               Zarządzanie Ocenami
             </h1>
+
             <button
               onClick={() => setShowAddModal(true)}
               className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center gap-2"
@@ -350,436 +379,389 @@ export default function AdminMarksManagementPage() {
           {/* Statystyki */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
-                Wszystkie Oceny
-              </h3>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{marks.length}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">Wszystkie oceny</h3>
+              <p className="text-3xl font-bold">{marks.length}</p>
             </div>
+
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
-                Studenci
-              </h3>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{students.length}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">Studentów z ocenami</h3>
+              <p className="text-3xl font-bold">{new Set(marks.map(m => m.albumNr)).size}</p>
             </div>
+
             <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 border border-[var(--color-accent)]">
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">
-                Przedmioty
-              </h3>
-              <p className="text-3xl font-bold text-[var(--color-accent)]">{subjects.length}</p>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-1">Przedmiotów</h3>
+              <p className="text-3xl font-bold">{new Set(marks.map(m => m.subjectId)).size}</p>
             </div>
           </div>
 
-          {/* Filtry i Wyszukiwanie */}
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 border border-[var(--color-accent)]">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <FaSearch /> Filtry i Wyszukiwanie
-            </h2>
+          {/* Filtry */}
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 mb-6 border border-[var(--color-accent)]">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              
+              {/* Search */}
               <div>
-                <label className="block text-sm font-medium mb-2">Wyszukaj ocenę</label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Szukaj..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
-                />
+                <label className="block text-sm font-medium mb-2">Szukaj</label>
+                <div className="relative">
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+                  <input
+                    type="text"
+                    placeholder="Przedmiot, ocena..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                  />
+                </div>
               </div>
 
+              {/* Search by ID */}
               <div>
-                <label className="block text-sm font-medium mb-2">ID Oceny</label>
+                <label className="block text-sm font-medium mb-2">ID oceny</label>
                 <input
                   type="text"
+                  placeholder="Szukaj po ID..."
                   value={gradeIdSearch}
                   onChange={(e) => setGradeIdSearch(e.target.value)}
-                  placeholder="ID oceny..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
                 />
               </div>
 
+              {/* Student filter */}
               <div>
                 <label className="block text-sm font-medium mb-2">Student</label>
                 <select
                   value={selectedStudent}
                   onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
                 >
-                  <option value="">Wszyscy studenci</option>
+                  <option value="">Wszyscy</option>
                   {students.map((s) => (
                     <option key={s.userId} value={s.albumNr}>
-                      {s.name} {s.surname} (Album: {s.albumNr})
+                      {s.name} {s.surname} ({s.albumNr})
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Subject filter */}
               <div>
                 <label className="block text-sm font-medium mb-2">Przedmiot</label>
                 <select
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
                 >
-                  <option value="">Wszystkie przedmioty</option>
+                  <option value="">Wszystkie</option>
                   {subjects.map((s) => (
                     <option key={s.subjectId} value={s.subjectId}>
-                      {s.name} ({s.alias})
+                      {s.name}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="mt-4 text-sm text-[var(--color-text-secondary)]">
-              Znaleziono: {filteredMarks.length} ocen
+
             </div>
           </div>
 
-          {/* Tabela ocen - KOMPAKTOWA */}
+          {/* ---------- TABELA OCEN ---------- */}
           <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-lg overflow-hidden">
             <div className="bg-[var(--color-accent)] text-white px-6 py-4">
-              <h2 className="text-xl font-semibold">Lista Ocen</h2>
+              <h2 className="text-xl font-semibold">Lista Ocen ({filteredMarks.length})</h2>
             </div>
 
             {filteredMarks.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <h3 className="text-xl font-semibold text-[var(--color-accent)] mb-2">
-                  Brak ocen
-                </h3>
-                <p className="text-[var(--color-text-secondary)]">
-                  Nie znaleziono ocen spełniających kryteria wyszukiwania
-                </p>
+              <div className="p-8 text-center text-[var(--color-text-secondary)]">
+                Brak ocen do wyświetlenia
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-[var(--color-accent)]/10">
+                  <thead className="bg-[var(--color-bg)] border-b border-[var(--color-accent)]">
                     <tr>
-                      <th className="text-left py-3 px-4 font-semibold">ID</th>
-                      <th className="text-left py-3 px-4 font-semibold">Student</th>
-                      <th className="text-left py-3 px-4 font-semibold">Przedmiot</th>
-                      <th className="text-center py-3 px-4 font-semibold">Ocena</th>
-                      <th className="text-center py-3 px-4 font-semibold">Waga</th>
-                      <th className="text-center py-3 px-4 font-semibold">Podejście</th>
-                      <th className="text-left py-3 px-4 font-semibold">Prowadzący</th>
-                      <th className="text-left py-3 px-4 font-semibold">Data</th>
-                      <th className="text-center py-3 px-4 font-semibold">Akcje</th>
+                      <th className="px-4 py-3 text-left">ID</th>
+                      <th className="px-4 py-3 text-left">Student</th>
+                      <th className="px-4 py-3 text-left">Przedmiot</th>
+                      <th className="px-4 py-3 text-left">Typ</th>
+                      <th className="px-4 py-3 text-left">Ocena</th>
+                      <th className="px-4 py-3 text-left">Waga</th>
+                      <th className="px-4 py-3 text-left">Wystawił</th>
+                      <th className="px-4 py-3 text-left">Data</th>
+                      <th className="px-4 py-3 text-right">Akcje</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {filteredMarks.map((mark) => (
-                      <tr
-                        key={mark.gradeId}
-                        className="border-b border-[var(--color-accent)]/20 hover:bg-[var(--color-bg-hover)] transition"
-                      >
-                        <td className="py-2 px-4 text-xs text-[var(--color-text-secondary)]">
-                          #{mark.gradeId}
-                        </td>
-                        <td className="py-2 px-4">
-                          <div className="font-semibold">
-                          {mark.studentName || mark.studentName || getStudentName(mark.albumNr)}
-                          </div>
-                        </td>
+                      <tr key={mark.gradeId} className="border-b border-[var(--color-accent)]/20 hover:bg-[var(--color-bg)]">
+                        <td className="px-4 py-3">{mark.gradeId}</td>
+                        <td className="px-4 py-3">{mark.studentName || `${mark.albumNr}`}</td>
+                        <td className="px-4 py-3">{mark.subjectName || mark.subjectId}</td>
+                        <td className="px-4 py-3">{mark.classType || "-"}</td>
+                        <td className="px-4 py-3 font-bold">{mark.value}</td>
+                        <td className="px-4 py-3">{mark.weight}</td>
+                        <td className="px-4 py-3">{mark.addedByName || "-"}</td>
+                        <td className="px-4 py-3">{mark.createdAt?.split(" ")[0]}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
 
-                        <td className="py-2 px-4">
-                          <div>{mark.subjectName || `ID: ${mark.subjectId}`}</div>
-                          {mark.classType && (
-                            <div className="text-xs text-[var(--color-text-secondary)]">{mark.classType}</div>
-                          )}
-                        </td>
-                        <td className="py-2 px-4 text-center">
-                          <span className="px-2 py-1 bg-[var(--color-accent)]/20 text-[var(--color-accent)] rounded font-semibold">
-                            {mark.value}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-center">{mark.weight}</td>
-                        <td className="py-2 px-4 text-center">{mark.attempt}</td>
-                        <td className="py-2 px-4 text-xs">
-                          {mark.addedByName || "Brak danych"}
-                        </td>
-                        <td className="py-2 px-4 text-xs">
-                          {formatDate(mark.createdAt)}
-                        </td>
-                        <td className="py-2 px-4">
-                          <div className="flex items-center justify-center gap-2">
+                            {/* EDYCJA */}
                             <button
-                              onClick={() => openEditModal(mark)}
-                              className="p-1.5 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 rounded transition"
-                              title="Edytuj"
+                              onClick={() => {
+                                setEditingMark(mark);
+                                setMarkForm({
+                                  albumNr: mark.albumNr.toString(),
+                                  subjectId: mark.subjectId.toString(),
+                                  classId: mark.classId.toString(),
+                                  as_teaching_staff_id: mark.addedByTeachingStaffId?.toString() || "",
+                                  value: mark.value,
+                                  weight: mark.weight.toString(),
+                                  attempt: mark.attempt.toString(),
+                                  comment: mark.comment,
+                                });
+                              }}
+                              className="p-2 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 rounded"
                             >
                               <FaEdit />
                             </button>
+
+                            {/* USUWANIE */}
                             <button
-                              onClick={() => handleDeleteMark(mark.gradeId)}
-                              disabled={deletingMarkId === mark.gradeId}
-                              className="p-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] rounded transition disabled:opacity-50"
-                              title="Usuń"
+                              onClick={() => setDeletingMarkId(mark.gradeId)}
+                              className="p-2 text-red-600 hover:bg-red-600/20 rounded"
                             >
                               <FaTrash />
                             </button>
+
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
+
                 </table>
               </div>
             )}
+
           </div>
 
-          {/* Modal Dodawania Oceny */}
+          {/* --------------------------------------------- */}
+          {/* -------------- MODAL DODAWANIA --------------- */}
+          {/* --------------------------------------------- */}
+
           {showAddModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+
               <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+                {/* HEADER */}
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-semibold">Dodaj Ocenę</h2>
                   <button
                     onClick={() => {
                       setShowAddModal(false);
-                      resetForm();
+                      setMarkForm({
+                        albumNr: "",
+                        subjectId: "",
+                        classId: "",
+                        value: "",
+                        weight: "1",
+                        attempt: "1",
+                        comment: "",
+                        as_teaching_staff_id: "",
+                      });
                     }}
-                    className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
                   >
                     <FaTimes size={24} />
                   </button>
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Student <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      list="students-list"
-                      value={studentSearch}
-                      onChange={(e) => {
-                        setStudentSearch(e.target.value);
-                        const student = students.find(s => 
-                          `${s.name} ${s.surname} (${s.albumNr})` === e.target.value
-                        );
-                        if (student) {
-                          setMarkForm({ ...markForm, albumNr: student.albumNr?.toString() || "" });
-                        }
-                      }}
-                      placeholder="Szukaj studenta..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      required
-                    />
-                    <datalist id="students-list">
-                      {students.map((s) => (
-                        <option key={s.userId} value={`${s.name} ${s.surname} (${s.albumNr})`} />
-                      ))}
-                    </datalist>
-                  </div>
 
+                  {/* ----------------- PRZEDMIOT ----------------- */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label className="text-sm font-medium mb-2 block">
                       Przedmiot <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      list="subjects-list"
-                      value={subjectSearch}
-                      onChange={(e) => {
-                        setSubjectSearch(e.target.value);
-                        const subject = subjects.find(s => 
-                          `${s.name} (${s.alias})` === e.target.value
-                        );
-                        if (subject) {
-                          setMarkForm({ ...markForm, subjectId: subject.subjectId.toString() });
-                        }
-                      }}
-                      placeholder="Szukaj przedmiotu..."
+
+                    <select
+                      value={markForm.subjectId}
+                      onChange={(e) => onSubjectChange(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      required
-                    />
-                    <datalist id="subjects-list">
+                    >
+                      <option value="">Wybierz przedmiot...</option>
                       {subjects.map((s) => (
-                        <option key={s.subjectId} value={`${s.name} (${s.alias})`} />
+                        <option key={s.subjectId} value={s.subjectId}>
+                          {s.name} ({s.alias})
+                        </option>
                       ))}
-                    </datalist>
+                    </select>
                   </div>
 
+                  {/* ------------------ ZAJĘCIA ------------------ */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label className="text-sm font-medium mb-2 block">
+                      Zajęcia <span className="text-red-500">*</span>
+                    </label>
+
+                    <select
+                      value={markForm.classId}
+                      onChange={(e) => onClassChange(e.target.value)}
+                      disabled={!markForm.subjectId}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                    >
+                      <option value="">Wybierz grupę...</option>
+
+                      {getClassesForSubject().map((c) => (
+                        <option key={c.classId} value={c.classId}>
+                          {c.classType} — Grupa {c.groupNr} (ID: {c.classId})
+                          — {c.enrolledStudents.length} studentów
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* ----------------- PROWADZĄCY ---------------- */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
                       Prowadzący <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      list="teachers-list"
-                      value={teacherSearch}
-                      onChange={(e) => {
-                        setTeacherSearch(e.target.value);
-                        const teacher = teachers.find(t => 
-                          `${t.name} ${t.surname}` === e.target.value
-                        );
-                        if (teacher) {
-                          setMarkForm({ ...markForm, as_teaching_staff_id: teacher.teachingStaffId?.toString() || "" });
-                        }
-                      }}
-                      placeholder="Szukaj wykładowcy..."
+
+                    <select
+                      value={markForm.as_teaching_staff_id}
+                      onChange={(e) =>
+                        setMarkForm({
+                          ...markForm,
+                          as_teaching_staff_id: e.target.value,
+                        })
+                      }
+                      disabled={!markForm.classId}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      required
-                    />
-                    <datalist id="teachers-list">
-                      {teachers.map((t) => (
-                        <option key={t.userId} value={`${t.name} ${t.surname}`} />
+                    >
+                      <option value="">Wybierz prowadzącego...</option>
+
+                      {getInstructorsForClass().map((i) => (
+                        <option key={i.teachingStaffId} value={i.teachingStaffId}>
+                          {i.name} (ID: {i.teachingStaffId})
+                        </option>
                       ))}
-                    </datalist>
+                    </select>
                   </div>
 
+                  {/* ------------------ STUDENT ------------------ */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Student <span className="text-red-500">*</span>
+                    </label>
+
+                    {/* ✔ OPCJA B — jeśli klasa nie ma studentów */}
+                    {(() => {
+                      const studentsForClass = getStudentsForClass();
+
+                      if (markForm.classId && studentsForClass.length === 0) {
+                        return (
+                          <div className="p-3 bg-yellow-600/20 border border-yellow-600 rounded text-yellow-200">
+                            Brak studentów zapisanych na te zajęcia.
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <select
+                          value={markForm.albumNr}
+                          onChange={(e) => setMarkForm({ ...markForm, albumNr: e.target.value })}
+                          disabled={!markForm.classId || studentsForClass.length === 0}
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
+                        >
+                          <option value="">Wybierz studenta...</option>
+                          {studentsForClass.map((s) => (
+                            <option key={s.userId} value={s.albumNr}>
+                              {s.name} {s.surname} (Album: {s.albumNr})
+                            </option>
+                          ))}
+                        </select>
+                      );
+                    })()}
+                  </div>
+
+                  {/* ------------- OCENA, WAGA, PODEJŚCIE -------------- */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">
+                      <label className="text-sm font-medium mb-2 block">
                         Ocena <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={markForm.value}
                         onChange={(e) => setMarkForm({ ...markForm, value: e.target.value })}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                        placeholder="np. 5.0, ZAL"
-                        required
-                      />
+                      >
+                        <option value="">Wybierz...</option>
+                        <option value="2.0">2.0</option>
+                        <option value="3.0">3.0</option>
+                        <option value="3.5">3.5</option>
+                        <option value="4.0">4.0</option>
+                        <option value="4.5">4.5</option>
+                        <option value="5.0">5.0</option>
+                        <option value="ZAL">ZAL</option>
+                        <option value="NZAL">NZAL</option>
+                      </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Waga</label>
+                      <label className="text-sm font-medium mb-2 block">Waga</label>
                       <input
                         type="number"
+                        min="1"
+                        max="10"
                         value={markForm.weight}
                         onChange={(e) => setMarkForm({ ...markForm, weight: e.target.value })}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                        min="1"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Podejście</label>
-                      <input
-                        type="number"
-                        value={markForm.attempt}
-                        onChange={(e) => setMarkForm({ ...markForm, attempt: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                        min="1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">ID Zajęć</label>
-                      <input
-                        type="number"
-                        value={markForm.classId}
-                        onChange={(e) => setMarkForm({ ...markForm, classId: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      />
-                    </div>
-                  </div>
-
+                  {/* ------------------ KOMENTARZ ------------------ */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Komentarz</label>
-                    <textarea
+                    <label className="text-sm font-medium mb-2 block">Komentarz</label>
+                    <input
+                      type="text"
                       value={markForm.comment}
                       onChange={(e) => setMarkForm({ ...markForm, comment: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      rows={3}
-                      placeholder="Opcjonalny komentarz do oceny"
+                      placeholder="Opcjonalnie..."
                     />
                   </div>
                 </div>
 
+                {/* ---------------- PRZYCISKI ---------------- */}
                 <div className="flex gap-4 mt-6">
+
                   <button
                     onClick={handleAddMark}
-                    className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
+                    disabled={
+                      !markForm.subjectId ||
+                      !markForm.classId ||
+                      !markForm.as_teaching_staff_id ||
+                      !markForm.value ||
+                      getStudentsForClass().length === 0 ||  // OPIS B
+                      !markForm.albumNr
+                    }
+                    className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg disabled:opacity-50"
                   >
-                    <FaSave /> Dodaj Ocenę
+                    <FaSave className="inline mr-2" />
+                    Dodaj Ocenę
                   </button>
+
                   <button
-                    onClick={() => {
-                      setShowAddModal(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:opacity-90 transition"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg"
                   >
                     Anuluj
                   </button>
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* Modal Edycji Oceny */}
-          {editingMark && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-w-2xl w-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-semibold">Edytuj Ocenę #{editingMark.gradeId}</h2>
-                  <button
-                    onClick={() => {
-                      setEditingMark(null);
-                      resetForm();
-                    }}
-                    className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                  >
-                    <FaTimes size={24} />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Ocena</label>
-                      <input
-                        type="text"
-                        value={markForm.value}
-                        onChange={(e) => setMarkForm({ ...markForm, value: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Waga</label>
-                      <input
-                        type="number"
-                        value={markForm.weight}
-                        onChange={(e) => setMarkForm({ ...markForm, weight: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                        min="1"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Komentarz</label>
-                    <textarea
-                      value={markForm.comment}
-                      onChange={(e) => setMarkForm({ ...markForm, comment: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4 mt-6">
-                  <button
-                    onClick={handleEditMark}
-                    className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
-                  >
-                    <FaSave /> Zapisz Zmiany
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingMark(null);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:opacity-90 transition"
-                  >
-                    Anuluj
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </main>
       </div>
     </div>

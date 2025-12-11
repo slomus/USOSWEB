@@ -79,14 +79,10 @@ export default function AdminApplicationsManagementPage() {
       setLoading(true);
       try {
         // Pobierz wszystkie wnioski
-        const appsRes = await fetch(`${API_BASE}/api/applications?page=1&pageSize=1000`, {
-          credentials: "include",
-        });
-        if (appsRes.ok) {
-          const appsData = await appsRes.json();
-          setApplications(appsData.items || []);
-          setFilteredApplications(appsData.items || []);
-        }
+        const allApps = await fetchAllApplications();
+        setApplications(allApps);
+        setFilteredApplications(allApps);
+
 
         // Pobierz kategorie wniosków
         const catsRes = await fetch(`${API_BASE}/api/application-categories`, {
@@ -117,6 +113,38 @@ export default function AdminApplicationsManagementPage() {
 
     fetchData();
   }, []);
+
+// Pobieranie wszystkich stron /api/applications (backend zwraca max 20 na stronę)
+const fetchAllApplications = async () => {
+  let page = 1;
+  let pageSize = 20; // backendowy limit
+  let allItems: Application[] = [];
+  let total = 0;
+
+  while (true) {
+    const res = await fetch(
+      `${API_BASE}/api/applications?page=${page}&pageSize=${pageSize}`,
+      { credentials: "include" }
+    );
+
+    if (!res.ok) break;
+
+    const data = await res.json();
+
+    // Backend zwraca:
+    // { items: [...], total: X, page: Y, pageSize: Z }
+    allItems = [...allItems, ...(data.items || [])];
+    total = data.total;
+
+    // Jeśli mamy już wszystkie — kończymy
+    if (allItems.length >= total) break;
+
+    page++;
+  }
+
+  return allItems;
+};
+
 
   // Filtrowanie wniosków
   useEffect(() => {

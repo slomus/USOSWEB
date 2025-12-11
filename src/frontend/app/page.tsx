@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import Button from "@/app/components/button";
 import Input from "@/app/components/input";
@@ -60,7 +61,7 @@ export default function Home() {
         </div>
         {/* Linki */}
         <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
-          <a href="#">o aplikacji</a>
+          <a href="/about">o aplikacji</a>
           <a href="#">dokumentacja</a>
           <ThemeToggleButton />
         </nav>
@@ -122,7 +123,12 @@ export default function Home() {
           )}
 
           <div className="mt-4 text-center text-sm text-[var(--color-text)]">
-            Nie pamiętasz hasła?
+            <Link 
+              href="/forgot-password" 
+              className="hover:text-[var(--color-accent)] hover:underline transition-colors"
+            >
+              Nie pamiętasz hasła?
+            </Link>
           </div>
         </div>
       </main>
