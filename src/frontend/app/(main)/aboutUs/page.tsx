@@ -281,7 +281,7 @@ const teamMembers = [
     name: "Karol Kudłacz",
     role: "Backend Developer",
     description: "Dba o logikę, API i integrację z bazą danych.",
-    image: "/Karol.jpg",
+    image: "/Karol.png",
   },
   {
     name: "Michał Grzonkowski",
@@ -293,13 +293,13 @@ const teamMembers = [
     name: "Weronika Mazurek",
     role: "Backend Developer",
     description: "Dba o logikę, API i integrację z bazą danych.",
-    image: "/Wera.jpg",
+    image: "/Weronika.png",
   },
   {
     name: "Agnieszka Kowalik",
     role: "Frontend Developer",
     description: "Odpowiedzialna za wygląd i interakcje w aplikacji.",
-    image: "/Aga.jpg",
+    image: "/Agnieszka.png",
   },
   {
     name: "Emil Kosicki",
