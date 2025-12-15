@@ -35,7 +35,7 @@ export default function Home() {
 
       if (response.ok && data.message === "Login successful") {
         console.log("Zalogowano użytkownika:", data);
-        router.push("/StudentMainPage");
+        router.push("/MainPage");
       } else {
         console.error("Błąd logowania:", data);
         setMessage("Nieprawidłowe dane logowania.");
@@ -62,7 +62,6 @@ export default function Home() {
         {/* Linki */}
         <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
           <a href="/about">o aplikacji</a>
-          <a href="#">dokumentacja</a>
           <ThemeToggleButton />
         </nav>
         {/* Hamburger (opcjonalnie) */}
