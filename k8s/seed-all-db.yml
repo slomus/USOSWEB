@@ -84,6 +84,9 @@ spec:
       - name: init-users
         image: ghcr.io/slomus/usosweb-init-users:latest
         imagePullPolicy: Always
+        env:
+        - name: API_URL
+          value: "http://api-gateway-service:8083"
         resources:
           requests:
             memory: "64Mi"
@@ -151,4 +154,3 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-
