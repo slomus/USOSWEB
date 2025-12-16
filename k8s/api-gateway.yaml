@@ -10,9 +10,13 @@ data:
   DB_USER: "admin"
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
-  COMMON_SERVICE_URL: "http://common-service:3003"
-  CALENDAR_SERVICE_URL: "http://calendar-service:3001"
-  MESSAGING_SERVICE_URL: "http://messaging-service:3002"
+  # gRPC service endpoints - use GRPC_* prefix to avoid K8s auto-injected vars collision
+  GRPC_COMMON_HOST: "common-service"
+  GRPC_COMMON_PORT: "3003"
+  GRPC_CALENDAR_HOST: "calendar-service"
+  GRPC_CALENDAR_PORT: "3001"
+  GRPC_MESSAGING_HOST: "messaging-service"
+  GRPC_MESSAGING_PORT: "3002"
 ---
 apiVersion: apps/v1
 kind: Deployment
