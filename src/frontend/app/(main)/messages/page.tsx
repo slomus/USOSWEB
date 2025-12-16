@@ -1,387 +1,592 @@
 "use client";
+
 import { useState, useEffect, useRef } from "react";
 
-// Konfiguracja API
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+// --- KONFIGURACJA API ---
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-type Email = {
-  email_uid: string;
-  sender_email: string;
-  sender_name: string;
+// --- TYPY DANYCH ---
+type Folder = "inbox" | "sent" | "trash";
+
+// Zaktualizowany typ obsługujący camelCase (z logów) i snake_case (z dok)
+type EmailSummary = {
+  // ID
+  emailUid?: string;    // camelCase (widoczne w Twoich logach)
+  email_uid?: string;   // snake_case
+  id?: string | number; 
+  message_id?: string;
+  uid?: string;
+
+  // Nadawca
+  senderEmail?: string; // camelCase
+  sender_email?: string; // snake_case
+  senderName?: string;
+  sender_name?: string;
+
+  // Inne pola
   title: string;
-  content?: string;
-  send_date: string;
-  is_read: boolean;
+  sendDate?: string;    // camelCase
+  send_date?: string;   // snake_case
+  isRead?: boolean;     // camelCase
+  is_read?: boolean;    // snake_case
+
+  [key: string]: any;   // Pozostałe pola
 };
 
-type Folder = "inbox" | "sent" | "draft" | "trash";
+type EmailDetails = EmailSummary & {
+  content: string;
+};
 
-// Debounce hook
-function useDebounce(value: string, delay: number) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debounced;
-}
+// --- POMOCNICZA FUNKCJA DO WYCIĄGANIA ID ---
+const getEmailId = (email: EmailSummary): string => {
+  const id = email.emailUid || email.email_uid || email.id || email.message_id || email.uid;
+  return id ? String(id) : "";
+};
 
-// Pole wejściowe z sugestiami e-mail
+// --- POMOCNICZE FUNKCJE DO PÓL (Adaptery camelCase/snake_case) ---
+const getSenderEmail = (e: EmailSummary) => e.senderEmail || e.sender_email || "";
+const getSenderName = (e: EmailSummary) => e.senderName || e.sender_name || "";
+const getSendDate = (e: EmailSummary) => e.sendDate || e.send_date || "";
+const getIsRead = (e: EmailSummary) => (e.isRead !== undefined ? e.isRead : e.is_read);
+
+// --- KOMPONENT: Sugestie Email ---
 function EmailSuggestInput({
   value,
   onChange,
-  onSelect,
+  disabled,
 }: {
   value: string;
   onChange: (value: string) => void;
-  onSelect: (email: string) => void;
+  disabled?: boolean;
 }) {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [visible, setVisible] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const debouncedInput = useDebounce(value, 400);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (debouncedInput.length < 3) {
-      setSuggestions([]);
-      return;
-    }
+    const timer = setTimeout(() => {
+      if (value.length >= 2) {
+        fetchSuggestions(value);
+      } else {
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [value]);
 
-    fetch(
-      `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(
-        debouncedInput
-      )}&limit=5&scope=all`,
-      { method: "GET", credentials: "include" }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const items = data.items?.map((i: any) => i.email || i) || [];
-        setSuggestions(items);
+  const fetchSuggestions = async (query: string) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(
+          query
+        )}&limit=5&scope=all`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data.items || []);
         setVisible(true);
-      })
-      .catch((err) => console.error("Błąd fetch:", err));
-  }, [debouncedInput]);
+      }
+    } catch (e) {
+      console.error("Błąd sugestii:", e);
+    }
+  };
 
   useEffect(() => {
-    function onClick(e: MouseEvent) {
+    function handleClickOutside(event: MouseEvent) {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
       ) {
         setVisible(false);
       }
     }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative w-full" ref={wrapperRef}>
       <input
         type="text"
         value={value}
+        disabled={disabled}
         onChange={(e) => {
           onChange(e.target.value);
           setVisible(true);
         }}
-        className="w-full p-2 rounded border bg-[var(--color-bg-secondary)] text-[var(--color-text)]"
-        placeholder="Do:"
+        placeholder="Odbiorca (wpisz min. 2 znaki)..."
+        className="w-full p-3 rounded-lg bg-[var(--color-bg)] border border-[var(--color-text-secondary)]/20 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
       />
-      {visible && (
-        <ul className="absolute z-10 mt-1 w-full bg-[var(--color-bg-secondary)] border rounded shadow max-h-48 overflow-y-auto">
-          {value.length < 3 ? (
-            <li className="px-3 py-2 italic text-[var(--color-text-secondary)]">
-              Wprowadź przynajmniej 3 znaki
+      {visible && suggestions.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 mt-1 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+          {suggestions.map((s) => (
+            <li
+              key={s.userId || s.email}
+              onClick={() => {
+                onChange(s.email);
+                setVisible(false);
+              }}
+              className="px-4 py-2 hover:bg-[var(--color-accent)] hover:text-white cursor-pointer transition-colors border-b border-white/10 last:border-0"
+            >
+              <div className="font-bold text-sm">{s.displayName}</div>
+              <div className="text-xs opacity-80">{s.email}</div>
             </li>
-          ) : suggestions.length > 0 ? (
-            suggestions.map((s, idx) => (
-              <li
-                key={idx}
-                onClick={() => {
-                  onSelect(s);
-                  onChange(s);
-                  setVisible(false);
-                }}
-                className="px-3 py-2 hover:bg-[var(--color-accent)] cursor-pointer text-[var(--color-text)]"
-              >
-                {s}
-              </li>
-            ))
-          ) : (
-            <li className="px-3 py-2 italic text-[var(--color-text-secondary)]">
-              Brak sugestii
-            </li>
-          )}
+          ))}
         </ul>
       )}
     </div>
   );
 }
 
+// --- GŁÓWNY KOMPONENT STRONY ---
 export default function MessagesPage() {
-  const [emails, setEmails] = useState<Email[]>([]);
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [currentFolder, setCurrentFolder] = useState<Folder>("inbox");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [limit] = useState(20);
+  const [folder, setFolder] = useState<Folder>("inbox");
+  const [emails, setEmails] = useState<EmailSummary[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<EmailDetails | null>(null);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeData, setComposeData] = useState({ to: "", subject: "", body: "" });
+  const [isSending, setIsSending] = useState(false);
+
   const [offset, setOffset] = useState(0);
-  const [composing, setComposing] = useState(false);
+  const limit = 20;
+  const [totalCount, setTotalCount] = useState(0);
 
-  const [formData, setFormData] = useState({
-    to: "",
-    subject: "",
-    body: "",
-  });
+  const formatHeaders = {
+    "Content-Type": "application/json",
+  };
 
-  // Pobierz listę emaili
-  const fetchEmails = async () => {
-    setLoading(true);
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Brak daty";
     try {
-      const response = await fetch(`${API_BASE}/api/messaging/get_all_emails`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit, offset }),
+      return new Date(dateString).toLocaleString("pl-PL", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
       });
-
-      const data = await response.json();
-
-      if (data.success && Array.isArray(data.emails)) {
-        // Mapa konwertująca klucze camelCase → snake_case
-        const mappedEmails = data.emails.map((e: any) => ({
-          email_uid: e.emailUid,
-          sender_email: e.sender_email,
-          sender_name: e.sender_name,
-          title: e.title,
-          send_date: e.send_date,
-          is_read: e.is_read,
-        }));
-
-        setEmails(mappedEmails);
-        setTotalCount(data.total_count || 0);
-      } else {
-        alert("Nie udało się pobrać wiadomości");
-        console.error("Niepoprawna struktura odpowiedzi API:", data);
-      }
-    } catch (err) {
-      console.error("Błąd podczas pobierania maili:", err);
-      alert("Błąd połączenia z serwerem");
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      return dateString;
     }
   };
 
-  useEffect(() => {
-    fetchEmails();
-  }, [offset]);
+  // --- API ACTIONS ---
 
-  // Pobranie szczegółów wiadomości
-  const fetchEmailDetails = async (email_uid: string) => {
+  // 1. Pobieranie listy maili
+  const fetchEmails = async () => {
+    setIsLoadingList(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/messaging/get_all_emails`, {
+        method: "POST",
+        credentials: "include",
+        headers: formatHeaders,
+        body: JSON.stringify({ limit, offset, folder }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const fetchedEmails = data.emails || [];
+          setEmails(fetchedEmails);
+          setTotalCount(data.total_count || 0);
+        }
+      } else {
+        console.error("Błąd pobierania listy maili", res.status);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingList(false);
+    }
+  };
+
+  // 2. Pobieranie szczegółów maila
+  const openEmail = async (summary: EmailSummary) => {
+    const uid = getEmailId(summary);
+    
+    if (!uid) {
+      console.error("❌ BŁĄD: Brak ID wiadomości. Otrzymany obiekt:", summary);
+      alert("Błąd integracji: Nie znaleziono ID wiadomości (sprawdź konsolę).");
+      return;
+    }
+
+    setSelectedEmail(null);
+    setIsLoadingDetails(true);
+    
     try {
       const res = await fetch(`${API_BASE}/api/messaging/get_email`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email_uid: email_uid }),
+        headers: formatHeaders,
+        body: JSON.stringify({
+          email_uid: uid, // Wysyłamy poprawne ID wyciągnięte helperem
+          folder: folder,
+        }),
       });
 
       const data = await res.json();
-      if (data.success) {
-        setSelectedEmail({
-          email_uid: data.email_uid,
-          sender_email: data.sender_email,
-          sender_name: data.sender_name,
-          title: data.title,
-          content: data.content,
-          send_date: data.send_date,
-          is_read: data.is_read,
-        });
 
-        if (!data.is_read) markAsRead(email_uid);
+      if (res.ok && data.success) {
+        const fullEmail = {
+          ...summary,
+          ...data,
+          content: data.content || "Brak treści wiadomości.",
+        };
+        setSelectedEmail(fullEmail);
+
+        // Oznacz jako przeczytane
+        if (!getIsRead(fullEmail)) {
+          markAsRead(uid);
+        }
+      } else {
+        console.error("Błąd API:", data);
+        alert("Błąd serwera: " + (data.message || "Nie udało się pobrać treści."));
       }
-    } catch (e) {
-      console.error("Błąd pobierania szczegółów emaila", e);
+    } catch (err) {
+      console.error(err);
+      alert("Błąd połączenia.");
+    } finally {
+      setIsLoadingDetails(false);
     }
   };
 
-  const markAsRead = async (email_uid: string) => {
+  // 3. Oznaczanie jako przeczytane
+  const markAsRead = async (uid: string) => {
     try {
       await fetch(`${API_BASE}/api/messaging/set_email_read`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email_uid }),
+        headers: formatHeaders,
+        body: JSON.stringify({ email_uid: uid, folder: folder }),
       });
+      
       setEmails((prev) =>
-        prev.map((e) =>
-          e.email_uid === email_uid ? { ...e, is_read: true } : e
-        )
+        prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: true, is_read: true } : e))
       );
     } catch (e) {
       console.error(e);
     }
   };
 
-  const filteredEmails = emails.filter(
-    (e) =>
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.sender_email.toLowerCase().includes(search.toLowerCase())
-  );
+  // 4. Wysyłanie maila
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
 
-  const startReply = () => {
-    if (!selectedEmail) return;
-    setFormData({
-      to: selectedEmail.sender_email,
-      subject: "Re: " + selectedEmail.title,
-      body: `\n\n--- Oryginalna wiadomość ---\nOd: ${
-        selectedEmail.sender_name
-      } (${selectedEmail.sender_email})\n${new Date(
-        selectedEmail.send_date
-      ).toLocaleString("pl-PL")}\n\n${selectedEmail.content || ""}`,
-    });
-    setComposing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/messaging/send-email`, {
+        method: "POST",
+        credentials: "include",
+        headers: formatHeaders,
+        body: JSON.stringify({
+            to: composeData.to,
+            subject: composeData.subject,
+            body: composeData.body
+        }),
+      });
+      
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Wiadomość wysłana pomyślnie!");
+        setIsComposeOpen(false);
+        setComposeData({ to: "", subject: "", body: "" });
+        if (folder === "sent") fetchEmails();
+      } else {
+        alert("Błąd wysyłania: " + (data.message || "Nieznany błąd"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Błąd połączenia z serwerem.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
+  // 5. Usuwanie maila
+  const handleDelete = async () => {
+    if (!selectedEmail) return;
+    const uid = getEmailId(selectedEmail);
+    if (!uid) return;
+
+    if (!confirm("Czy na pewno chcesz usunąć tę wiadomość?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/messaging/delete_email`, {
+        method: "POST",
+        credentials: "include",
+        headers: formatHeaders,
+        body: JSON.stringify({ 
+            email_uid: uid,
+            folder: folder
+        }),
+      });
+      const data = await res.json();
+      if(data.success) {
+          setSelectedEmail(null);
+          fetchEmails();
+      } else {
+          alert("Nie udało się usunąć wiadomości.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmails();
+    setSelectedEmail(null);
+  }, [folder, offset]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [folder]);
+
+  // --- RENDER ---
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="w-60 p-4 bg-[var(--color-bg-secondary)] border-r">
-        <button
-          onClick={() => {
-            setComposing(true);
-            setSelectedEmail(null);
-          }}
-          className="w-full bg-[var(--color-accent)] text-white rounded p-2 mb-4"
-        >
-          Nowa wiadomość
-        </button>
-        {["inbox", "sent", "draft", "trash"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setCurrentFolder(f as Folder)}
-            className={`block w-full text-left px-3 py-2 rounded mb-1 ${
-              currentFolder === f
-                ? "bg-[var(--color-accent)] text-white"
-                : "hover:bg-[var(--color-accent-hover)]"
-            }`}
-          >
-            {f === "inbox" && "Odebrane"}
-            {f === "sent" && "Wysłane"}
-            {f === "draft" && "Robocze"}
-            {f === "trash" && "Kosz"}
-          </button>
-        ))}
-      </aside>
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col font-sans pt-24 pb-12">
+      
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 h-[calc(100vh-8rem)] flex gap-6">
+        
+        {/* LEWA KOLUMNA */}
+        <aside className="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
+            <button
+                onClick={() => setIsComposeOpen(true)}
+                className="w-full py-3 px-4 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+                Nowa wiadomość
+            </button>
 
-      {/* Lista wiadomości */}
-      <main className="flex-1 flex">
-        <div className="w-2/3 p-4 overflow-y-auto border-r">
-          {loading ? (
-            <p>Ładowanie...</p>
-          ) : (
-            filteredEmails.map((email) => (
-              <div
-                key={email.email_uid}
-                onClick={() => fetchEmailDetails(email.email_uid)}
-                className={`p-4 mb-3 rounded cursor-pointer ${
-                  email.is_read
-                    ? "bg-[var(--color-accent)]"
-                    : "bg-[var(--color-bg-secondary)] text-white"
-                } ${
-                  selectedEmail?.email_uid === email.email_uid
-                    ? "border border-[var(--color-accent-hover)]"
-                    : ""
-                }`}
-              >
-                <strong>{email.title}</strong>
-                <p className="text-sm">
-                  Od: {email.sender_name} ({email.sender_email})
-                </p>
-                <p className="text-xs">
-                  {new Date(email.send_date).toLocaleString("pl-PL")}
-                </p>
-              </div>
-            ))
-          )}
-          <div className="flex justify-between mt-3">
-            <button
-              disabled={offset === 0}
-              onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-              className="px-3 py-1 bg-[var(--color-accent)] text-white rounded disabled:opacity-50"
-            >
-              ← Poprzednia
-            </button>
-            <span>
-              {offset + 1} - {Math.min(offset + limit, totalCount)} z{" "}
-              {totalCount}
-            </span>
-            <button
-              disabled={offset + limit >= totalCount}
-              onClick={() => setOffset((prev) => prev + limit)}
-              className="px-3 py-1 bg-[var(--color-accent)] text-white rounded disabled:opacity-50"
-            >
-              Następna →
-            </button>
-          </div>
+            <nav className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden p-2 flex flex-col gap-1">
+                {[
+                    { id: "inbox", label: "Odebrane", icon: "📥" },
+                    { id: "sent", label: "Wysłane", icon: "📤" },
+                    { id: "trash", label: "Kosz", icon: "🗑️" },
+                ].map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => setFolder(item.id as Folder)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 ${
+                            folder === item.id
+                                ? "bg-[var(--color-accent)] text-white shadow-md font-semibold"
+                                : "hover:bg-white/10 text-[var(--color-text-secondary)]"
+                        }`}
+                    >
+                        <span>{item.icon}</span>
+                        {item.label}
+                    </button>
+                ))}
+            </nav>
+        </aside>
+
+        {/* ŚRODKOWA KOLUMNA */}
+        <div className={`flex-1 flex flex-col bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden ${selectedEmail ? 'hidden md:flex md:w-1/3 md:flex-none' : 'w-full'}`}>
+            <div className="p-4 border-b border-[var(--color-text-secondary)]/10 flex justify-between items-center bg-[var(--color-bg)]/5">
+                <h2 className="text-xl font-bold">
+                    {folder === 'inbox' && 'Odebrane'}
+                    {folder === 'sent' && 'Wysłane'}
+                    {folder === 'trash' && 'Kosz'}
+                </h2>
+                <span className="text-sm opacity-60">{totalCount} wiadomości</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                {isLoadingList ? (
+                    <div className="flex justify-center items-center h-40">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent)]"></div>
+                    </div>
+                ) : emails.length === 0 ? (
+                    <div className="text-center p-10 opacity-60">Brak wiadomości w tym folderze.</div>
+                ) : (
+                    emails.map((email, idx) => {
+                        const uid = getEmailId(email) || idx;
+                        const isRead = getIsRead(email);
+                        const senderName = getSenderName(email);
+                        const senderEmail = getSenderEmail(email);
+                        const date = getSendDate(email);
+
+                        return (
+                          <div
+                              key={uid}
+                              onClick={() => openEmail(email)}
+                              className={`p-4 rounded-xl cursor-pointer transition-all border border-transparent ${
+                                  selectedEmail && getEmailId(selectedEmail) === getEmailId(email)
+                                      ? "bg-[var(--color-bg)] border-[var(--color-accent)] shadow-md"
+                                      : isRead
+                                      ? "bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)]/60"
+                                      : "bg-[var(--color-bg)] border-l-4 border-l-[var(--color-accent)] font-semibold shadow-sm"
+                              }`}
+                          >
+                              <div className="flex justify-between items-start mb-1">
+                                  <span className="text-sm font-bold truncate pr-2" title={senderEmail}>
+                                      {senderName || senderEmail}
+                                  </span>
+                                  <span className="text-xs whitespace-nowrap opacity-70">
+                                      {formatDate(date).split(',')[0]}
+                                  </span>
+                              </div>
+                              <h3 className="text-md truncate mb-1 text-[var(--color-accent)]">{email.title}</h3>
+                          </div>
+                        )
+                    })
+                )}
+            </div>
+
+            <div className="p-3 border-t border-[var(--color-text-secondary)]/10 flex justify-between items-center text-sm bg-[var(--color-bg)]/5">
+                <button 
+                    disabled={offset === 0}
+                    onClick={() => setOffset(Math.max(0, offset - limit))}
+                    className="px-3 py-1 rounded hover:bg-black/10 disabled:opacity-30 transition-colors"
+                >
+                    &larr; Nowsze
+                </button>
+                <span>{offset + 1}-{Math.min(offset + limit, totalCount)}</span>
+                <button 
+                    disabled={offset + limit >= totalCount}
+                    onClick={() => setOffset(offset + limit)}
+                    className="px-3 py-1 rounded hover:bg-black/10 disabled:opacity-30 transition-colors"
+                >
+                    Starsze &rarr;
+                </button>
+            </div>
         </div>
 
-        {/* Podgląd i odpowiedź */}
-        <div className="w-1/3 p-4 overflow-y-auto">
-          {composing ? (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Nowa wiadomość</h3>
-              <EmailSuggestInput
-                value={formData.to}
-                onChange={(val) => setFormData({ ...formData, to: val })}
-                onSelect={(val) => setFormData({ ...formData, to: val })}
-              />
-              <input
-                type="text"
-                placeholder="Temat"
-                value={formData.subject}
-                onChange={(e) =>
-                  setFormData({ ...formData, subject: e.target.value })
-                }
-                className="w-full p-2 border rounded mt-2"
-              />
-              <textarea
-                placeholder="Treść"
-                value={formData.body}
-                onChange={(e) =>
-                  setFormData({ ...formData, body: e.target.value })
-                }
-                className="w-full h-40 border rounded p-2 mt-2"
-              />
-            </div>
-          ) : selectedEmail ? (
-            <div>
-              <h2 className="text-xl font-bold">{selectedEmail.title}</h2>
-              <p className="text-sm">
-                Od: {selectedEmail.sender_name} ({selectedEmail.sender_email})
-              </p>
-              <p className="text-xs mb-3">
-                {new Date(selectedEmail.send_date).toLocaleString("pl-PL")}
-              </p>
-              <div className="whitespace-pre-wrap mb-3">
-                {selectedEmail.content || "Brak treści"}
-              </div>
-              <button
-                onClick={startReply}
-                className="mt-2 px-4 py-2 bg-[var(--color-accent)] text-white rounded"
-              >
-                Odpowiedz
-              </button>
-            </div>
-          ) : (
-            <p className="text-[var(--color-text-secondary)] mt-4">
-              Wybierz wiadomość, aby ją wyświetlić
-            </p>
-          )}
+        {/* PRAWA KOLUMNA */}
+        <div className={`flex-[1.5] bg-[var(--color-bg)] border border-[var(--color-bg-secondary)] rounded-2xl shadow-xl overflow-hidden flex flex-col ${!selectedEmail ? 'hidden md:flex justify-center items-center bg-opacity-50' : ''}`}>
+            {selectedEmail ? (
+                <>
+                    <div className="p-6 border-b border-[var(--color-accent)]/20 bg-[var(--color-bg-secondary)]/10">
+                        <div className="flex justify-between items-start mb-4">
+                            <h1 className="text-2xl font-bold leading-tight">{selectedEmail.title}</h1>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={handleDelete}
+                                    className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors" 
+                                    title="Usuń do kosza"
+                                >
+                                    🗑️
+                                </button>
+                                <button 
+                                    onClick={() => setSelectedEmail(null)}
+                                    className="md:hidden p-2 bg-gray-200 rounded-lg"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-lg">
+                                {(getSenderName(selectedEmail) || getSenderEmail(selectedEmail) || "?").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div className="font-semibold text-sm">
+                                    {getSenderName(selectedEmail)} 
+                                    <span className="font-normal opacity-70 ml-1">&lt;{getSenderEmail(selectedEmail)}&gt;</span>
+                                </div>
+                                <div className="text-xs opacity-60">
+                                    {formatDate(getSendDate(selectedEmail))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 p-8 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                        {isLoadingDetails ? (
+                            <div className="flex gap-2 items-center text-[var(--color-accent)]">
+                                ⏳ Ładowanie treści...
+                            </div>
+                        ) : (
+                            selectedEmail.content
+                        )}
+                    </div>
+                </>
+            ) : (
+                <div className="text-center p-6 opacity-40">
+                    <svg className="w-24 h-24 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z"></path></svg>
+                    <p className="text-lg">Wybierz wiadomość z listy, aby ją przeczytać.</p>
+                </div>
+            )}
         </div>
+
       </main>
+
+      {/* --- MODAL NOWA WIADOMOŚĆ --- */}
+      {isComposeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-[var(--color-bg)] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+                
+                <div className="px-6 py-4 border-b border-[var(--color-accent)] flex justify-between items-center bg-[var(--color-accent)] text-white rounded-t-2xl">
+                    <h3 className="font-bold text-lg">Nowa wiadomość</h3>
+                    <button onClick={() => setIsComposeOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors">✕</button>
+                </div>
+
+                <form onSubmit={handleSend} className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+                    <div>
+                        <label className="block text-sm font-semibold mb-1 opacity-70">Odbiorca:</label>
+                        <EmailSuggestInput 
+                            value={composeData.to}
+                            onChange={(val) => setComposeData({...composeData, to: val})}
+                            disabled={isSending}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold mb-1 opacity-70">Temat:</label>
+                        <input 
+                            type="text" 
+                            required
+                            value={composeData.subject}
+                            onChange={(e) => setComposeData({...composeData, subject: e.target.value})}
+                            className="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)]/20 border border-[var(--color-text-secondary)]/20 focus:outline-none focus:border-[var(--color-accent)]"
+                            placeholder="Wpisz temat..."
+                        />
+                    </div>
+
+                    <div className="flex-1 min-h-[200px]">
+                        <label className="block text-sm font-semibold mb-1 opacity-70">Treść:</label>
+                        <textarea 
+                            required
+                            value={composeData.body}
+                            onChange={(e) => setComposeData({...composeData, body: e.target.value})}
+                            className="w-full h-full p-3 rounded-lg bg-[var(--color-bg-secondary)]/20 border border-[var(--color-text-secondary)]/20 focus:outline-none focus:border-[var(--color-accent)] resize-none"
+                            placeholder="Napisz wiadomość..."
+                        />
+                    </div>
+                    
+                    <div className="flex justify-end pt-2">
+                        <button 
+                            type="button" 
+                            onClick={() => setIsComposeOpen(false)}
+                            className="mr-3 px-6 py-2 rounded-lg hover:bg-black/5 transition-colors"
+                        >
+                            Anuluj
+                        </button>
+                        <button 
+                            type="submit" 
+                            disabled={isSending}
+                            className="px-8 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-lg shadow transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {isSending ? (
+                                <>
+                                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                  Wysyłanie...
+                                </>
+                            ) : "Wyślij"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      )}
     </div>
   );
 }

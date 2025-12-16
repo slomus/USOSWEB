@@ -224,6 +224,50 @@ message DeleteUserResponse {
   string message = 2;
 }
 
+
+message UploadProfilePhotoRequest {
+  string photo_data = 10;
+  string mime_type = 11; 
+}
+
+message UploadProfilePhotoResponse {
+  bool success = 10;
+  string message = 11;
+  string photo_url = 12;
+}
+
+message GetProfilePhotoRequest {
+  int32 user_id = 10;
+}
+
+message GetProfilePhotoResponse {
+  bytes photo_data = 10;
+  string mime_type = 11;
+}
+
+message GetMyStudentsRequest {}
+
+message GetMyStudentsResponse {
+  repeated User students = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+
+message GetUserInfoRequest {
+  int64 user_id = 1;
+}
+
+message GetUserInfoResponse {
+  int64 user_id = 1;
+  string name = 2;
+  string surname = 3;
+  string email = 4;
+  bool active = 5;
+  string profile_photo_path = 6;
+}
+
+
 // Serwis
 
 service AuthService {
@@ -316,6 +360,32 @@ service AuthService {
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
     option (google.api.http) = {
       delete: "/api/auth/user/{user_id}"
+    };
+  }
+
+  rpc UploadProfilePhoto(UploadProfilePhotoRequest) returns (UploadProfilePhotoResponse) {
+    option (google.api.http) = {
+      post: "/api/users/photo"
+      body: "*"
+    };
+  }
+
+  rpc GetProfilePhoto(GetProfilePhotoRequest) returns (GetProfilePhotoResponse) {
+    option (google.api.http) = {
+      get: "/api/users/{user_id}/photo"
+    };
+  }
+
+  rpc GetMyStudents(GetMyStudentsRequest) returns (GetMyStudentsResponse) {
+    option (google.api.http) = {
+    get : "/api/teacher/students"
+  };
+}
+
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
+
+    option (google.api.http) = {
+      get: "/api/info/user/{user_id}"
     };
   }
 }

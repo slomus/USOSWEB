@@ -4,22 +4,21 @@ metadata:
   name: api-gateway-config
   namespace: usosweb
 data:
-  ENV: "development"
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
   DB_NAME: "usosweb"
-  DB_USER: "postgres"
-  DB_SSLMODE: "disable"
-  GRPC_PORT: "9090"
-  HTTP_PORT: "8083"
+  DB_USER: "admin"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  COMMON_SERVICE_URL: "http://common-service:3003"
+  CALENDAR_SERVICE_URL: "http://calendar-service:3001"
+  MESSAGING_SERVICE_URL: "http://messaging-service:3002"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
   namespace: usosweb
-  labels:
-    app: api-gateway
 spec:
   replicas: 2
   selector:
@@ -38,88 +37,43 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8083
-          name: http
         - containerPort: 9090
-          name: grpc
+        envFrom:
+        - configMapRef:
+            name: api-gateway-config
         env:
-        - name: ENV
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: ENV
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: DB_HOST
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: DB_PORT
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: DB_NAME
-        - name: DB_USER
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: DB_USER
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
-        - name: DB_SSLMODE
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: DB_SSLMODE
-        - name: GRPC_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: GRPC_PORT
-        - name: HTTP_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: api-gateway-config
-              key: HTTP_PORT
         livenessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: 8083
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /ready
+          tcpSocket:
             port: 8083
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 5
+          timeoutSeconds: 5
           failureThreshold: 3
         resources:
           requests:
             memory: "128Mi"
             cpu: "100m"
           limits:
-            memory: "256Mi"
+            memory: "512Mi"
             cpu: "500m"
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1001
-          readOnlyRootFilesystem: true
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: api-gateway-service
   namespace: usosweb
-  labels:
-    app: api-gateway
 spec:
   selector:
     app: api-gateway
@@ -128,7 +82,8 @@ spec:
     port: 8083
     targetPort: 8083
     nodePort: 30083
-  - name: grpc
+  - name: metrics
     port: 9090
     targetPort: 9090
-  type: NodePort 
+    nodePort: 31632
+  type: NodePort

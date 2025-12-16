@@ -1691,6 +1691,310 @@ func (x *DeleteSubjectResponse) GetMessage() string {
 	return ""
 }
 
+type GetSubjectInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId     int32                  `protobuf:"varint,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubjectInfoRequest) Reset() {
+	*x = GetSubjectInfoRequest{}
+	mi := &file_academic_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubjectInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubjectInfoRequest) ProtoMessage() {}
+
+func (x *GetSubjectInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubjectInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetSubjectInfoRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetSubjectInfoRequest) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+type GetSubjectInfoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId     int32                  `protobuf:"varint,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	Alias         string                 `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Ects          float32                `protobuf:"fixed32,4,opt,name=ects,proto3" json:"ects,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Syllabus      string                 `protobuf:"bytes,6,opt,name=syllabus,proto3" json:"syllabus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubjectInfoResponse) Reset() {
+	*x = GetSubjectInfoResponse{}
+	mi := &file_academic_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubjectInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubjectInfoResponse) ProtoMessage() {}
+
+func (x *GetSubjectInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubjectInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetSubjectInfoResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GetSubjectInfoResponse) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+func (x *GetSubjectInfoResponse) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+func (x *GetSubjectInfoResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetSubjectInfoResponse) GetEcts() float32 {
+	if x != nil {
+		return x.Ects
+	}
+	return 0
+}
+
+func (x *GetSubjectInfoResponse) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *GetSubjectInfoResponse) GetSyllabus() string {
+	if x != nil {
+		return x.Syllabus
+	}
+	return ""
+}
+
+type GetClassInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetClassInfoRequest) Reset() {
+	*x = GetClassInfoRequest{}
+	mi := &file_academic_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetClassInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetClassInfoRequest) ProtoMessage() {}
+
+func (x *GetClassInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetClassInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetClassInfoRequest) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GetClassInfoRequest) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+type GetClassInfoResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClassId         int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ClassType       string                 `protobuf:"bytes,2,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	Credit          string                 `protobuf:"bytes,3,opt,name=credit,proto3" json:"credit,omitempty"`
+	SpanOfHours     int32                  `protobuf:"varint,4,opt,name=span_of_hours,json=spanOfHours,proto3" json:"span_of_hours,omitempty"`
+	GroupNr         int32                  `protobuf:"varint,5,opt,name=group_nr,json=groupNr,proto3" json:"group_nr,omitempty"`
+	CurrentCapacity int32                  `protobuf:"varint,6,opt,name=current_capacity,json=currentCapacity,proto3" json:"current_capacity,omitempty"`
+	Capacity        int32                  `protobuf:"varint,7,opt,name=capacity,proto3" json:"capacity,omitempty"`
+	Classroom       int32                  `protobuf:"varint,8,opt,name=classroom,proto3" json:"classroom,omitempty"`
+	BuildingName    string                 `protobuf:"bytes,9,opt,name=building_name,json=buildingName,proto3" json:"building_name,omitempty"`
+	BuildingAddress string                 `protobuf:"bytes,10,opt,name=building_address,json=buildingAddress,proto3" json:"building_address,omitempty"`
+	SubjectName     string                 `protobuf:"bytes,11,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	SubjectAlias    string                 `protobuf:"bytes,12,opt,name=subject_alias,json=subjectAlias,proto3" json:"subject_alias,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetClassInfoResponse) Reset() {
+	*x = GetClassInfoResponse{}
+	mi := &file_academic_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetClassInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetClassInfoResponse) ProtoMessage() {}
+
+func (x *GetClassInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_academic_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetClassInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetClassInfoResponse) Descriptor() ([]byte, []int) {
+	return file_academic_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *GetClassInfoResponse) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetClassType() string {
+	if x != nil {
+		return x.ClassType
+	}
+	return ""
+}
+
+func (x *GetClassInfoResponse) GetCredit() string {
+	if x != nil {
+		return x.Credit
+	}
+	return ""
+}
+
+func (x *GetClassInfoResponse) GetSpanOfHours() int32 {
+	if x != nil {
+		return x.SpanOfHours
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetGroupNr() int32 {
+	if x != nil {
+		return x.GroupNr
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetCurrentCapacity() int32 {
+	if x != nil {
+		return x.CurrentCapacity
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetCapacity() int32 {
+	if x != nil {
+		return x.Capacity
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetClassroom() int32 {
+	if x != nil {
+		return x.Classroom
+	}
+	return 0
+}
+
+func (x *GetClassInfoResponse) GetBuildingName() string {
+	if x != nil {
+		return x.BuildingName
+	}
+	return ""
+}
+
+func (x *GetClassInfoResponse) GetBuildingAddress() string {
+	if x != nil {
+		return x.BuildingAddress
+	}
+	return ""
+}
+
+func (x *GetClassInfoResponse) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *GetClassInfoResponse) GetSubjectAlias() string {
+	if x != nil {
+		return x.SubjectAlias
+	}
+	return ""
+}
+
 var File_academic_proto protoreflect.FileDescriptor
 
 const file_academic_proto_rawDesc = "" +
@@ -1832,14 +2136,44 @@ const file_academic_proto_rawDesc = "" +
 	"subject_id\x18\x01 \x01(\x05R\tsubjectId\"K\n" +
 	"\x15DeleteSubjectResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xf5\x05\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"6\n" +
+	"\x15GetSubjectInfoRequest\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x01 \x01(\x05R\tsubjectId\"\xb3\x01\n" +
+	"\x16GetSubjectInfoResponse\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x01 \x01(\x05R\tsubjectId\x12\x14\n" +
+	"\x05alias\x18\x02 \x01(\tR\x05alias\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04ects\x18\x04 \x01(\x02R\x04ects\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bsyllabus\x18\x06 \x01(\tR\bsyllabus\"0\n" +
+	"\x13GetClassInfoRequest\x12\x19\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\"\xa4\x03\n" +
+	"\x14GetClassInfoResponse\x12\x19\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
+	"\n" +
+	"class_type\x18\x02 \x01(\tR\tclassType\x12\x16\n" +
+	"\x06credit\x18\x03 \x01(\tR\x06credit\x12\"\n" +
+	"\rspan_of_hours\x18\x04 \x01(\x05R\vspanOfHours\x12\x19\n" +
+	"\bgroup_nr\x18\x05 \x01(\x05R\agroupNr\x12)\n" +
+	"\x10current_capacity\x18\x06 \x01(\x05R\x0fcurrentCapacity\x12\x1a\n" +
+	"\bcapacity\x18\a \x01(\x05R\bcapacity\x12\x1c\n" +
+	"\tclassroom\x18\b \x01(\x05R\tclassroom\x12#\n" +
+	"\rbuilding_name\x18\t \x01(\tR\fbuildingName\x12)\n" +
+	"\x10building_address\x18\n" +
+	" \x01(\tR\x0fbuildingAddress\x12!\n" +
+	"\fsubject_name\x18\v \x01(\tR\vsubjectName\x12#\n" +
+	"\rsubject_alias\x18\f \x01(\tR\fsubjectAlias2\xe5\a\n" +
 	"\x0fSubjectsService\x12a\n" +
 	"\vGetSubjects\x12\x1c.academic.GetSubjectsRequest\x1a\x1d.academic.GetSubjectsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/subjects\x12\x80\x01\n" +
 	"\x11GetSubjectDetails\x12\".academic.GetSubjectDetailsRequest\x1a#.academic.GetSubjectDetailsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/subjects/{subject_id}\x12\x8e\x01\n" +
 	"\x14GetAvailableSubjects\x12%.academic.GetAvailableSubjectsRequest\x1a&.academic.GetAvailableSubjectsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/student/subjects/available\x12p\n" +
 	"\rCreateSubject\x12\x1e.academic.CreateSubjectRequest\x1a\x1f.academic.CreateSubjectResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/admin/subjects\x12}\n" +
 	"\rUpdateSubject\x12\x1e.academic.UpdateSubjectRequest\x1a\x1f.academic.UpdateSubjectResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/admin/subjects/{subject_id}\x12z\n" +
-	"\rDeleteSubject\x12\x1e.academic.DeleteSubjectRequest\x1a\x1f.academic.DeleteSubjectResponse\"(\x82\xd3\xe4\x93\x02\"* /api/admin/subjects/{subject_id}2\x92\x04\n" +
+	"\rDeleteSubject\x12\x1e.academic.DeleteSubjectRequest\x1a\x1f.academic.DeleteSubjectResponse\"(\x82\xd3\xe4\x93\x02\"* /api/admin/subjects/{subject_id}\x12{\n" +
+	"\x0eGetSubjectInfo\x12\x1f.academic.GetSubjectInfoRequest\x1a .academic.GetSubjectInfoResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/info/subject/{subject_id}\x12q\n" +
+	"\fGetClassInfo\x12\x1d.academic.GetClassInfoRequest\x1a\x1e.academic.GetClassInfoResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/info/class/{class_id}2\x92\x04\n" +
 	"\x12EnrollmentsService\x12m\n" +
 	"\rEnrollSubject\x12\x1e.academic.EnrollSubjectRequest\x1a\x1f.academic.EnrollSubjectResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/enrollments\x12}\n" +
 	"\x0fUnenrollSubject\x12 .academic.UnenrollSubjectRequest\x1a!.academic.UnenrollSubjectResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/enrollments/{subject_id}\x12s\n" +
@@ -1858,7 +2192,7 @@ func file_academic_proto_rawDescGZIP() []byte {
 	return file_academic_proto_rawDescData
 }
 
-var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_academic_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_academic_proto_goTypes = []any{
 	(*TimeSlot)(nil),                       // 0: academic.TimeSlot
 	(*ClassInfo)(nil),                      // 1: academic.ClassInfo
@@ -1887,7 +2221,11 @@ var file_academic_proto_goTypes = []any{
 	(*UpdateSubjectResponse)(nil),          // 24: academic.UpdateSubjectResponse
 	(*DeleteSubjectRequest)(nil),           // 25: academic.DeleteSubjectRequest
 	(*DeleteSubjectResponse)(nil),          // 26: academic.DeleteSubjectResponse
-	(*timestamppb.Timestamp)(nil),          // 27: google.protobuf.Timestamp
+	(*GetSubjectInfoRequest)(nil),          // 27: academic.GetSubjectInfoRequest
+	(*GetSubjectInfoResponse)(nil),         // 28: academic.GetSubjectInfoResponse
+	(*GetClassInfoRequest)(nil),            // 29: academic.GetClassInfoRequest
+	(*GetClassInfoResponse)(nil),           // 30: academic.GetClassInfoResponse
+	(*timestamppb.Timestamp)(nil),          // 31: google.protobuf.Timestamp
 }
 var file_academic_proto_depIdxs = []int32{
 	0,  // 0: academic.ClassInfo.schedule:type_name -> academic.TimeSlot
@@ -1897,7 +2235,7 @@ var file_academic_proto_depIdxs = []int32{
 	3,  // 4: academic.GetSubjectsResponse.subjects:type_name -> academic.SubjectSummary
 	4,  // 5: academic.GetSubjectDetailsResponse.subject:type_name -> academic.SubjectDetails
 	1,  // 6: academic.Enrollment.enrolled_classes:type_name -> academic.ClassInfo
-	27, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
+	31, // 7: academic.Enrollment.enrolled_at:type_name -> google.protobuf.Timestamp
 	9,  // 8: academic.EnrollSubjectResponse.enrollment:type_name -> academic.Enrollment
 	9,  // 9: academic.GetMyEnrollmentsResponse.enrollments:type_name -> academic.Enrollment
 	0,  // 10: academic.ScheduleConflict.conflicting_time:type_name -> academic.TimeSlot
@@ -1909,22 +2247,26 @@ var file_academic_proto_depIdxs = []int32{
 	21, // 16: academic.SubjectsService.CreateSubject:input_type -> academic.CreateSubjectRequest
 	23, // 17: academic.SubjectsService.UpdateSubject:input_type -> academic.UpdateSubjectRequest
 	25, // 18: academic.SubjectsService.DeleteSubject:input_type -> academic.DeleteSubjectRequest
-	10, // 19: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
-	12, // 20: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
-	14, // 21: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
-	16, // 22: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
-	6,  // 23: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
-	8,  // 24: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
-	20, // 25: academic.SubjectsService.GetAvailableSubjects:output_type -> academic.GetAvailableSubjectsResponse
-	22, // 26: academic.SubjectsService.CreateSubject:output_type -> academic.CreateSubjectResponse
-	24, // 27: academic.SubjectsService.UpdateSubject:output_type -> academic.UpdateSubjectResponse
-	26, // 28: academic.SubjectsService.DeleteSubject:output_type -> academic.DeleteSubjectResponse
-	11, // 29: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
-	13, // 30: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
-	15, // 31: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
-	18, // 32: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
-	23, // [23:33] is the sub-list for method output_type
-	13, // [13:23] is the sub-list for method input_type
+	27, // 19: academic.SubjectsService.GetSubjectInfo:input_type -> academic.GetSubjectInfoRequest
+	29, // 20: academic.SubjectsService.GetClassInfo:input_type -> academic.GetClassInfoRequest
+	10, // 21: academic.EnrollmentsService.EnrollSubject:input_type -> academic.EnrollSubjectRequest
+	12, // 22: academic.EnrollmentsService.UnenrollSubject:input_type -> academic.UnenrollSubjectRequest
+	14, // 23: academic.EnrollmentsService.GetMyEnrollments:input_type -> academic.GetMyEnrollmentsRequest
+	16, // 24: academic.EnrollmentsService.CheckScheduleConflicts:input_type -> academic.CheckScheduleConflictsRequest
+	6,  // 25: academic.SubjectsService.GetSubjects:output_type -> academic.GetSubjectsResponse
+	8,  // 26: academic.SubjectsService.GetSubjectDetails:output_type -> academic.GetSubjectDetailsResponse
+	20, // 27: academic.SubjectsService.GetAvailableSubjects:output_type -> academic.GetAvailableSubjectsResponse
+	22, // 28: academic.SubjectsService.CreateSubject:output_type -> academic.CreateSubjectResponse
+	24, // 29: academic.SubjectsService.UpdateSubject:output_type -> academic.UpdateSubjectResponse
+	26, // 30: academic.SubjectsService.DeleteSubject:output_type -> academic.DeleteSubjectResponse
+	28, // 31: academic.SubjectsService.GetSubjectInfo:output_type -> academic.GetSubjectInfoResponse
+	30, // 32: academic.SubjectsService.GetClassInfo:output_type -> academic.GetClassInfoResponse
+	11, // 33: academic.EnrollmentsService.EnrollSubject:output_type -> academic.EnrollSubjectResponse
+	13, // 34: academic.EnrollmentsService.UnenrollSubject:output_type -> academic.UnenrollSubjectResponse
+	15, // 35: academic.EnrollmentsService.GetMyEnrollments:output_type -> academic.GetMyEnrollmentsResponse
+	18, // 36: academic.EnrollmentsService.CheckScheduleConflicts:output_type -> academic.CheckScheduleConflictsResponse
+	25, // [25:37] is the sub-list for method output_type
+	13, // [13:25] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
 	13, // [13:13] is the sub-list for extension extendee
 	0,  // [0:13] is the sub-list for field type_name
@@ -1942,7 +2284,7 @@ func file_academic_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_academic_proto_rawDesc), len(file_academic_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

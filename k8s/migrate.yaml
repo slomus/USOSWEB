@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: usosweb
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate
+        image: ghcr.io/slomus/usosweb-migrate:latest
+        args: ["up"]
+        env:
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          value: "usosweb"
+        - name: DB_SSLMODE
+          value: "disable"
+        - name: LOG_LEVEL
+          value: "info"
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h postgres-service -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"

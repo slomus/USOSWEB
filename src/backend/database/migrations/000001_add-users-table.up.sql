@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS users(
    bank_account_nr VARCHAR (26)  NULL,
    active BOOLEAN DEFAULT TRUE,
    activation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-   deactivation_date TIMESTAMP NULL
+   deactivation_date TIMESTAMP NULL,
+   profile_photo_path VARCHAR(255),
+   profile_photo_mime_type VARCHAR(50)
 );
 
 

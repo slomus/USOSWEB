@@ -35,10 +35,10 @@ type Grade struct {
 	AddedByTeachingStaffId int32                  `protobuf:"varint,17,opt,name=added_by_teaching_staff_id,json=addedByTeachingStaffId,proto3" json:"added_by_teaching_staff_id,omitempty"`
 	Comment                string                 `protobuf:"bytes,18,opt,name=comment,proto3" json:"comment,omitempty"`
 	CreatedAt              string                 `protobuf:"bytes,19,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	SubjectName            string                 `protobuf:"bytes,20,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
-	AddedByName            string                 `protobuf:"bytes,21,opt,name=added_by_name,json=addedByName,proto3" json:"added_by_name,omitempty"`
-	StudentName            string                 `protobuf:"bytes,22,opt,name=student_name,json=studentName,proto3" json:"student_name,omitempty"`
-	ClassType              string                 `protobuf:"bytes,23,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	SubjectName            *string                `protobuf:"bytes,20,opt,name=subject_name,json=subjectName,proto3,oneof" json:"subject_name,omitempty"`
+	AddedByName            *string                `protobuf:"bytes,21,opt,name=added_by_name,json=addedByName,proto3,oneof" json:"added_by_name,omitempty"`
+	StudentName            *string                `protobuf:"bytes,22,opt,name=student_name,json=studentName,proto3,oneof" json:"student_name,omitempty"`
+	ClassType              *string                `protobuf:"bytes,23,opt,name=class_type,json=classType,proto3,oneof" json:"class_type,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -144,29 +144,29 @@ func (x *Grade) GetCreatedAt() string {
 }
 
 func (x *Grade) GetSubjectName() string {
-	if x != nil {
-		return x.SubjectName
+	if x != nil && x.SubjectName != nil {
+		return *x.SubjectName
 	}
 	return ""
 }
 
 func (x *Grade) GetAddedByName() string {
-	if x != nil {
-		return x.AddedByName
+	if x != nil && x.AddedByName != nil {
+		return *x.AddedByName
 	}
 	return ""
 }
 
 func (x *Grade) GetStudentName() string {
-	if x != nil {
-		return x.StudentName
+	if x != nil && x.StudentName != nil {
+		return *x.StudentName
 	}
 	return ""
 }
 
 func (x *Grade) GetClassType() string {
-	if x != nil {
-		return x.ClassType
+	if x != nil && x.ClassType != nil {
+		return *x.ClassType
 	}
 	return ""
 }
@@ -959,11 +959,395 @@ func (x *GetTeacherClassesResponse) GetMessage() string {
 	return ""
 }
 
+type StudentOption struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AlbumNr       int32                  `protobuf:"varint,10,opt,name=album_nr,json=albumNr,proto3" json:"album_nr,omitempty"`
+	Name          string                 `protobuf:"bytes,11,opt,name=name,proto3" json:"name,omitempty"`
+	CourseName    string                 `protobuf:"bytes,12,opt,name=course_name,json=courseName,proto3" json:"course_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StudentOption) Reset() {
+	*x = StudentOption{}
+	mi := &file_grades_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StudentOption) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StudentOption) ProtoMessage() {}
+
+func (x *StudentOption) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StudentOption.ProtoReflect.Descriptor instead.
+func (*StudentOption) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *StudentOption) GetAlbumNr() int32 {
+	if x != nil {
+		return x.AlbumNr
+	}
+	return 0
+}
+
+func (x *StudentOption) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *StudentOption) GetCourseName() string {
+	if x != nil {
+		return x.CourseName
+	}
+	return ""
+}
+
+type TeacherOption struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TeachingStaffId int32                  `protobuf:"varint,10,opt,name=teaching_staff_id,json=teachingStaffId,proto3" json:"teaching_staff_id,omitempty"`
+	Name            string                 `protobuf:"bytes,11,opt,name=name,proto3" json:"name,omitempty"`
+	SubjectIds      []int32                `protobuf:"varint,12,rep,packed,name=subject_ids,json=subjectIds,proto3" json:"subject_ids,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *TeacherOption) Reset() {
+	*x = TeacherOption{}
+	mi := &file_grades_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TeacherOption) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TeacherOption) ProtoMessage() {}
+
+func (x *TeacherOption) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TeacherOption.ProtoReflect.Descriptor instead.
+func (*TeacherOption) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *TeacherOption) GetTeachingStaffId() int32 {
+	if x != nil {
+		return x.TeachingStaffId
+	}
+	return 0
+}
+
+func (x *TeacherOption) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TeacherOption) GetSubjectIds() []int32 {
+	if x != nil {
+		return x.SubjectIds
+	}
+	return nil
+}
+
+type SubjectOption struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId     int32                  `protobuf:"varint,10,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	Name          string                 `protobuf:"bytes,11,opt,name=name,proto3" json:"name,omitempty"`
+	Alias         string                 `protobuf:"bytes,12,opt,name=alias,proto3" json:"alias,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubjectOption) Reset() {
+	*x = SubjectOption{}
+	mi := &file_grades_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubjectOption) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubjectOption) ProtoMessage() {}
+
+func (x *SubjectOption) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubjectOption.ProtoReflect.Descriptor instead.
+func (*SubjectOption) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SubjectOption) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+func (x *SubjectOption) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SubjectOption) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+type ClassOption struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClassId         int32                  `protobuf:"varint,10,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	SubjectId       int32                  `protobuf:"varint,11,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	SubjectName     string                 `protobuf:"bytes,12,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	ClassType       string                 `protobuf:"bytes,13,opt,name=class_type,json=classType,proto3" json:"class_type,omitempty"`
+	GroupNr         int32                  `protobuf:"varint,14,opt,name=group_nr,json=groupNr,proto3" json:"group_nr,omitempty"`
+	TeacherIds      []int32                `protobuf:"varint,15,rep,packed,name=teacher_ids,json=teacherIds,proto3" json:"teacher_ids,omitempty"`
+	StudentAlbumNrs []int32                `protobuf:"varint,16,rep,packed,name=student_album_nrs,json=studentAlbumNrs,proto3" json:"student_album_nrs,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ClassOption) Reset() {
+	*x = ClassOption{}
+	mi := &file_grades_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassOption) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassOption) ProtoMessage() {}
+
+func (x *ClassOption) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassOption.ProtoReflect.Descriptor instead.
+func (*ClassOption) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ClassOption) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *ClassOption) GetSubjectId() int32 {
+	if x != nil {
+		return x.SubjectId
+	}
+	return 0
+}
+
+func (x *ClassOption) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *ClassOption) GetClassType() string {
+	if x != nil {
+		return x.ClassType
+	}
+	return ""
+}
+
+func (x *ClassOption) GetGroupNr() int32 {
+	if x != nil {
+		return x.GroupNr
+	}
+	return 0
+}
+
+func (x *ClassOption) GetTeacherIds() []int32 {
+	if x != nil {
+		return x.TeacherIds
+	}
+	return nil
+}
+
+func (x *ClassOption) GetStudentAlbumNrs() []int32 {
+	if x != nil {
+		return x.StudentAlbumNrs
+	}
+	return nil
+}
+
+type GetAdminGradeOptionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAdminGradeOptionsRequest) Reset() {
+	*x = GetAdminGradeOptionsRequest{}
+	mi := &file_grades_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAdminGradeOptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAdminGradeOptionsRequest) ProtoMessage() {}
+
+func (x *GetAdminGradeOptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAdminGradeOptionsRequest.ProtoReflect.Descriptor instead.
+func (*GetAdminGradeOptionsRequest) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{18}
+}
+
+type GetAdminGradeOptionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Students      []*StudentOption       `protobuf:"bytes,10,rep,name=students,proto3" json:"students,omitempty"`
+	Teachers      []*TeacherOption       `protobuf:"bytes,11,rep,name=teachers,proto3" json:"teachers,omitempty"`
+	Subjects      []*SubjectOption       `protobuf:"bytes,12,rep,name=subjects,proto3" json:"subjects,omitempty"`
+	Classes       []*ClassOption         `protobuf:"bytes,13,rep,name=classes,proto3" json:"classes,omitempty"`
+	Message       string                 `protobuf:"bytes,14,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAdminGradeOptionsResponse) Reset() {
+	*x = GetAdminGradeOptionsResponse{}
+	mi := &file_grades_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAdminGradeOptionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAdminGradeOptionsResponse) ProtoMessage() {}
+
+func (x *GetAdminGradeOptionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_grades_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAdminGradeOptionsResponse.ProtoReflect.Descriptor instead.
+func (*GetAdminGradeOptionsResponse) Descriptor() ([]byte, []int) {
+	return file_grades_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetAdminGradeOptionsResponse) GetStudents() []*StudentOption {
+	if x != nil {
+		return x.Students
+	}
+	return nil
+}
+
+func (x *GetAdminGradeOptionsResponse) GetTeachers() []*TeacherOption {
+	if x != nil {
+		return x.Teachers
+	}
+	return nil
+}
+
+func (x *GetAdminGradeOptionsResponse) GetSubjects() []*SubjectOption {
+	if x != nil {
+		return x.Subjects
+	}
+	return nil
+}
+
+func (x *GetAdminGradeOptionsResponse) GetClasses() []*ClassOption {
+	if x != nil {
+		return x.Classes
+	}
+	return nil
+}
+
+func (x *GetAdminGradeOptionsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_grades_proto protoreflect.FileDescriptor
 
 const file_grades_proto_rawDesc = "" +
 	"\n" +
-	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbd\x03\n" +
+	"\fgrades.proto\x12\x06grades\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x94\x04\n" +
 	"\x05Grade\x12\x19\n" +
 	"\bgrade_id\x18\n" +
 	" \x01(\x05R\agradeId\x12\x19\n" +
@@ -977,12 +1361,16 @@ const file_grades_proto_rawDesc = "" +
 	"\x1aadded_by_teaching_staff_id\x18\x11 \x01(\x05R\x16addedByTeachingStaffId\x12\x18\n" +
 	"\acomment\x18\x12 \x01(\tR\acomment\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x13 \x01(\tR\tcreatedAt\x12!\n" +
-	"\fsubject_name\x18\x14 \x01(\tR\vsubjectName\x12\"\n" +
-	"\radded_by_name\x18\x15 \x01(\tR\vaddedByName\x12!\n" +
-	"\fstudent_name\x18\x16 \x01(\tR\vstudentName\x12\x1d\n" +
+	"created_at\x18\x13 \x01(\tR\tcreatedAt\x12&\n" +
+	"\fsubject_name\x18\x14 \x01(\tH\x00R\vsubjectName\x88\x01\x01\x12'\n" +
+	"\radded_by_name\x18\x15 \x01(\tH\x01R\vaddedByName\x88\x01\x01\x12&\n" +
+	"\fstudent_name\x18\x16 \x01(\tH\x02R\vstudentName\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"class_type\x18\x17 \x01(\tR\tclassType\"y\n" +
+	"class_type\x18\x17 \x01(\tH\x03R\tclassType\x88\x01\x01B\x0f\n" +
+	"\r_subject_nameB\x10\n" +
+	"\x0e_added_by_nameB\x0f\n" +
+	"\r_student_nameB\r\n" +
+	"\v_class_type\"y\n" +
 	"\x11ListGradesRequest\x12\x1e\n" +
 	"\balbum_nr\x18\n" +
 	" \x01(\x05H\x00R\aalbumNr\x88\x01\x01\x12&\n" +
@@ -1063,7 +1451,45 @@ const file_grades_proto_rawDesc = "" +
 	"\x19GetTeacherClassesResponse\x12.\n" +
 	"\aclasses\x18\n" +
 	" \x03(\v2\x14.grades.TeacherClassR\aclasses\x12\x18\n" +
-	"\amessage\x18\v \x01(\tR\amessage2\x83\x05\n" +
+	"\amessage\x18\v \x01(\tR\amessage\"_\n" +
+	"\rStudentOption\x12\x19\n" +
+	"\balbum_nr\x18\n" +
+	" \x01(\x05R\aalbumNr\x12\x12\n" +
+	"\x04name\x18\v \x01(\tR\x04name\x12\x1f\n" +
+	"\vcourse_name\x18\f \x01(\tR\n" +
+	"courseName\"p\n" +
+	"\rTeacherOption\x12*\n" +
+	"\x11teaching_staff_id\x18\n" +
+	" \x01(\x05R\x0fteachingStaffId\x12\x12\n" +
+	"\x04name\x18\v \x01(\tR\x04name\x12\x1f\n" +
+	"\vsubject_ids\x18\f \x03(\x05R\n" +
+	"subjectIds\"X\n" +
+	"\rSubjectOption\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\n" +
+	" \x01(\x05R\tsubjectId\x12\x12\n" +
+	"\x04name\x18\v \x01(\tR\x04name\x12\x14\n" +
+	"\x05alias\x18\f \x01(\tR\x05alias\"\xf1\x01\n" +
+	"\vClassOption\x12\x19\n" +
+	"\bclass_id\x18\n" +
+	" \x01(\x05R\aclassId\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\v \x01(\x05R\tsubjectId\x12!\n" +
+	"\fsubject_name\x18\f \x01(\tR\vsubjectName\x12\x1d\n" +
+	"\n" +
+	"class_type\x18\r \x01(\tR\tclassType\x12\x19\n" +
+	"\bgroup_nr\x18\x0e \x01(\x05R\agroupNr\x12\x1f\n" +
+	"\vteacher_ids\x18\x0f \x03(\x05R\n" +
+	"teacherIds\x12*\n" +
+	"\x11student_album_nrs\x18\x10 \x03(\x05R\x0fstudentAlbumNrs\"\x1d\n" +
+	"\x1bGetAdminGradeOptionsRequest\"\x80\x02\n" +
+	"\x1cGetAdminGradeOptionsResponse\x121\n" +
+	"\bstudents\x18\n" +
+	" \x03(\v2\x15.grades.StudentOptionR\bstudents\x121\n" +
+	"\bteachers\x18\v \x03(\v2\x15.grades.TeacherOptionR\bteachers\x121\n" +
+	"\bsubjects\x18\f \x03(\v2\x15.grades.SubjectOptionR\bsubjects\x12-\n" +
+	"\aclasses\x18\r \x03(\v2\x13.grades.ClassOptionR\aclasses\x12\x18\n" +
+	"\amessage\x18\x0e \x01(\tR\amessage2\x89\x06\n" +
 	"\rGradesService\x12X\n" +
 	"\n" +
 	"ListGrades\x12\x19.grades.ListGradesRequest\x1a\x1a.grades.ListGradesResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\v/api/grades\x12U\n" +
@@ -1071,7 +1497,8 @@ const file_grades_proto_rawDesc = "" +
 	"\x0fGetRecentGrades\x12\x1e.grades.GetRecentGradesRequest\x1a\x1f.grades.GetRecentGradesResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/student/grades/recent\x12i\n" +
 	"\vUpdateGrade\x12\x1a.grades.UpdateGradeRequest\x1a\x1b.grades.UpdateGradeResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/api/grades/{grade_id}\x12f\n" +
 	"\vDeleteGrade\x12\x1a.grades.DeleteGradeRequest\x1a\x1b.grades.DeleteGradeResponse\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/api/grades/{grade_id}\x12v\n" +
-	"\x11GetTeacherClasses\x12 .grades.GetTeacherClassesRequest\x1a!.grades.GetTeacherClassesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/teacher/classesBAZ?github.com/slomus/USOSWEB/src/backend/modules/common/gen/gradesb\x06proto3"
+	"\x11GetTeacherClasses\x12 .grades.GetTeacherClassesRequest\x1a!.grades.GetTeacherClassesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/teacher/classes\x12\x83\x01\n" +
+	"\x14GetAdminGradeOptions\x12#.grades.GetAdminGradeOptionsRequest\x1a$.grades.GetAdminGradeOptionsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/admin/grade-optionsBAZ?github.com/slomus/USOSWEB/src/backend/modules/common/gen/gradesb\x06proto3"
 
 var (
 	file_grades_proto_rawDescOnce sync.Once
@@ -1085,22 +1512,28 @@ func file_grades_proto_rawDescGZIP() []byte {
 	return file_grades_proto_rawDescData
 }
 
-var file_grades_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_grades_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_grades_proto_goTypes = []any{
-	(*Grade)(nil),                     // 0: grades.Grade
-	(*ListGradesRequest)(nil),         // 1: grades.ListGradesRequest
-	(*ListGradesResponse)(nil),        // 2: grades.ListGradesResponse
-	(*AddGradeRequest)(nil),           // 3: grades.AddGradeRequest
-	(*AddGradeResponse)(nil),          // 4: grades.AddGradeResponse
-	(*GetRecentGradesRequest)(nil),    // 5: grades.GetRecentGradesRequest
-	(*GetRecentGradesResponse)(nil),   // 6: grades.GetRecentGradesResponse
-	(*UpdateGradeRequest)(nil),        // 7: grades.UpdateGradeRequest
-	(*UpdateGradeResponse)(nil),       // 8: grades.UpdateGradeResponse
-	(*DeleteGradeRequest)(nil),        // 9: grades.DeleteGradeRequest
-	(*DeleteGradeResponse)(nil),       // 10: grades.DeleteGradeResponse
-	(*TeacherClass)(nil),              // 11: grades.TeacherClass
-	(*GetTeacherClassesRequest)(nil),  // 12: grades.GetTeacherClassesRequest
-	(*GetTeacherClassesResponse)(nil), // 13: grades.GetTeacherClassesResponse
+	(*Grade)(nil),                        // 0: grades.Grade
+	(*ListGradesRequest)(nil),            // 1: grades.ListGradesRequest
+	(*ListGradesResponse)(nil),           // 2: grades.ListGradesResponse
+	(*AddGradeRequest)(nil),              // 3: grades.AddGradeRequest
+	(*AddGradeResponse)(nil),             // 4: grades.AddGradeResponse
+	(*GetRecentGradesRequest)(nil),       // 5: grades.GetRecentGradesRequest
+	(*GetRecentGradesResponse)(nil),      // 6: grades.GetRecentGradesResponse
+	(*UpdateGradeRequest)(nil),           // 7: grades.UpdateGradeRequest
+	(*UpdateGradeResponse)(nil),          // 8: grades.UpdateGradeResponse
+	(*DeleteGradeRequest)(nil),           // 9: grades.DeleteGradeRequest
+	(*DeleteGradeResponse)(nil),          // 10: grades.DeleteGradeResponse
+	(*TeacherClass)(nil),                 // 11: grades.TeacherClass
+	(*GetTeacherClassesRequest)(nil),     // 12: grades.GetTeacherClassesRequest
+	(*GetTeacherClassesResponse)(nil),    // 13: grades.GetTeacherClassesResponse
+	(*StudentOption)(nil),                // 14: grades.StudentOption
+	(*TeacherOption)(nil),                // 15: grades.TeacherOption
+	(*SubjectOption)(nil),                // 16: grades.SubjectOption
+	(*ClassOption)(nil),                  // 17: grades.ClassOption
+	(*GetAdminGradeOptionsRequest)(nil),  // 18: grades.GetAdminGradeOptionsRequest
+	(*GetAdminGradeOptionsResponse)(nil), // 19: grades.GetAdminGradeOptionsResponse
 }
 var file_grades_proto_depIdxs = []int32{
 	0,  // 0: grades.ListGradesResponse.grades:type_name -> grades.Grade
@@ -1108,23 +1541,29 @@ var file_grades_proto_depIdxs = []int32{
 	0,  // 2: grades.GetRecentGradesResponse.grades:type_name -> grades.Grade
 	0,  // 3: grades.UpdateGradeResponse.grade:type_name -> grades.Grade
 	11, // 4: grades.GetTeacherClassesResponse.classes:type_name -> grades.TeacherClass
-	1,  // 5: grades.GradesService.ListGrades:input_type -> grades.ListGradesRequest
-	3,  // 6: grades.GradesService.AddGrade:input_type -> grades.AddGradeRequest
-	5,  // 7: grades.GradesService.GetRecentGrades:input_type -> grades.GetRecentGradesRequest
-	7,  // 8: grades.GradesService.UpdateGrade:input_type -> grades.UpdateGradeRequest
-	9,  // 9: grades.GradesService.DeleteGrade:input_type -> grades.DeleteGradeRequest
-	12, // 10: grades.GradesService.GetTeacherClasses:input_type -> grades.GetTeacherClassesRequest
-	2,  // 11: grades.GradesService.ListGrades:output_type -> grades.ListGradesResponse
-	4,  // 12: grades.GradesService.AddGrade:output_type -> grades.AddGradeResponse
-	6,  // 13: grades.GradesService.GetRecentGrades:output_type -> grades.GetRecentGradesResponse
-	8,  // 14: grades.GradesService.UpdateGrade:output_type -> grades.UpdateGradeResponse
-	10, // 15: grades.GradesService.DeleteGrade:output_type -> grades.DeleteGradeResponse
-	13, // 16: grades.GradesService.GetTeacherClasses:output_type -> grades.GetTeacherClassesResponse
-	11, // [11:17] is the sub-list for method output_type
-	5,  // [5:11] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	14, // 5: grades.GetAdminGradeOptionsResponse.students:type_name -> grades.StudentOption
+	15, // 6: grades.GetAdminGradeOptionsResponse.teachers:type_name -> grades.TeacherOption
+	16, // 7: grades.GetAdminGradeOptionsResponse.subjects:type_name -> grades.SubjectOption
+	17, // 8: grades.GetAdminGradeOptionsResponse.classes:type_name -> grades.ClassOption
+	1,  // 9: grades.GradesService.ListGrades:input_type -> grades.ListGradesRequest
+	3,  // 10: grades.GradesService.AddGrade:input_type -> grades.AddGradeRequest
+	5,  // 11: grades.GradesService.GetRecentGrades:input_type -> grades.GetRecentGradesRequest
+	7,  // 12: grades.GradesService.UpdateGrade:input_type -> grades.UpdateGradeRequest
+	9,  // 13: grades.GradesService.DeleteGrade:input_type -> grades.DeleteGradeRequest
+	12, // 14: grades.GradesService.GetTeacherClasses:input_type -> grades.GetTeacherClassesRequest
+	18, // 15: grades.GradesService.GetAdminGradeOptions:input_type -> grades.GetAdminGradeOptionsRequest
+	2,  // 16: grades.GradesService.ListGrades:output_type -> grades.ListGradesResponse
+	4,  // 17: grades.GradesService.AddGrade:output_type -> grades.AddGradeResponse
+	6,  // 18: grades.GradesService.GetRecentGrades:output_type -> grades.GetRecentGradesResponse
+	8,  // 19: grades.GradesService.UpdateGrade:output_type -> grades.UpdateGradeResponse
+	10, // 20: grades.GradesService.DeleteGrade:output_type -> grades.DeleteGradeResponse
+	13, // 21: grades.GradesService.GetTeacherClasses:output_type -> grades.GetTeacherClassesResponse
+	19, // 22: grades.GradesService.GetAdminGradeOptions:output_type -> grades.GetAdminGradeOptionsResponse
+	16, // [16:23] is the sub-list for method output_type
+	9,  // [9:16] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_grades_proto_init() }
@@ -1132,6 +1571,7 @@ func file_grades_proto_init() {
 	if File_grades_proto != nil {
 		return
 	}
+	file_grades_proto_msgTypes[0].OneofWrappers = []any{}
 	file_grades_proto_msgTypes[1].OneofWrappers = []any{}
 	file_grades_proto_msgTypes[3].OneofWrappers = []any{}
 	file_grades_proto_msgTypes[5].OneofWrappers = []any{}
@@ -1142,7 +1582,7 @@ func file_grades_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_grades_proto_rawDesc), len(file_grades_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

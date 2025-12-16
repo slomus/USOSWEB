@@ -283,7 +283,17 @@ func main() {
   appLog.LogInfo("SearchService endpoints registered successfully")
 
 
-	handler := loggingMiddleware(allowCORS(mux))
+
+	photoHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/api/users/") && strings.HasSuffix(r.URL.Path, "/photo") {
+        handleProfilePhoto(w, r, commonServiceEndpoint, opts)
+        return
+    }
+    mux.ServeHTTP(w, r)
+})
+
+	handler := loggingMiddleware(allowCORS(photoHandler))
+
 	appLog.LogInfo("API Gateway configured with endpoints:")
 	endpoints := []string{
 		"GET  /health",
@@ -338,4 +348,44 @@ func main() {
 		appLog.LogError("Failed to start HTTP server", err)
 		panic(err)
 	}
+}
+
+func handleProfilePhoto(w http.ResponseWriter, r *http.Request, endpoint string, opts []grpc.DialOption) {
+    appLog.LogInfo(fmt.Sprintf("Custom photo handler called for: %s", r.URL.Path))
+    
+    parts := strings.Split(r.URL.Path, "/")
+    appLog.LogInfo(fmt.Sprintf("Path parts: %v", parts))
+    if len(parts) < 4 {
+        http.Error(w, "Invalid path", http.StatusBadRequest)
+        return
+    }
+    
+    userID := parts[3]
+    var userIDInt int32
+    fmt.Sscanf(userID, "%d", &userIDInt)
+    
+    ctx := r.Context()
+    if cookie, err := r.Cookie("access_token"); err == nil {
+        md := metadata.Pairs("authorization", cookie.Value)
+        ctx = metadata.NewOutgoingContext(ctx, md)
+    }
+    
+    conn, err := grpc.NewClient(endpoint, opts...)
+    if err != nil {
+        http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+        return
+    }
+    defer conn.Close()
+    
+    client := authPb.NewAuthServiceClient(conn)
+    resp, err := client.GetProfilePhoto(ctx, &authPb.GetProfilePhotoRequest{UserId: userIDInt}) 
+    
+    if err != nil {
+        appLog.LogError("GetProfilePhoto failed", err) // ← dodaj log błędu
+        http.Error(w, "Photo not found", http.StatusNotFound)
+        return
+    }
+    
+    w.Header().Set("Content-Type", resp.MimeType)
+    w.Write(resp.PhotoData)
 }

@@ -48,6 +48,12 @@ service CourseService {
       get : "/api/student/course-info/{album_nr}"
     };
   }
+
+  rpc GetBuildingInfo(GetBuildingInfoRequest) returns (GetBuildingInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/info/building/{building_id}"
+    };
+  }
 }
 
 // Podstawowe informacje o kierunku
@@ -174,4 +180,15 @@ message GetStudentCourseInfoRequest { int32 album_nr = 10; }
 message GetStudentCourseInfoResponse {
   StudentCourseInfo course_info = 10;
   string message = 11;
+}
+
+
+message GetBuildingInfoRequest {
+  int32 building_id = 1;
+}
+
+message GetBuildingInfoResponse {
+  int32 building_id = 1;
+  string name = 2;
+  string address = 3;
 }

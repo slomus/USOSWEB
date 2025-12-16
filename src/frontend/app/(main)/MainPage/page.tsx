@@ -1,4 +1,4 @@
-// app/(main)/StudentMainPage/page.tsx
+// app/(main)/MainPage/page.tsx
 "use client";
 import { useUserRole } from "@/app/hooks/useUserRole";
 import AdminDashboard from "@/app/components/AdminDashboard";

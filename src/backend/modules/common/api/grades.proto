@@ -17,10 +17,10 @@ message Grade {
   int32 added_by_teaching_staff_id = 17;
   string comment = 18;
   string created_at = 19;
-  string subject_name = 20;
-  string added_by_name = 21;
-  string student_name = 22; 
-  string class_type = 23; 
+  optional string subject_name = 20;
+  optional string added_by_name = 21;
+  optional string student_name = 22; 
+  optional string class_type = 23; 
 }
 
 message ListGradesRequest { 
@@ -103,6 +103,45 @@ message GetTeacherClassesResponse {
   string message = 11;
 }
 
+message StudentOption {
+  int32 album_nr = 10;
+  string name = 11;
+  string course_name = 12;
+}
+
+message TeacherOption {
+  int32 teaching_staff_id = 10;
+  string name = 11;
+  repeated int32 subject_ids = 12;
+}
+
+message SubjectOption {
+  int32 subject_id = 10;
+  string name = 11;
+  string alias = 12;
+}
+
+message ClassOption {
+  int32 class_id = 10;
+  int32 subject_id = 11;
+  string subject_name = 12;
+  string class_type = 13;
+  int32 group_nr = 14;
+  repeated int32 teacher_ids = 15;
+  repeated int32 student_album_nrs = 16;
+}
+
+message GetAdminGradeOptionsRequest {
+}
+
+message GetAdminGradeOptionsResponse {
+  repeated StudentOption students = 10;
+  repeated TeacherOption teachers = 11;
+  repeated SubjectOption subjects = 12;
+  repeated ClassOption classes = 13;
+  string message = 14;
+}
+
 
 service GradesService {
   rpc ListGrades(ListGradesRequest) returns (ListGradesResponse) {
@@ -140,6 +179,12 @@ service GradesService {
   rpc GetTeacherClasses(GetTeacherClassesRequest) returns (GetTeacherClassesResponse) {
     option (google.api.http) = {
       get : "/api/teacher/classes"
+    };
+  }
+
+  rpc GetAdminGradeOptions(GetAdminGradeOptionsRequest) returns (GetAdminGradeOptionsResponse) {
+    option (google.api.http) = {
+      get : "/api/admin/grade-options"
     };
   }
 }
