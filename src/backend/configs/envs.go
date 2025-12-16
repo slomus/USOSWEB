@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -66,13 +67,15 @@ func initConfig() Config {
 		JWTAccessTokenExpiry:  getEnvAsInt("JWT_ACCESS_TOKEN_EXPIRY", 15),
 		JWTRefreshTokenExpiry: getEnvAsInt("JWT_REFRESH_TOKEN_EXPIRY", 168), // 7 dni
 
-		// Service Discovery - nazwy muszą pasować do docker-compose.yml
-		CalendarServiceHost:  getEnv("CALENDAR_SERVICE_HOST", "calendar"),
-		CalendarServicePort:  getEnv("CALENDAR_SERVICE_PORT", "3001"),
-		MessagingServiceHost: getEnv("MESSAGING_SERVICE_HOST", "messaging"),
-		MessagingServicePort: getEnv("MESSAGING_SERVICE_PORT", "3002"),
-		CommonServiceHost:    getEnv("COMMON_SERVICE_HOST", "common"),
-		CommonServicePort:    getEnv("COMMON_SERVICE_PORT", "3003"),
+		// Service Discovery - używamy GRPC_* prefix aby uniknąć kolizji
+		// z automatycznie wstrzykiwanymi zmiennymi Kubernetes (*_SERVICE_HOST)
+		// Fallback do starych nazw dla Docker Compose
+		CalendarServiceHost:  getEnvWithFallback("GRPC_CALENDAR_HOST", "CALENDAR_SERVICE_HOST", "calendar"),
+		CalendarServicePort:  getEnvWithFallback("GRPC_CALENDAR_PORT", "CALENDAR_SERVICE_PORT", "3001"),
+		MessagingServiceHost: getEnvWithFallback("GRPC_MESSAGING_HOST", "MESSAGING_SERVICE_HOST", "messaging"),
+		MessagingServicePort: getEnvWithFallback("GRPC_MESSAGING_PORT", "MESSAGING_SERVICE_PORT", "3002"),
+		CommonServiceHost:    getEnvWithFallback("GRPC_COMMON_HOST", "COMMON_SERVICE_HOST", "common"),
+		CommonServicePort:    getEnvWithFallback("GRPC_COMMON_PORT", "COMMON_SERVICE_PORT", "3003"),
 
 		RedisHost:     getEnv("REDIS_HOST", "localhost"),
 		RedisPort:     getEnv("REDIS_PORT", "6379"),
@@ -106,6 +109,23 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// getEnvWithFallback checks primary key first, then fallback key, then default value
+// This allows using GRPC_* vars in K8s while keeping compatibility with Docker Compose
+func getEnvWithFallback(primaryKey, fallbackKey, defaultValue string) string {
+	// First try the primary key (GRPC_*)
+	if value, ok := os.LookupEnv(primaryKey); ok && value != "" {
+		return value
+	}
+	// Then try fallback key, but skip Kubernetes auto-injected values
+	if value, ok := os.LookupEnv(fallbackKey); ok && value != "" {
+		// K8s injects values like "tcp://10.43.172.158:3003" - skip these
+		if !strings.Contains(value, "://") {
+			return value
+		}
+	}
+	return defaultValue
 }
 
 func getEnvAsInt(key string, fallback int) int {
