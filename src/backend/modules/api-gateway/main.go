@@ -239,7 +239,7 @@ func main() {
 
 	// Calendar Service
 	appLog.LogInfo("Registering CalendarService endpoints")
-	calendarServiceEndpoint := "calendar:3001"
+	calendarServiceEndpoint := configs.Envs.GetCalendarEndpoint()
 	appLog.LogDebug(fmt.Sprintf("Connecting to CalendarService at: %s", calendarServiceEndpoint))
 	err = calendarPb.RegisterCalendarServiceHandlerFromEndpoint(ctx, mux, calendarServiceEndpoint, opts)
 	if err != nil {

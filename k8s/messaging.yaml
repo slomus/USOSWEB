@@ -4,13 +4,15 @@ metadata:
   name: messaging-config
   namespace: usosweb
 data:
-  ENV: "development"
+  ENV: "production"
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
   DB_NAME: "usosweb"
   DB_USER: "postgres"
   DB_SSLMODE: "disable"
   GRPC_PORT: "3002"
+  EMAIL_APP_SECRET_KEY: "94X6hQt2ILQ5j1jM06VQR5DgiGD9Ox5i"
+  JWT_SECRET_KEY: "moje-super-tajne-haslo-ktore-powinno-byc-dlugie"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -79,6 +81,16 @@ spec:
             configMapKeyRef:
               name: messaging-config
               key: GRPC_PORT
+        - name: EMAIL_APP_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: EMAIL_APP_SECRET_KEY
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: messaging-config
+              key: JWT_SECRET_KEY
         livenessProbe:
           tcpSocket:
             port: 3002
