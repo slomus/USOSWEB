@@ -17,6 +17,8 @@ data:
   GRPC_CALENDAR_PORT: "3001"
   GRPC_MESSAGING_HOST: "messaging-service"
   GRPC_MESSAGING_PORT: "3002"
+  # CORS - comma separated list of allowed origins
+  ALLOWED_ORIGINS: "https://asos.elmar.pro,http://localhost:3000"
 ---
 apiVersion: apps/v1
 kind: Deployment
