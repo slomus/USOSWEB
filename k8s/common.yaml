@@ -1,65 +1,158 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-config
+  namespace: usosweb
+data:
+  ENV: "production"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "usosweb"
+  DB_USER: "postgres"
+  DB_SSLMODE: "disable"
+  GRPC_PORT: "3003"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  REDIS_DB: "0"
+  CACHE_ENABLED: "true"
+  CACHE_DEFAULT_TTL: "1h"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: common
   namespace: usosweb
+  labels:
+    app: common
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: common
   template:
     metadata:
       labels:
-        app: frontend
+        app: common
     spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
-      - name: frontend
-        image: ghcr.io/slomus/usosweb-frontend:latest
+      - name: common
+        image: ghcr.io/slomus/usosweb-common:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 3003
+          name: grpc
         env:
-        - name: NODE_ENV
-          value: "development"
-        - name: NEXT_PUBLIC_API_URL
-          value: "http://localhost:30083"
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: ENV
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_SSLMODE
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_SSLMODE
+        - name: GRPC_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: GRPC_PORT
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: REDIS_PASSWORD
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: REDIS_DB
+        - name: CACHE_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: CACHE_ENABLED
+        - name: CACHE_DEFAULT_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: CACHE_DEFAULT_TTL
         livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 120
+          tcpSocket:
+            port: 3003
+          initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 30
+          timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 60
+          tcpSocket:
+            port: 3003
+          initialDelaySeconds: 5
           periodSeconds: 5
-          timeoutSeconds: 30
+          timeoutSeconds: 5
           failureThreshold: 3
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "64Mi"
+            cpu: "50m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "128Mi"
+            cpu: "200m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          readOnlyRootFilesystem: true
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: common-service
   namespace: usosweb
+  labels:
+    app: common
 spec:
   selector:
-    app: frontend
+    app: common
   ports:
-  - port: 3000
-    targetPort: 3000
-    nodePort: 30000
-  type: NodePort
+  - name: grpc
+    port: 3003
+    targetPort: 3003
+  type: ClusterIP 
