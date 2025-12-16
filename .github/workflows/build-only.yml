@@ -38,6 +38,9 @@ jobs:
           - name: init-users
             context: ./src/backend
             dockerfile: ./scripts/init_users/Dockerfile
+          - name: generator
+            context: ./src/backend/database/seeds/generator
+            dockerfile: ./Dockerfile
           - name: frontend
             context: ./src/frontend
             dockerfile: ./Dockerfile
