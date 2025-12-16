@@ -64,7 +64,9 @@ type AvailableSubject = {
   availableClasses?: AvailableClass[];    // Pole opcjonalne, ładowane "lazy"
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+import { getApiBaseUrl } from "@/app/config/api";
+
+const API_BASE = getApiBaseUrl();
 
 export default function EnrollmentPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
