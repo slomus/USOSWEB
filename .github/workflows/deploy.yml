@@ -40,6 +40,9 @@ jobs:
           - name: init-users
             context: ./src/backend
             dockerfile: ./scripts/init_users/Dockerfile
+          - name: seeder
+            context: ./src/backend/database/seeds
+            dockerfile: ./Dockerfile
           - name: generator
             context: ./src/backend/database/seeds/generator
             dockerfile: ./Dockerfile
