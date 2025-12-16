@@ -37,8 +37,35 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
   const [dashboardEvents, setDashboardEvents] = useState<CalendarEvent[]>([]);
   const [currentEvent, setCurrentEvent] = useState<CalendarEvent | null>(null);
 
-  // Fetch Logic (Existing)
+  // Fetch Logic
   useEffect(() => {
+    // Funkcja pobierająca wszystkie wnioski z paginacją
+    const fetchAllApplications = async () => {
+      let page = 1;
+      const pageSize = 20;
+      let allItems: any[] = [];
+      let total = 0;
+
+      while (true) {
+        const res = await fetch(
+          `http://localhost:8083/api/applications?page=${page}&pageSize=${pageSize}`,
+          { credentials: "include" }
+        );
+
+        if (!res.ok) break;
+
+        const data = await res.json();
+        allItems = [...allItems, ...(data.items || [])];
+        total = data.total;
+
+        // Jeśli mamy już wszystkie — kończymy
+        if (allItems.length >= total) break;
+        page++;
+      }
+
+      return allItems;
+    };
+
     const fetchDashboardData = async () => {
       try {
         const usersRes = await fetch("http://localhost:8083/api/auth/users", { credentials: "include" });
@@ -55,9 +82,8 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
         let pendingApplications = 0;
         
         try {
-          const appsRes = await fetch("http://localhost:8083/api/applications", { credentials: "include" });
-          const appsData = await appsRes.json();
-          const applications = appsData.items || [];
+          // Używamy funkcji z paginacją zamiast pojedynczego fetcha
+          const applications = await fetchAllApplications();
           totalApplications = applications.length;
           pendingApplications = applications.filter((app: any) => app.status === "submitted").length;
         } catch (error) {

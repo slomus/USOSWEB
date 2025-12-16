@@ -713,3 +713,113 @@ func (s *SubjectsServer) DeleteSubject(ctx context.Context, req *pb.DeleteSubjec
 		Message: "Subject deleted successfully",
 	}, nil
 }
+
+func (s *SubjectsServer) GetSubjectInfo(ctx context.Context, req *pb.GetSubjectInfoRequest) (*pb.GetSubjectInfoResponse, error) {
+	subjectsLog.LogInfo(fmt.Sprintf("GetSubjectInfo request received for subject_id: %d", req.SubjectId))
+
+	_, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "unauthorized")
+	}
+
+	if req.SubjectId <= 0 {
+		subjectsLog.LogWarn("Invalid subject_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid subject_id")
+	}
+
+	query := `
+		SELECT 
+			subject_id,
+			alias,
+			name,
+			ects,
+			COALESCE(description, '') as description,
+			COALESCE(syllabus, '') as syllabus
+		FROM subjects
+		WHERE subject_id = $1
+	`
+
+	var response pb.GetSubjectInfoResponse
+	err = s.db.QueryRow(query, req.SubjectId).Scan(
+		&response.SubjectId,
+		&response.Alias,
+		&response.Name,
+		&response.Ects,
+		&response.Description,
+		&response.Syllabus,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			subjectsLog.LogWarn(fmt.Sprintf("Subject not found: %d", req.SubjectId))
+			return nil, status.Error(codes.NotFound, "subject not found")
+		}
+		subjectsLog.LogError("Failed to fetch subject info", err)
+		return nil, status.Error(codes.Internal, "failed to fetch subject info")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Successfully fetched info for subject_id: %d", req.SubjectId))
+	return &response, nil
+}
+
+func (s *SubjectsServer) GetClassInfo(ctx context.Context, req *pb.GetClassInfoRequest) (*pb.GetClassInfoResponse, error) {
+	subjectsLog.LogInfo(fmt.Sprintf("GetClassInfo request received for class_id: %d", req.ClassId))
+
+	_, err := getUserIDFromContext(ctx)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "unauthorized")
+		}
+
+	if req.ClassId <= 0 {
+		subjectsLog.LogWarn("Invalid class_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid class_id")
+	}
+
+	query := `
+		SELECT 
+			c.class_id,
+			c.class_type,
+			c.credit,
+			c.span_of_hours,
+			c.group_nr,
+			c.current_capacity,
+			c.capacity,
+			c.classroom,
+			b.name as building_name,
+			b.address as building_address,
+			s.name as subject_name,
+			s.alias as subject_alias
+		FROM classes c
+		JOIN buildings b ON c.building_id = b.building_id
+		JOIN subjects s ON c.subject_id = s.subject_id
+		WHERE c.class_id = $1
+	`
+
+	var response pb.GetClassInfoResponse
+	err = s.db.QueryRow(query, req.ClassId).Scan(
+		&response.ClassId,
+		&response.ClassType,
+		&response.Credit,
+		&response.SpanOfHours,
+		&response.GroupNr,
+		&response.CurrentCapacity,
+		&response.Capacity,
+		&response.Classroom,
+		&response.BuildingName,
+		&response.BuildingAddress,
+		&response.SubjectName,
+		&response.SubjectAlias,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			subjectsLog.LogWarn(fmt.Sprintf("Class not found: %d", req.ClassId))
+			return nil, status.Error(codes.NotFound, "class not found")
+		}
+		subjectsLog.LogError("Failed to fetch class info", err)
+		return nil, status.Error(codes.Internal, "failed to fetch class info")
+	}
+
+	subjectsLog.LogInfo(fmt.Sprintf("Successfully fetched info for class_id: %d", req.ClassId))
+	return &response, nil
+}

@@ -418,17 +418,17 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		}, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
-	var albumNr int32
-	err = s.db.QueryRowContext(ctx, "SELECT album_nr FROM students WHERE user_id = $1", userID).Scan(&albumNr)
+	role, albumNr, teachingStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &pb.GetWeekScheduleResponse{
-				Success: false,
-				Message: "User is not a student",
-			}, status.Error(codes.PermissionDenied, "user is not a student")
-		}
-		calendarLog.LogError("Failed to get album_nr", err)
+		calendarLog.LogError("Failed to get user role", err)
 		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	if role != "student" && role != "teacher" {
+		return &pb.GetWeekScheduleResponse{
+			Success: false,
+			Message: "Only students and teachers can view schedules",
+		}, status.Error(codes.PermissionDenied, "insufficient permissions")
 	}
 
 	var targetDate time.Time
@@ -449,18 +449,18 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		weekday = 7
 	}
 	
-	weekStart := targetDate.AddDate(0, 0, -(weekday - 1)) 
-	weekEnd := weekStart.AddDate(0, 0, 4)                 
+	weekStart := targetDate.AddDate(0, 0, -(weekday - 1))
+	weekEnd := weekStart.AddDate(0, 0, 4)
 
-	query := `
+	baseQuery := `
 		SELECT 
 			sch.id as schedule_id,
 			sch.class_id,
 			s.name as subject_name,
 			c.class_type,
 			sch.day_of_week,
-	    sch.start_time::text,
-	    sch.end_time::text,
+			sch.start_time::text,
+			sch.end_time::text,
 			sch.room,
 			sch.building,
 			COALESCE(
@@ -473,20 +473,41 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		FROM schedules sch
 		JOIN classes c ON sch.class_id = c.class_id
 		JOIN subjects s ON c.subject_id = s.subject_id
-		JOIN student_classes sc ON c.class_id = sc.class_id
 		LEFT JOIN course_instructors ci ON c.class_id = ci.class_id
 		LEFT JOIN teaching_staff ts ON ci.teaching_staff_id = ts.teaching_staff_id
 		LEFT JOIN users u ON ts.user_id = u.user_id
+	`
+
+	var query string
+	var args []interface{}
+
+	if role == "student" {
+		query = baseQuery + `
+		JOIN student_classes sc ON c.class_id = sc.class_id
 		WHERE sc.album_nr = $1
-		  AND sch.valid_from<= $2
+		  AND sch.valid_from <= $2
 		  AND sch.valid_to >= $3
 		  AND sch.day_of_week BETWEEN 1 AND 5
 		GROUP BY sch.id, sch.class_id, s.name, c.class_type, sch.day_of_week, 
 		         sch.start_time, sch.end_time, sch.room, sch.building
 		ORDER BY sch.day_of_week, sch.start_time
-	`
+		`
+		args = []interface{}{albumNr, weekEnd, weekStart}
+	} else { // role == "teacher"
+		query = baseQuery + `
+		JOIN course_instructors ci_filter ON c.class_id = ci_filter.class_id
+		WHERE ci_filter.teaching_staff_id = $1
+		  AND sch.valid_from <= $2
+		  AND sch.valid_to >= $3
+		  AND sch.day_of_week BETWEEN 1 AND 5
+		GROUP BY sch.id, sch.class_id, s.name, c.class_type, sch.day_of_week, 
+		         sch.start_time, sch.end_time, sch.room, sch.building
+		ORDER BY sch.day_of_week, sch.start_time
+		`
+		args = []interface{}{teachingStaffID, weekEnd, weekStart}
+	}
 
-	rows, err := s.db.QueryContext(ctx, query, albumNr, weekStart, weekEnd)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		calendarLog.LogError("Failed to query week schedule", err)
 		return nil, status.Error(codes.Internal, "failed to fetch schedule")
@@ -518,7 +539,7 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		schedule = append(schedule, entry)
 	}
 
-	calendarLog.LogInfo(fmt.Sprintf("Successfully returned %d schedule entries for student %d", len(schedule), albumNr))
+	calendarLog.LogInfo(fmt.Sprintf("Successfully returned %d schedule entries for %s %d", len(schedule), role, userID))
 	return &pb.GetWeekScheduleResponse{
 		Success:   true,
 		Message:   "Week schedule retrieved successfully",
@@ -527,6 +548,7 @@ func (s *CalendarServer) GetWeekSchedule(ctx context.Context, req *pb.GetWeekSch
 		WeekEnd:   weekEnd.Format("2006-01-02"),
 	}, nil
 }
+
 
 func getUserIDFromContext(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import Button from "@/app/components/button";
 import Input from "@/app/components/input";
@@ -34,7 +35,7 @@ export default function Home() {
 
       if (response.ok && data.message === "Login successful") {
         console.log("Zalogowano użytkownika:", data);
-        router.push("/StudentMainPage");
+        router.push("/MainPage");
       } else {
         console.error("Błąd logowania:", data);
         setMessage("Nieprawidłowe dane logowania.");
@@ -60,8 +61,7 @@ export default function Home() {
         </div>
         {/* Linki */}
         <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
-          <a href="#">o aplikacji</a>
-          <a href="#">dokumentacja</a>
+          <a href="/about">o aplikacji</a>
           <ThemeToggleButton />
         </nav>
         {/* Hamburger (opcjonalnie) */}
@@ -122,7 +122,12 @@ export default function Home() {
           )}
 
           <div className="mt-4 text-center text-sm text-[var(--color-text)]">
-            Nie pamiętasz hasła?
+            <Link 
+              href="/forgot-password" 
+              className="hover:text-[var(--color-accent)] hover:underline transition-colors"
+            >
+              Nie pamiętasz hasła?
+            </Link>
           </div>
         </div>
       </main>

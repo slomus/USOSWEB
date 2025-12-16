@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"os"
+	"encoding/base64"
 
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	"github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
@@ -117,7 +119,6 @@ func isValidPESEL(pesel string) bool {
 }
 
 func isValidPhoneNumber(phone string) bool {
-	// Polish phone number validation
 	phoneRegex := regexp.MustCompile(`^(\+48)?[ -]?\d{3}[ -]?\d{3}[ -]?\d{3}$`)
 	return phoneRegex.MatchString(phone)
 }
@@ -648,6 +649,58 @@ func (s *AuthServer) checkRoleSpecificUniqueness(req *pb.RegisterRequest) error 
 	}
 
 	return nil
+}
+
+func (s *AuthServer) UploadProfilePhoto(ctx context.Context, req *pb.UploadProfilePhotoRequest) (*pb.UploadProfilePhotoResponse, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "unauthorized")
+	}
+
+	photoData, err := base64.StdEncoding.DecodeString(req.PhotoData)
+	if err != nil {
+		authLog.LogError("Failed to decode base64", err)
+		return nil, status.Error(codes.InvalidArgument, "invalid base64 data")
+	}
+
+	if req.MimeType != "image/jpeg" && req.MimeType != "image/png" && req.MimeType != "image/jpg" {
+		return nil, status.Error(codes.InvalidArgument, "only JPEG and PNG allowed")
+	}
+
+	if len(photoData) > 5*1024*1024 {
+		return nil, status.Error(codes.InvalidArgument, "photo too large (max 5MB)")
+	}
+
+	ext := ".jpg"
+	if req.MimeType == "image/png" {
+		ext = ".png"
+	}
+
+	photoDir := "/mnt/user-data/uploads/profile-photos"
+	os.MkdirAll(photoDir, 0755)
+	
+	filename := fmt.Sprintf("%d%s", userID, ext)
+	filepath := fmt.Sprintf("%s/%s", photoDir, filename)
+
+	if err := os.WriteFile(filepath, photoData, 0644); err != nil {
+		authLog.LogError("Failed to write photo", err)
+		return nil, status.Error(codes.Internal, "failed to save photo")
+	}
+
+	_, err = s.db.ExecContext(ctx, 
+		"UPDATE users SET profile_photo_path = $1, profile_photo_mime_type = $2 WHERE user_id = $3",
+		filepath, req.MimeType, userID)
+	
+	if err != nil {
+		authLog.LogError("Failed to update user photo path", err)
+		return nil, status.Error(codes.Internal, "failed to update database")
+	}
+
+	return &pb.UploadProfilePhotoResponse{
+		Success:  true,
+		Message:  "Photo uploaded successfully",
+		PhotoUrl: fmt.Sprintf("/api/users/%d/photo", userID),
+	}, nil
 }
 func (s *AuthServer) insertIntoRoleTable(tx *sql.Tx, userID int64, req *pb.RegisterRequest) (int64, error) {
 	var roleID int64
@@ -1252,63 +1305,26 @@ func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
         }, nil
     }
 
-    var query string
-    var args []interface{}
+    authLog.LogInfo(fmt.Sprintf("GetUsers: User %d requesting users list", claims.UserID))
+    query := `
+        SELECT u.user_id, u.name, u.surname, u.email, u.active,
+               CASE
+                   WHEN s.user_id IS NOT NULL THEN 'student'
+                   WHEN ts.user_id IS NOT NULL THEN 'teacher'
+                   WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
+                   ELSE 'unknown'
+               END as role,
+               s.album_nr,
+               ts.teaching_staff_id,
+               admin_staff.administrative_staff_id
+        FROM users u
+        LEFT JOIN students s ON u.user_id = s.user_id
+        LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
+        LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
+        ORDER BY u.user_id
+    `
 
-    if userRole == RoleAdmin {
-        authLog.LogInfo(fmt.Sprintf("GetUsers: Admin user %d requesting users list", claims.UserID))
-        query = `
-            SELECT u.user_id, u.name, u.surname, u.email, u.active,
-                   CASE
-                       WHEN s.user_id IS NOT NULL THEN 'student'
-                       WHEN ts.user_id IS NOT NULL THEN 'teacher'
-                       WHEN admin_staff.user_id IS NOT NULL THEN 'admin'
-                       ELSE 'unknown'
-                   END as role,
-                   s.album_nr,
-                   ts.teaching_staff_id,
-                   admin_staff.administrative_staff_id
-            FROM users u
-            LEFT JOIN students s ON u.user_id = s.user_id
-            LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
-            LEFT JOIN administrative_staff admin_staff ON u.user_id = admin_staff.user_id
-            ORDER BY u.user_id
-        `
-    } else {
-        authLog.LogInfo(fmt.Sprintf("GetUsers: Teacher user %d requesting students list", claims.UserID))
-
-        var teachingStaffID int64
-        err = s.db.QueryRow("SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", claims.UserID).Scan(&teachingStaffID)
-        if err != nil {
-            authLog.LogError("GetUsers: Error getting teaching_staff_id", err)
-            return &pb.GetUsersResponse{
-                Users:   nil,
-                Success: false,
-                Message: "Error while checking credentials",
-                Status:  500,
-            }, nil
-        }
-
-        query = `
-            SELECT DISTINCT u.user_id, u.name, u.surname, u.email, u.active, 'student' as role,
-                   s.album_nr, NULL as teaching_staff_id, NULL as administrative_staff_id
-            FROM users u
-            JOIN students s ON u.user_id = s.user_id
-            JOIN student_classes sc ON s.album_nr = sc.album_nr
-            JOIN course_instructors ci ON sc.class_id = ci.class_id
-            WHERE ci.teaching_staff_id = $1
-            ORDER BY u.user_id
-        `
-        args = []interface{}{teachingStaffID}
-    }
-
-    var rows *sql.Rows
-    if len(args) > 0 {
-        rows, err = s.db.Query(query, args...)
-    } else {
-        rows, err = s.db.Query(query)
-    }
-
+    rows, err := s.db.Query(query)
     if err != nil {
         authLog.LogError("GetUsers SQL error", err)
         return &pb.GetUsersResponse{
@@ -1334,7 +1350,7 @@ func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
         users = append(users, user)
     }
 
-    authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to %s user %d", len(users), userRole, claims.UserID))
+    authLog.LogInfo(fmt.Sprintf("GetUsers: Successfully returned %d users to user %d", len(users), claims.UserID))
 
     return &pb.GetUsersResponse{
         Users:   users,
@@ -1343,7 +1359,6 @@ func (s *AuthServer) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
         Status:  200,
     }, nil
 }
-
 
 // SayHello implementuje AuthHello service
 func (s *AuthServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
@@ -2078,6 +2093,40 @@ func (s *AuthServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) 
     }, nil
 }
 
+
+func (s *AuthServer) GetProfilePhoto(ctx context.Context, req *pb.GetProfilePhotoRequest) (*pb.GetProfilePhotoResponse, error) {
+
+	callerID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "unauthorized")
+	}
+
+	_ = callerID
+
+	var photoPath, mimeType sql.NullString 
+	err = s.db.QueryRowContext(ctx, 
+		"SELECT profile_photo_path, profile_photo_mime_type FROM users WHERE user_id = $1",
+		req.UserId).Scan(&photoPath, &mimeType)
+	
+	if err == sql.ErrNoRows || !photoPath.Valid {
+		return nil, status.Error(codes.NotFound, "user not found or no photo")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "database error")
+	}
+
+	photoData, err := os.ReadFile(photoPath.String)
+	if err != nil {
+		authLog.LogError("Failed to read photo file", err)
+		return nil, status.Error(codes.NotFound, "photo file not found")
+	}
+
+	return &pb.GetProfilePhotoResponse{
+		PhotoData: photoData,
+		MimeType:  mimeType.String,
+	}, nil
+}
+
 func (s *AuthServer) invalidateUserCache(ctx context.Context, userID int64) {
 	if s.cache == nil {
 		return
@@ -2091,3 +2140,167 @@ func (s *AuthServer) invalidateUserCache(ctx context.Context, userID int64) {
 		s.cache.Delete(ctx, key)
 	}
 }
+
+func getUserIDFromContext(ctx context.Context) (int64, error) {
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        return 0, fmt.Errorf("no metadata")
+    }
+    userIDs := md.Get("user_id")
+    if len(userIDs) == 0 {
+        return 0, fmt.Errorf("no user_id")
+    }
+    var userID int64
+    fmt.Sscanf(userIDs[0], "%d", &userID)
+    return userID, nil
+}
+
+func (s *AuthServer) GetMyStudents(ctx context.Context, req *pb.GetMyStudentsRequest) (*pb.GetMyStudentsResponse, error) {
+    authLog.LogInfo("GetMyStudents request received")
+
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        authLog.LogWarn("GetMyStudents: No metadata")
+        return &pb.GetMyStudentsResponse{
+            Students: nil,
+            Success:  false,
+            Message:  "No metadata",
+        }, nil
+    }
+
+    tokens := md.Get("authorization")
+    if len(tokens) == 0 {
+        authLog.LogWarn("GetMyStudents: No authorization token")
+        return &pb.GetMyStudentsResponse{
+            Students: nil,
+            Success:  false,
+            Message:  "No authorization token",
+        }, nil
+    }
+
+    claims, err := auth.ValidateToken(tokens[0])
+    if err != nil {
+        authLog.LogWarn(fmt.Sprintf("GetMyStudents: Invalid token: %v", err))
+        return &pb.GetMyStudentsResponse{
+            Students: nil,
+            Success:  false,
+            Message:  "Invalid token",
+        }, nil
+    }
+
+    // Sprawdź czy user jest nauczycielem
+    var teachingStaffID int64
+    err = s.db.QueryRow("SELECT teaching_staff_id FROM teaching_staff WHERE user_id = $1", claims.UserID).Scan(&teachingStaffID)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            authLog.LogWarn(fmt.Sprintf("GetMyStudents: User %d is not a teacher", claims.UserID))
+            return &pb.GetMyStudentsResponse{
+                Students: nil,
+                Success:  false,
+                Message:  "Access denied - only teachers can access this endpoint",
+            }, nil
+        }
+        authLog.LogError("GetMyStudents: Error getting teaching_staff_id", err)
+        return &pb.GetMyStudentsResponse{
+            Students: nil,
+            Success:  false,
+            Message:  "Error while checking credentials",
+        }, nil
+    }
+
+    authLog.LogInfo(fmt.Sprintf("GetMyStudents: Teacher %d (teaching_staff_id: %d) requesting students", claims.UserID, teachingStaffID))
+
+    query := `
+        SELECT DISTINCT u.user_id, u.name, u.surname, u.email, u.active, 'student' as role,
+               s.album_nr, NULL as teaching_staff_id, NULL as administrative_staff_id
+        FROM users u
+        JOIN students s ON u.user_id = s.user_id
+        JOIN student_classes sc ON s.album_nr = sc.album_nr
+        JOIN course_instructors ci ON sc.class_id = ci.class_id
+        WHERE ci.teaching_staff_id = $1
+        ORDER BY u.user_id
+    `
+
+    rows, err := s.db.Query(query, teachingStaffID)
+    if err != nil {
+        authLog.LogError("GetMyStudents SQL error", err)
+        return &pb.GetMyStudentsResponse{
+            Students: nil,
+            Success:  false,
+            Message:  "Error fetching students",
+        }, nil
+    }
+    defer rows.Close()
+
+    var students []*pb.User
+    for rows.Next() {
+        student := &pb.User{}
+        err := rows.Scan(
+            &student.UserId, &student.Name, &student.Surname, &student.Email, &student.Active, &student.Role,
+            &student.AlbumNr, &student.TeachingStaffId, &student.AdministrativeStaffId,
+        )
+        if err != nil {
+            authLog.LogWarn(fmt.Sprintf("Error scanning student row: %v", err))
+            continue
+        }
+        students = append(students, student)
+    }
+
+    authLog.LogInfo(fmt.Sprintf("GetMyStudents: Successfully returned %d students for teacher %d", len(students), claims.UserID))
+
+    return &pb.GetMyStudentsResponse{
+        Students: students,
+        Success:  true,
+        Message:  "Students retrieved successfully",
+    }, nil
+}
+
+func (s *AuthServer) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest) (*pb.GetUserInfoResponse, error) {
+	authLog.LogInfo(fmt.Sprintf("GetUserInfo request received for user_id: %d", req.UserId))
+
+	_, err := getUserIDFromContext(ctx)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "unauthorized")
+		}
+
+	if req.UserId <= 0 {
+		authLog.LogWarn("Invalid user_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+
+	query := `
+		SELECT 
+			user_id,
+			COALESCE(name, '') as name,
+			COALESCE(surname, '') as surname,
+			email,
+			active,
+			COALESCE(profile_photo_path, '') as profile_photo_path
+		FROM users
+		WHERE user_id = $1
+	`
+
+	var response pb.GetUserInfoResponse
+	err = s.db.QueryRow(query, req.UserId).Scan(
+		&response.UserId,
+		&response.Name,
+		&response.Surname,
+		&response.Email,
+		&response.Active,
+		&response.ProfilePhotoPath,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			authLog.LogWarn(fmt.Sprintf("User not found: %d", req.UserId))
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		authLog.LogError("Failed to fetch user info", err)
+		return nil, status.Error(codes.Internal, "failed to fetch user info")
+	}
+
+	authLog.LogInfo(fmt.Sprintf("Successfully fetched info for user_id: %d", req.UserId))
+	return &response, nil
+}
+
+

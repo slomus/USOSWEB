@@ -10,6 +10,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"strings"
 	"time"
+	"google.golang.org/grpc/codes"      
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/metadata"
 )
 
 var courseLog = logger.NewLogger("course-service")
@@ -769,3 +772,83 @@ func (s *CourseServer) GetFaculties(ctx context.Context, req *emptypb.Empty) (*p
 	courseLog.LogInfo(fmt.Sprintf("Successfully returned %d faculties", len(faculties)))
 	return response, nil
 }
+
+func (s *CourseServer) GetBuildingInfo(ctx context.Context, req *pb.GetBuildingInfoRequest) (*pb.GetBuildingInfoResponse, error) {
+
+	_, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "unauthorized")
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("GetBuildingInfo request received for building_id: %d", req.BuildingId))
+
+	if req.BuildingId <= 0 {
+		courseLog.LogWarn("Invalid building_id provided")
+		return nil, status.Error(codes.InvalidArgument, "invalid building_id")
+	}
+
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("buildings", "info", req.BuildingId)
+		var cachedResponse pb.GetBuildingInfoResponse
+		err := s.cache.Get(ctx, cacheKey, &cachedResponse)
+		if err == nil {
+			courseLog.LogInfo(fmt.Sprintf("Building info for ID %d fetched from cache", req.BuildingId))
+			return &cachedResponse, nil
+		}
+	}
+
+	query := `
+		SELECT 
+			building_id,
+			name,
+			address
+		FROM buildings
+		WHERE building_id = $1
+	`
+
+	var response pb.GetBuildingInfoResponse
+	err = s.db.QueryRow(query, req.BuildingId).Scan(
+		&response.BuildingId,
+		&response.Name,
+		&response.Address,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			courseLog.LogWarn(fmt.Sprintf("Building not found: %d", req.BuildingId))
+			return nil, status.Error(codes.NotFound, "building not found")
+		}
+		courseLog.LogError("Failed to fetch building info", err)
+		return nil, status.Error(codes.Internal, "failed to fetch building info")
+	}
+
+	// Save in cache
+	if s.cache != nil {
+		cacheKey := cache.GenerateKey("buildings", "info", req.BuildingId)
+		s.cache.Set(ctx, cacheKey, &response, 1*time.Hour)
+	}
+
+	courseLog.LogInfo(fmt.Sprintf("Successfully fetched info for building_id: %d", req.BuildingId))
+	return &response, nil
+}
+
+func getUserIDFromContext(ctx context.Context) (int64, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, fmt.Errorf("no metadata in context")
+	}
+
+	userIDs := md.Get("user_id")
+	if len(userIDs) == 0 {
+		return 0, fmt.Errorf("no user_id in metadata")
+	}
+
+	var userID int64
+	_, err := fmt.Sscanf(userIDs[0], "%d", &userID)
+	if err != nil {
+		return 0, err
+	}
+
+	return userID, nil
+}
+

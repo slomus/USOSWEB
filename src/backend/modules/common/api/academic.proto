@@ -175,6 +175,39 @@ message DeleteSubjectResponse {
   string message = 2;
 }
 
+
+message GetSubjectInfoRequest {
+  int32 subject_id = 1;
+}
+
+message GetSubjectInfoResponse {
+  int32 subject_id = 1;
+  string alias = 2;
+  string name = 3;
+  float ects = 4;
+  string description = 5;
+  string syllabus = 6;
+}
+
+message GetClassInfoRequest {
+  int32 class_id = 1;
+}
+
+message GetClassInfoResponse {
+  int32 class_id = 1;
+  string class_type = 2;
+  string credit = 3;
+  int32 span_of_hours = 4;
+  int32 group_nr = 5;
+  int32 current_capacity = 6;
+  int32 capacity = 7;
+  int32 classroom = 8;
+  string building_name = 9;
+  string building_address = 10;
+  string subject_name = 11;
+  string subject_alias = 12;
+}
+
 service SubjectsService {
   rpc GetSubjects(GetSubjectsRequest) returns (GetSubjectsResponse) {
     option (google.api.http) = {
@@ -213,7 +246,21 @@ service SubjectsService {
       delete: "/api/admin/subjects/{subject_id}"
     };
   }
+
+  rpc GetSubjectInfo(GetSubjectInfoRequest) returns (GetSubjectInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/info/subject/{subject_id}"
+    };
 }
+
+rpc GetClassInfo(GetClassInfoRequest) returns (GetClassInfoResponse) {
+  option (google.api.http) = {
+    get: "/api/info/class/{class_id}"
+  };
+}
+}
+
+
 
 service EnrollmentsService {
   rpc EnrollSubject(EnrollSubjectRequest) returns (EnrollSubjectResponse) {

@@ -17,7 +17,7 @@ export default function Footer() {
           +48 123 456 789
         </a>
         <a
-          href="https://facebook.com"
+          href="https://www.facebook.com/ukwbydgoszcz"
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-[var(--color-text)] transition-colors"

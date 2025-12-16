@@ -68,11 +68,9 @@ export default function LecturerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
         
         {/* Left Column: Calendar Component */}
-        <div className="lg:col-span-2 bg-[var(--color-bg)] rounded-xl shadow-md border border-[#327f7a] overflow-hidden">
-          <div className="p-4">
-             {/* Reusing the ScheduleCalendar component */}
-            <ScheduleCalendar onEventsLoaded={setDashboardEvents} />
-          </div>
+        <div className="lg:col-span-2">
+           {/* Reusing the ScheduleCalendar component - styles matched to StudentDashboard */}
+          <ScheduleCalendar onEventsLoaded={setDashboardEvents} />
         </div>
 
         {/* Right Column: Dynamic Class Info */}
