@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -184,7 +185,12 @@ func registerUser(user RegisterRequest) {
 
 	log.Printf("EmailAppPassword wysyłany dla %s: %s", user.Email, user.EmailAppPassword)
 
-	resp, err := http.Post("http://api-gateway:8083/api/auth/register", "application/json", bytes.NewBuffer(jsonData))
+	apiURL := os.Getenv("API_URL")
+	if apiURL == "" {
+		apiURL = "http://api-gateway-service:8083" // fallback
+	}
+
+	resp, err := http.Post(apiURL+"/api/auth/register", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Błąd dla %s: %v", user.Email, err)
 		return
