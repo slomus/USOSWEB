@@ -43,6 +43,9 @@ type Config struct {
 
 	// Secrets
 	EmailAppSecretKey string
+
+	// CORS
+	AllowedOrigins string
 }
 
 var Envs = initConfig()
@@ -88,6 +91,9 @@ func initConfig() Config {
 
 		// Secrets
 		EmailAppSecretKey: getEnv("EMAIL_APP_SECRET_KEY", ""),
+
+		// CORS - comma separated list of allowed origins
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),
 	}
 }
 
