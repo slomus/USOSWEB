@@ -4,13 +4,14 @@ metadata:
   name: calendar-config
   namespace: usosweb
 data:
-  ENV: "development"
+  ENV: "production"
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
   DB_NAME: "usosweb"
   DB_USER: "postgres"
   DB_SSLMODE: "disable"
   GRPC_PORT: "3001"
+  JWT_SECRET_KEY: "moje-super-tajne-haslo-ktore-powinno-byc-dlugie"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -79,6 +80,11 @@ spec:
             configMapKeyRef:
               name: calendar-config
               key: GRPC_PORT
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: calendar-config
+              key: JWT_SECRET_KEY
         livenessProbe:
           tcpSocket:
             port: 3001
