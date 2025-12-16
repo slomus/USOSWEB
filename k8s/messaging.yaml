@@ -84,11 +84,15 @@ spec:
             port: 3002
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 3002
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
         resources:
           requests:
             memory: "64Mi"
