@@ -19,6 +19,8 @@ data:
   GRPC_MESSAGING_PORT: "3002"
   # CORS - comma separated list of allowed origins
   ALLOWED_ORIGINS: "https://asos.elmar.pro,http://localhost:3000"
+  # JWT
+  JWT_SECRET_KEY: "moje-super-tajne-haslo-ktore-powinno-byc-dlugie"
 ---
 apiVersion: apps/v1
 kind: Deployment
