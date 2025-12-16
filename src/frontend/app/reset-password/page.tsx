@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeToggleButton from "@/app/components/ThemeToggleButton";
 import { FaEye, FaEyeSlash, FaArrowLeft, FaCheck } from "react-icons/fa";
+import { getApiBaseUrl } from "@/app/config/api";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -20,7 +21,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+  const API_BASE = getApiBaseUrl();
 
   const passwordRequirements = {
     minLength: newPassword.length >= 8,

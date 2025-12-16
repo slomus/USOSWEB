@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 
+import { getApiBaseUrl } from "@/app/config/api";
+
 // --- KONFIGURACJA API ---
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBaseUrl();
 
 // --- TYPY DANYCH ---
 type Folder = "inbox" | "sent" | "trash";

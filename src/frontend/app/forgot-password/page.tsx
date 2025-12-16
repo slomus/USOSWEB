@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeToggleButton from "@/app/components/ThemeToggleButton";
 import { FaEnvelope, FaArrowLeft } from "react-icons/fa";
+import { getApiBaseUrl } from "@/app/config/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ export default function ForgotPassword() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+  const API_BASE = getApiBaseUrl();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
