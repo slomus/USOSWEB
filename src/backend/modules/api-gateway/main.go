@@ -6,22 +6,23 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/slomus/USOSWEB/src/backend/configs"
 	calendarPb "github.com/slomus/USOSWEB/src/backend/modules/calendar/gen/calendar"
+	academicPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 	applicationsPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/applications"
 	authPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/auth"
 	coursePb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/course"
 	gradesPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
-	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
-	academicPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/academic"
 	searchPb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/search"
+	messagingPb "github.com/slomus/USOSWEB/src/backend/modules/messaging/gen/messaging"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
- "google.golang.org/protobuf/encoding/protojson"
 )
 
 var appLog = logger.NewLogger("api-gateway")
@@ -73,13 +74,29 @@ func getClientIP(r *http.Request) string {
 }
 
 func allowCORS(h http.Handler) http.Handler {
+	// Parse allowed origins from config (comma-separated)
+	allowedOrigins := strings.Split(configs.Envs.AllowedOrigins, ",")
+	for i := range allowedOrigins {
+		allowedOrigins[i] = strings.TrimSpace(allowedOrigins[i])
+	}
+	appLog.LogInfo(fmt.Sprintf("CORS allowed origins: %v", allowedOrigins))
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			appLog.LogDebug(fmt.Sprintf("CORS request from origin: %s", origin))
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		// Check if origin is allowed
+		allowedOrigin := allowedOrigins[0] // default to first
+		for _, allowed := range allowedOrigins {
+			if origin == allowed {
+				allowedOrigin = origin
+				break
+			}
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -161,10 +178,10 @@ func main() {
 	appLog.LogDebug("Configuring gRPC-Gateway multiplexer")
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
-        MarshalOptions: protojson.MarshalOptions{
-            EmitUnpopulated: true,  
-        },
-    }),
+			MarshalOptions: protojson.MarshalOptions{
+				EmitUnpopulated: true,
+			},
+		}),
 
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
 			if key == "Cookie" {
@@ -256,41 +273,39 @@ func main() {
 	appLog.LogInfo("Registering cou endpoints")
 
 	// Subjects Service
-  appLog.LogInfo("Registering SubjectsService endpoints")
-  err = academicPb.RegisterSubjectsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
-  if err != nil {
-      appLog.LogError("Failed to register SubjectsService gateway", err)
-      panic(err)
-  }
-  appLog.LogInfo("SubjectsService endpoints registered successfully")
+	appLog.LogInfo("Registering SubjectsService endpoints")
+	err = academicPb.RegisterSubjectsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register SubjectsService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("SubjectsService endpoints registered successfully")
 
-  // Enrollments Service
-  appLog.LogInfo("Registering EnrollmentsService endpoints")
-  err = academicPb.RegisterEnrollmentsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
-  if err != nil {
-      appLog.LogError("Failed to register EnrollmentsService gateway", err)
-      panic(err)
-  }
-  appLog.LogInfo("EnrollmentsService endpoints registered successfully")
+	// Enrollments Service
+	appLog.LogInfo("Registering EnrollmentsService endpoints")
+	err = academicPb.RegisterEnrollmentsServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register EnrollmentsService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("EnrollmentsService endpoints registered successfully")
 
 	// Search Service
 	appLog.LogInfo("Registering SearchService endpoints")
-  err = searchPb.RegisterSearchServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
-  if err != nil {
-      appLog.LogError("Failed to register SearchService gateway", err)
-      panic(err)
-  }
-  appLog.LogInfo("SearchService endpoints registered successfully")
-
-
+	err = searchPb.RegisterSearchServiceHandlerFromEndpoint(ctx, mux, commonServiceEndpoint, opts)
+	if err != nil {
+		appLog.LogError("Failed to register SearchService gateway", err)
+		panic(err)
+	}
+	appLog.LogInfo("SearchService endpoints registered successfully")
 
 	photoHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/api/users/") && strings.HasSuffix(r.URL.Path, "/photo") {
-        handleProfilePhoto(w, r, commonServiceEndpoint, opts)
-        return
-    }
-    mux.ServeHTTP(w, r)
-})
+		if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/api/users/") && strings.HasSuffix(r.URL.Path, "/photo") {
+			handleProfilePhoto(w, r, commonServiceEndpoint, opts)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
 
 	handler := loggingMiddleware(allowCORS(photoHandler))
 
@@ -330,13 +345,12 @@ func main() {
 		"GET  /api/grades",
 		"POST /api/grades",
 		"GET  /api/subjects",
-    "GET  /api/subjects/{id}",
-    "POST /api/enrollments",
+		"GET  /api/subjects/{id}",
+		"POST /api/enrollments",
 		"DELETE /api/enrollments/{subject_id}",
-    "GET  /api/enrollments",
-    "POST /api/enrollments/check-conflicts",		
+		"GET  /api/enrollments",
+		"POST /api/enrollments/check-conflicts",
 		"GET /api/search",
-
 	}
 	for _, endpoint := range endpoints {
 		appLog.LogInfo(fmt.Sprintf("  %s", endpoint))
@@ -351,41 +365,41 @@ func main() {
 }
 
 func handleProfilePhoto(w http.ResponseWriter, r *http.Request, endpoint string, opts []grpc.DialOption) {
-    appLog.LogInfo(fmt.Sprintf("Custom photo handler called for: %s", r.URL.Path))
-    
-    parts := strings.Split(r.URL.Path, "/")
-    appLog.LogInfo(fmt.Sprintf("Path parts: %v", parts))
-    if len(parts) < 4 {
-        http.Error(w, "Invalid path", http.StatusBadRequest)
-        return
-    }
-    
-    userID := parts[3]
-    var userIDInt int32
-    fmt.Sscanf(userID, "%d", &userIDInt)
-    
-    ctx := r.Context()
-    if cookie, err := r.Cookie("access_token"); err == nil {
-        md := metadata.Pairs("authorization", cookie.Value)
-        ctx = metadata.NewOutgoingContext(ctx, md)
-    }
-    
-    conn, err := grpc.NewClient(endpoint, opts...)
-    if err != nil {
-        http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-        return
-    }
-    defer conn.Close()
-    
-    client := authPb.NewAuthServiceClient(conn)
-    resp, err := client.GetProfilePhoto(ctx, &authPb.GetProfilePhotoRequest{UserId: userIDInt}) 
-    
-    if err != nil {
-        appLog.LogError("GetProfilePhoto failed", err) // ← dodaj log błędu
-        http.Error(w, "Photo not found", http.StatusNotFound)
-        return
-    }
-    
-    w.Header().Set("Content-Type", resp.MimeType)
-    w.Write(resp.PhotoData)
+	appLog.LogInfo(fmt.Sprintf("Custom photo handler called for: %s", r.URL.Path))
+
+	parts := strings.Split(r.URL.Path, "/")
+	appLog.LogInfo(fmt.Sprintf("Path parts: %v", parts))
+	if len(parts) < 4 {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+
+	userID := parts[3]
+	var userIDInt int32
+	fmt.Sscanf(userID, "%d", &userIDInt)
+
+	ctx := r.Context()
+	if cookie, err := r.Cookie("access_token"); err == nil {
+		md := metadata.Pairs("authorization", cookie.Value)
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+
+	conn, err := grpc.NewClient(endpoint, opts...)
+	if err != nil {
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	defer conn.Close()
+
+	client := authPb.NewAuthServiceClient(conn)
+	resp, err := client.GetProfilePhoto(ctx, &authPb.GetProfilePhotoRequest{UserId: userIDInt})
+
+	if err != nil {
+		appLog.LogError("GetProfilePhoto failed", err) // ← dodaj log błędu
+		http.Error(w, "Photo not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", resp.MimeType)
+	w.Write(resp.PhotoData)
 }
