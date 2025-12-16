@@ -1,0 +1,154 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-all-db
+  namespace: usosweb
+  annotations:
+    description: "Complete database seeding: mock_data → init-users → init_relations → generator"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      restartPolicy: OnFailure
+      
+      initContainers:
+      # ========================================
+      # STEP 1: Wait for PostgreSQL
+      # ========================================
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          echo "⏳ [1/6] Waiting for PostgreSQL..."
+          until pg_isready -h postgres-service -U postgres; do
+            echo "PostgreSQL not ready, waiting..."
+            sleep 3
+          done
+          echo "✅ PostgreSQL is ready!"
+
+      # ========================================
+      # STEP 2: Load mock_data.sql (faculties, buildings, categories)
+      # ========================================
+      - name: seed-mock-data
+        image: ghcr.io/slomus/usosweb-seeder:latest
+        imagePullPolicy: Always
+        args: ["mock"]
+        env:
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          value: "usosweb"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # ========================================
+      # STEP 3: Wait for API Gateway
+      # ========================================
+      - name: wait-for-api-gateway
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          echo "⏳ [3/6] Waiting for API Gateway..."
+          until nc -z api-gateway-service 8083; do
+            echo "API Gateway not ready, waiting..."
+            sleep 5
+          done
+          echo "Giving API Gateway extra time to initialize..."
+          sleep 10
+          echo "✅ API Gateway is ready!"
+
+      # ========================================
+      # STEP 4: Register 9 base users via API
+      # ========================================
+      - name: init-users
+        image: ghcr.io/slomus/usosweb-init-users:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # ========================================
+      # STEP 5: Load init_relations.sql (messages, grades, etc.)
+      # ========================================
+      - name: seed-relations
+        image: ghcr.io/slomus/usosweb-seeder:latest
+        imagePullPolicy: Always
+        args: ["relations"]
+        env:
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          value: "usosweb"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # ========================================
+      # STEP 6 (Main Container): Generate 91 additional users + relations
+      # ========================================
+      containers:
+      - name: generator
+        image: ghcr.io/slomus/usosweb-generator:latest
+        imagePullPolicy: Always
+        env:
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          value: "usosweb"
+        - name: API_URL
+          value: "http://api-gateway-service:8083"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
