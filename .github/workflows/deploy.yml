@@ -37,6 +37,9 @@ jobs:
           - name: migrate
             context: ./src/backend
             dockerfile: ./database/Dockerfile
+          - name: init-users
+            context: ./src/backend
+            dockerfile: ./scripts/init_users/Dockerfile
           - name: frontend
             context: ./src/frontend
             dockerfile: ./Dockerfile
