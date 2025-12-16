@@ -8,13 +8,14 @@ import Button from "@/app/components/button";
 import Input from "@/app/components/input";
 import ThemeToggleButton from "@/app/components/ThemeToggleButton";
 import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
+import { getApiBaseUrl } from "@/app/config/api";
 
 export default function Home() {
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+  const API_BASE = getApiBaseUrl();
 
   const handleClick = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

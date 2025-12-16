@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import StudentCalendar, { CalendarEvent } from "@/app/components/ScheduleCalendar";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+import { getApiBaseUrl } from "@/app/config/api";
+
+const API_BASE = getApiBaseUrl();
 
 // --- TYPY ---
 

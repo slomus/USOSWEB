@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { getApiBaseUrl } from "@/app/config/api";
 
 interface UserInfo {
   username: string;
@@ -31,7 +32,7 @@ const UserProfile = React.memo(() => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+  const API_BASE = getApiBaseUrl();
 
   useEffect(() => {
     let isMounted = true;
@@ -126,7 +127,7 @@ export default function TopBar({
 
   useEffect(() => {
     const fetchUserId = async () => {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+      const API_BASE = getApiBaseUrl();
       try {
         const res = await fetch(`${API_BASE}/api/auth/user`, {
           method: "GET",
@@ -179,7 +180,7 @@ export default function TopBar({
     const delayDebounceFn = setTimeout(async () => {
       if (inputValue.length >= 3) {
         setIsSearching(true);
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+        const API_BASE = getApiBaseUrl();
 
         try {
           const response = await fetch(
@@ -209,7 +210,7 @@ export default function TopBar({
   }, [inputValue]);
 
   const handleLogout = useCallback(async () => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+    const API_BASE = getApiBaseUrl();
 
     try {
       const response = await fetch(`${API_BASE}/api/auth/logout`, {

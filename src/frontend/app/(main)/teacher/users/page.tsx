@@ -46,7 +46,9 @@ const normalizeUser = (rawUser: any): User => ({
   role: rawUser.role ?? "student",
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+import { getApiBaseUrl } from "@/app/config/api";
+
+const API_BASE = getApiBaseUrl();
 
 export default function TeacherUsersPage() {
   const [users, setUsers] = useState<User[]>([]);

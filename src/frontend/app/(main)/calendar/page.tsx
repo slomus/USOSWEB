@@ -7,7 +7,9 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import plLocale from "@fullcalendar/core/locales/pl";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+import { getApiBaseUrl } from "@/app/config/api";
+
+const API_BASE = getApiBaseUrl();
 
 // --- TYPY ---
 

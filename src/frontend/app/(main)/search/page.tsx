@@ -3,7 +3,9 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
+import { getApiBaseUrl } from "@/app/config/api";
+
+const API_BASE = getApiBaseUrl();
 
 // Wrapper dla Suspense (wymagane w Next.js przy używaniu useSearchParams)
 export default function SearchPage() {
