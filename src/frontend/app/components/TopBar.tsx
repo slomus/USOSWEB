@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import React, {
   useState,
   useRef,
@@ -15,12 +16,13 @@ interface UserInfo {
   role: "student" | "teacher" | "admin";
 }
 
-// Typy odpowiedzi z API (bazując na PDF str. 43-44)
+// Typy odpowiedzi z API (bazując na strukturze zwracanej przez endpoint search)
 interface SearchResult {
   users: any[];
   subjects: any[];
   courses: any[];
-  // Dodajemy pola opcjonalne, gdyby backend zwrócił coś innego
+  buildings: any[];
+  classes: any[];
   [key: string]: any;
 }
 
@@ -36,12 +38,10 @@ const UserProfile = React.memo(() => {
 
     const fetchUserInfo = async () => {
       try {
-        // Pobierz nazwę użytkownika
         const usernameResponse = await fetch(`${API_BASE}/api/auth/username`, {
           credentials: "include",
         });
         
-        // Pobierz rolę użytkownika
         const roleResponse = await fetch(`${API_BASE}/api/auth/role`, {
           credentials: "include",
         });
@@ -78,34 +78,23 @@ const UserProfile = React.memo(() => {
 
   const getRoleLabel = (role: string): string => {
     switch (role) {
-      case "student":
-        return "Student";
-      case "teacher":
-        return "Wykładowca";
-      case "admin":
-        return "Administrator";
-      default:
-        return role;
+      case "student": return "Student";
+      case "teacher": return "Wykładowca";
+      case "admin": return "Administrator";
+      default: return role;
     }
   };
+
   if (loading) {
-    return (
-      <div className="text-sm text-[var(--color-text-secondary)]">
-        Ładowanie...
-      </div>
-    );
+    return <div className="text-sm text-[var(--color-text-secondary)]">Ładowanie...</div>;
   }
 
   if (error || !userInfo) {
-    return (
-      <div className="text-sm text-[var(--color-text-secondary)]">
-        {error || "Błąd"}
-      </div>
-    );
+    return <div className="text-sm text-[var(--color-text-secondary)]">{error || "Błąd"}</div>;
   }
 
   return (
-    <div className="text-sm">
+    <div className="text-sm hidden sm:block">
       <span className="text-[var(--color-text-secondary)]">Zalogowany jako </span>
       <span className="font-medium text-[var(--color-accent)]">{getRoleLabel(userInfo.role)}</span>
       <span className="text-[var(--color-text-secondary)]">, </span>
@@ -126,18 +115,15 @@ export default function TopBar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   
-  // Nowe stany do obsługi wyszukiwania
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // --- OBSŁUGA AVATARA ---
   const DEFAULT_AVATAR = "/userPicture.jpg";
   const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Pobranie userId w celu skonstruowania linku do zdjęcia
   useEffect(() => {
     const fetchUserId = async () => {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
@@ -150,8 +136,6 @@ export default function TopBar({
 
         if (res.ok) {
           const data = await res.json();
-          // Jeśli mamy userId, ustawiamy URL do zdjęcia z API
-          // Dodajemy parametr czasu (?t=...), aby uniknąć cache'owania po zmianie zdjęcia
           if (data?.user?.userId) {
             setAvatarUrl(`${API_BASE}/api/users/${data.user.userId}/photo?t=${new Date().getTime()}`);
           }
@@ -174,7 +158,14 @@ export default function TopBar({
   const handleClose = useCallback(() => {
     setSearchOpen(false);
     setInputValue("");
-    setSearchResults(null); // Czyścimy wyniki po zamknięciu
+    setSearchResults(null);
+  }, []);
+
+  // Funkcja pomocnicza: kliknięcie w wynik zamyka search i czyści input
+  const handleResultClick = useCallback(() => {
+    setSearchOpen(false);
+    setInputValue("");
+    setSearchResults(null);
   }, []);
 
   const handleInputChange = useCallback(
@@ -184,19 +175,13 @@ export default function TopBar({
     []
   );
 
-  // --- LOGIKA WYSZUKIWANIA (NOWE) ---
   useEffect(() => {
-    // Debounce: czekamy 500ms po ostatnim wpisaniu znaku
     const delayDebounceFn = setTimeout(async () => {
-      // Triggeruj tylko jeśli wpisano 3 lub więcej znaków
       if (inputValue.length >= 3) {
         setIsSearching(true);
         const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
         try {
-          console.log(`Wysyłam zapytanie: ${API_BASE}/api/search?query=${inputValue}`);
-          
-          // Fetch bezpośredni (zakładamy, że credentials include obsłuży sesję)
           const response = await fetch(
             `${API_BASE}/api/search?query=${inputValue}`,
             { credentials: "include" }
@@ -204,20 +189,19 @@ export default function TopBar({
 
           if (response.ok) {
             const data = await response.json();
-            console.log("Otrzymane dane:", data); // Log do konsoli
             setSearchResults(data);
           } else {
             console.error("Błąd zapytania search:", response.status);
-            setSearchResults({ error: `Błąd API: ${response.status}`, users: [], subjects: [], courses: [] });
+            setSearchResults({ users: [], subjects: [], courses: [], buildings: [], classes: [] });
           }
         } catch (error) {
           console.error("Błąd sieci podczas wyszukiwania:", error);
-          setSearchResults({ error: "Błąd połączenia", users: [], subjects: [], courses: [] });
+          setSearchResults({ users: [], subjects: [], courses: [], buildings: [], classes: [] });
         } finally {
           setIsSearching(false);
         }
       } else {
-        setSearchResults(null); // Czyścimy wyniki jeśli < 3 znaki
+        setSearchResults(null);
       }
     }, 500);
 
@@ -230,18 +214,13 @@ export default function TopBar({
     try {
       const response = await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({}),
       });
 
       if (response.ok) {
-        console.log("Logout successful");
         router.push("/");
-      } else {
-        console.error("Logout failed");
       }
     } catch (error) {
       console.error("Error during logout:", error);
@@ -274,14 +253,14 @@ export default function TopBar({
   return (
     <header className="fixed top-0 left-0 w-screen bg-[var(--color-bg)] text-[var(--color-text)] px-6 py-3 flex items-center justify-between shadow-md z-50">
       <div className="flex items-center gap-4 relative">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Image src="/logouniwersytet.png" alt="Logo" width={50} height={50} />
-          <span className="font-bold tracking-wide text-sm">
+          <span className="font-bold tracking-wide text-sm hidden md:block">
             UNIWERSYTET KAZIMIERZA WIELKIEGO
           </span>
-        </div>
+        </Link>
 
-        {/* Search box wrapper */}
+        {/* --- SEARCH BOX --- */}
         <div className="relative">
           <motion.div
             className="flex items-center"
@@ -292,18 +271,8 @@ export default function TopBar({
               borderRadius: searchOpen ? 24 : 999,
               boxShadow: searchOpen ? "0 2px 8px 0 rgba(0,0,0,0.10)" : "none",
             }}
-            transition={{
-              type: "spring",
-              stiffness: 400,
-              damping: 32,
-              duration: 0.38,
-            }}
-            style={{
-              overflow: "hidden",
-              marginLeft: 9,
-              height: 41,
-              minWidth: 1,
-            }}
+            transition={{ type: "spring", stiffness: 400, damping: 32, duration: 0.38 }}
+            style={{ overflow: "hidden", marginLeft: 9, height: 41, minWidth: 1 }}
           >
             <AnimatePresence initial={false}>
               {searchOpen && (
@@ -325,74 +294,169 @@ export default function TopBar({
             </AnimatePresence>
             <motion.button
               type="button"
-              aria-label="Szukaj"
-              tabIndex={1}
-              onClick={() =>
-                searchOpen ? inputRef.current?.focus() : openSearch()
-              }
+              onClick={() => searchOpen ? inputRef.current?.focus() : openSearch()}
               initial={false}
-              animate={{
-                backgroundColor: searchOpen
-                  ? "var(--color-accent)"
-                  : "var(--color-bg)",
-              }}
+              animate={{ backgroundColor: searchOpen ? "var(--color-accent)" : "var(--color-bg)" }}
               transition={{ duration: 0.22 }}
               className="rounded-full p-2 flex items-center justify-center"
-              style={{
-                cursor: "pointer",
-                border: "none",
-                outline: "none",
-                marginLeft: searchOpen ? 1 : 0,
-              }}
+              style={{ cursor: "pointer", border: "none", outline: "none", marginLeft: searchOpen ? 1 : 0 }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-5 h-5"
-                style={{
-                  color: searchOpen
-                    ? "var(--color-bg)"
-                    : "var(--color-text-secondary)",
-                }}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ color: searchOpen ? "var(--color-bg)" : "var(--color-text-secondary)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
             </motion.button>
           </motion.div>
 
-          {/* --- PANEL WYNIKÓW WYSZUKIWANIA --- */}
+          {/* --- WYNIKI WYSZUKIWANIA --- */}
           <AnimatePresence>
             {searchOpen && inputValue.length >= 3 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-[50px] left-[10px] w-[400px] bg-white text-black shadow-xl rounded-lg overflow-hidden border border-gray-200 z-[100]"
+                className="absolute top-[50px] left-[10px] w-[350px] sm:w-[450px] bg-[var(--color-bg-secondary)] text-[var(--color-text)] shadow-2xl rounded-lg overflow-hidden border border-[var(--color-text)]/10 z-[100] max-h-[70vh] flex flex-col"
               >
-                <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase text-gray-500">
-                    Wyniki API (Debug)
-                  </span>
-                  {isSearching && <span className="text-xs text-blue-500 animate-pulse">Szukanie...</span>}
+                {/* Header wyników */}
+                <div className="p-3 border-b border-[var(--color-text)]/10 bg-[var(--color-bg)] flex justify-between items-center sticky top-0 z-10">
+                  <span className="text-xs font-bold uppercase text-[var(--color-text-secondary)]">Wyniki wyszukiwania</span>
+                  {isSearching && <span className="text-xs text-[var(--color-accent)] animate-pulse">Szukanie...</span>}
                   <button onClick={handleClose} className="text-xs text-red-500 hover:underline">Zamknij</button>
                 </div>
                 
-                <div className="max-h-[60vh] overflow-y-auto p-4 text-xs font-mono">
+                {/* Lista wyników */}
+                <div className="overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-[var(--color-accent)] scrollbar-track-transparent">
                   {searchResults ? (
-                    <>
-                      <pre className="whitespace-pre-wrap break-all">
-                        {JSON.stringify(searchResults, null, 2)}
-                      </pre>
-                    </>
+                    <div className="flex flex-col gap-4">
+                      
+                      {/* --- UŻYTKOWNICY --- */}
+                      {searchResults.users && searchResults.users.length > 0 && (
+                        <div>
+                          <h4 className="px-2 mb-2 text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest border-b border-[var(--color-accent)]/20 pb-1">Użytkownicy</h4>
+                          {searchResults.users.map((user: any) => (
+                            <Link
+                              key={user.userId}
+                              href={`/search?type=users&id=${user.userId}`}
+                              onClick={handleResultClick}
+                              className="block px-3 py-2 hover:bg-[var(--color-bg)] rounded transition-colors group"
+                            >
+                              <div className="font-medium text-sm group-hover:text-[var(--color-accent)]">
+                                {user.name} {user.surname}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-secondary)]">
+                                {user.email} • <span className="capitalize">{user.role}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* --- PRZEDMIOTY --- */}
+                      {searchResults.subjects && searchResults.subjects.length > 0 && (
+                        <div>
+                          <h4 className="px-2 mb-2 text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest border-b border-[var(--color-accent)]/20 pb-1">Przedmioty</h4>
+                          {searchResults.subjects.map((subj: any) => (
+                            <Link
+                              key={subj.subjectId}
+                              href={`/search?type=subjects&id=${subj.subjectId}`}
+                              onClick={handleResultClick}
+                              className="block px-3 py-2 hover:bg-[var(--color-bg)] rounded transition-colors group"
+                            >
+                              <div className="font-medium text-sm group-hover:text-[var(--color-accent)]">
+                                {subj.name}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-secondary)]">
+                                {subj.alias} • ECTS: {subj.ects}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* --- KIERUNKI (COURSES) --- */}
+                      {searchResults.courses && searchResults.courses.length > 0 && (
+                        <div>
+                          <h4 className="px-2 mb-2 text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest border-b border-[var(--color-accent)]/20 pb-1">Kierunki</h4>
+                          {searchResults.courses.map((item: any) => {
+                            // Czasem API może zwrócić obiekt w wrapperze, bezpieczniej sprawdzić
+                            const course = item.course || item;
+                            return (
+                              <Link
+                                key={course.courseId}
+                                href={`/search?type=courses&id=${course.courseId}`}
+                                onClick={handleResultClick}
+                                className="block px-3 py-2 hover:bg-[var(--color-bg)] rounded transition-colors group"
+                              >
+                                <div className="font-medium text-sm group-hover:text-[var(--color-accent)]">
+                                  {course.name}
+                                </div>
+                                <div className="text-xs text-[var(--color-text-secondary)]">
+                                  {course.alias} • {course.facultyName}
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                       {/* --- ZAJĘCIA (CLASSES) --- */}
+                       {searchResults.classes && searchResults.classes.length > 0 && (
+                        <div>
+                          <h4 className="px-2 mb-2 text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest border-b border-[var(--color-accent)]/20 pb-1">Zajęcia</h4>
+                          {searchResults.classes.map((cls: any) => (
+                            <Link
+                              key={cls.classId}
+                              href={`/search?type=classes&id=${cls.classId}`}
+                              onClick={handleResultClick}
+                              className="block px-3 py-2 hover:bg-[var(--color-bg)] rounded transition-colors group"
+                            >
+                              <div className="font-medium text-sm group-hover:text-[var(--color-accent)]">
+                                {cls.subjectName}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-secondary)]">
+                                <span className="capitalize">{cls.classType}</span> • Gr: {cls.groupNr} • {cls.buildingName}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* --- BUDYNKI --- */}
+                      {searchResults.buildings && searchResults.buildings.length > 0 && (
+                        <div>
+                          <h4 className="px-2 mb-2 text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest border-b border-[var(--color-accent)]/20 pb-1">Budynki</h4>
+                          {searchResults.buildings.map((b: any) => (
+                            <Link
+                              key={b.buildingId}
+                              href={`/search?type=buildings&id=${b.buildingId}`}
+                              onClick={handleResultClick}
+                              className="block px-3 py-2 hover:bg-[var(--color-bg)] rounded transition-colors group"
+                            >
+                              <div className="font-medium text-sm group-hover:text-[var(--color-accent)]">
+                                {b.name}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-secondary)] truncate">
+                                {b.address}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* --- BRAK WYNIKÓW --- */}
+                      {!isSearching && 
+                       (!searchResults.users?.length && 
+                        !searchResults.subjects?.length && 
+                        !searchResults.courses?.length && 
+                        !searchResults.buildings?.length && 
+                        !searchResults.classes?.length) && (
+                          <div className="text-center py-6 text-[var(--color-text-secondary)] text-sm italic">
+                            Brak wyników dla podanej frazy.
+                          </div>
+                      )}
+
+                    </div>
                   ) : (
-                    !isSearching && <div className="text-gray-400 italic">Brak wyników lub błąd zapytania...</div>
+                    !isSearching && <div className="text-[var(--color-text-secondary)] italic p-4 text-sm text-center">Wpisz frazę aby wyszukać...</div>
                   )}
                 </div>
               </motion.div>
@@ -405,27 +469,25 @@ export default function TopBar({
         {memoizedUserProfile}
         <button
           onClick={() => setIsNavVisible(!isNavVisible)}
-          className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] text-xs px-3 py-1 rounded"
+          className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] text-xs px-3 py-1 rounded transition-colors"
         >
           {isNavVisible ? "Ukryj nawigację" : "Pokaż nawigację"}
         </button>
         <button
-          className="bg-[var(--color-accent2)] hover:bg-red-800 text-[var(--color-text)] text-xs px-3 py-1 rounded"
+          className="bg-[var(--color-accent2)] hover:bg-red-800 text-[var(--color-text)] text-xs px-3 py-1 rounded transition-colors"
           onClick={handleLogout}
         >
           Wyloguj
         </button>
         
-        {/* AVATAR UŻYTKOWNIKA */}
+        {/* AVATAR */}
         <img
           src={avatarUrl}
           alt="Avatar"
           width={50}
           height={50}
-          className="rounded-full border border-[#9C9793] object-cover w-[50px] h-[50px]"
+          className="rounded-full border border-[#9C9793] object-cover w-[50px] h-[50px] cursor-pointer"
           onError={(e) => {
-            // Jeśli obrazek się nie załaduje (np. 404), podmień na domyślny
-            // Zapobiega to nieskończonej pętli, sprawdzając czy src jest już domyślny
             const target = e.target as HTMLImageElement;
             if (target.src.indexOf(DEFAULT_AVATAR) === -1) {
               target.src = DEFAULT_AVATAR;
