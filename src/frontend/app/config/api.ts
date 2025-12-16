@@ -8,18 +8,23 @@
 
 /**
  * Get the API base URL
- * - In browser: uses relative path '/api' (works with Ingress proxy)
- * - On server-side: uses environment variable or service URL
+ * - In browser (production): returns empty string for relative paths
+ * - In browser (development): returns localhost URL
+ * - On server-side: uses environment variable or K8s service URL
+ * 
+ * Usage: fetch(`${API_BASE}/api/auth/login`)
+ * - Production: /api/auth/login (relative path, Ingress proxies to api-gateway)
+ * - Development: http://localhost:8083/api/auth/login
  */
 export function getApiBaseUrl(): string {
-  // Client-side: use relative path (Ingress will proxy to api-gateway)
+  // Client-side
   if (typeof window !== 'undefined') {
-    // Check if we're on production domain
     const hostname = window.location.hostname;
     
-    // Production: use the same origin with /api path
+    // Production: use relative paths (empty string)
+    // Requests like /api/auth/login will be handled by Ingress
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return window.location.origin;
+      return '';  // Relative path - /api/auth/login
     }
     
     // Development: use env variable or localhost
