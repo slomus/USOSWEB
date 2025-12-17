@@ -1,7 +1,7 @@
 // app/hooks/useUserRole.ts
 "use client";
 import { useState, useEffect } from "react";
-
+import { getApiBaseUrl } from "@/app/config/api";
 export type UserRole = "student" | "teacher" | "admin" | null;
 
 export interface UserData {
@@ -17,11 +17,11 @@ export function useUserRole() {
   const [role, setRole] = useState<UserRole>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const API_BASE = getApiBaseUrl();
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const response = await fetch("http://localhost:8083/api/auth/user", {
+        const response = await fetch(`http://${API_BASE}/api/auth/user`, {
           credentials: "include",
         });
         

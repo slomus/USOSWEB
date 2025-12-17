@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { getApiBaseUrl } from "@/app/config/api";
 type Mark = {
   gradeId: number;
   albumNr: number;
@@ -33,7 +33,7 @@ export default function MarksPage() {
   const [expandedSemesters, setExpandedSemesters] = useState<string[]>([
     "Semestr letni 2024/25",
   ]);
-
+  const API_BASE = getApiBaseUrl();
   const ChevronDownIcon = () => (
     <svg
       className="h-5 w-5 text-[var(--color-accent)]"
@@ -103,7 +103,7 @@ export default function MarksPage() {
         setLoading(true);
         setError("");
 
-        const res = await fetch("http://localhost:8083/api/grades?album_nr=1", {
+        const res = await fetch(`http://${API_BASE}/api/grades?album_nr=1`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -172,7 +172,7 @@ export default function MarksPage() {
 
     const fetchMarks = async () => {
       try {
-        const res = await fetch("http://localhost:8083/api/grades?album_nr=1", {
+        const res = await fetch(`http://${API_BASE}/api/grades?album_nr=1`, {
           method: "GET",
           credentials: "include",
           headers: {
