@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { getApiBaseUrl } from "@/app/config/api";
 
 type UserData = {
   userId: number;
@@ -46,11 +47,13 @@ export default function AccountManagementPage() {
     });
   };
 
+  const API_BASE = getApiBaseUrl();
+
   // Pobierz dane aktualnie zalogowanego użytkownika
   const fetchUserData = async () => {
     setLoadingUserData(true);
     try {
-      const res = await fetch("http://localhost:8083/api/auth/user", {
+      const res = await fetch(`http://${API_BASE}/api/auth/user`, {
         method: "GET",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -98,7 +101,7 @@ export default function AccountManagementPage() {
     try {
       const base64 = await fileToBase64(photoFile);
 
-      const response = await fetch("http://localhost:8083/api/users/photo", {
+      const response = await fetch(`http://${API_BASE}/api/users/photo`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -156,7 +159,7 @@ export default function AccountManagementPage() {
       if (password) bodyPayload.password = password;
 
       const response = await fetch(
-        `http://localhost:8083/api/auth/edit/${user.userId}`,
+        `http://${API_BASE}/api/auth/edit/${user.userId}`,
         {
           method: "PUT",
           credentials: "include",
@@ -214,7 +217,7 @@ export default function AccountManagementPage() {
               <p className="text-sm font-medium mb-2">Aktualne zdjęcie:</p>
               {user && !photoError ? (
                 <img 
-                  src={`http://localhost:8083/api/users/${user.userId}/photo?t=${photoTimestamp}`} 
+                  src={`http://${API_BASE}/api/users/${user.userId}/photo?t=${photoTimestamp}`} 
                   alt="Zdjęcie użytkownika"
                   className="w-32 h-32 rounded-full object-cover border-2 border-[var(--color-accent)] shadow-sm"
                   onError={() => setPhotoError(true)}

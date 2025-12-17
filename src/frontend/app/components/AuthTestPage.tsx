@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-
+import { getApiBaseUrl } from "@/app/config/api";
 interface AuthResponse {
   success: boolean;
   message: string;
@@ -34,7 +34,7 @@ const AuthTestPage: React.FC = () => {
 
   const [loginForm, setLoginForm] = useState({ name: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ name: '', password: '' });
-
+  const API_BASE = getApiBaseUrl();
   // API call helper with credentials: 'include' for cookies
   const apiCall = async (endpoint: string, method: string = 'GET', body?: any) => {
     const config: RequestInit = {
@@ -49,7 +49,7 @@ const AuthTestPage: React.FC = () => {
       config.body = JSON.stringify(body);
     }
 
-    return fetch(`http://localhost:8083${endpoint}`, config);
+    return fetch(`http://${API_BASE}${endpoint}`, config);
   };
 
   const handleLogin = async () => {

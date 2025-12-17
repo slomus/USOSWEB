@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
+import { getApiBaseUrl } from "@/app/config/api";
 interface Exam {
   examId: number;
   classId: number;
@@ -19,7 +19,7 @@ interface Exam {
 export default function ExamsAndGradesPage() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const API_BASE = getApiBaseUrl();
   const zaliczenia = [
     {
       kierunek: "Informatyka [SP-INF]",
@@ -61,7 +61,7 @@ export default function ExamsAndGradesPage() {
 
       // Pobierz nadchodzące egzaminy - zwiększam zakres żeby pokazać historię
       const examsResponse = await fetch(
-        "http://localhost:8083/api/student/exams/upcoming?days_ahead=365",
+        `http://${API_BASE}/api/student/exams/upcoming?days_ahead=365`,
         {
           credentials: "include",
         }
