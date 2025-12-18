@@ -90,7 +90,7 @@ func initConfig() Config {
 		CacheDefaultTTL: getEnv("CACHE_DEFAULT_TTL", "1h"),
 
 		// Secrets
-		EmailAppSecretKey: getEnv("EMAIL_APP_SECRET_KEY", ""),
+		EmailAppSecretKey: getEnv("EMAIL_APP_SECRET_KEY", "94X6hQt2ILQ5j1jM06VQR5DgiGD9Ox5i"),
 
 		// CORS - comma separated list of allowed origins
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),
