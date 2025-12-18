@@ -271,7 +271,7 @@ func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGra
 	var userID int64
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
-	role, albumFromDB, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, albumFromDB, teachingID, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return 0, "", 0, status.Error(codes.Internal, "failed to resolve user role")
 	}
@@ -309,7 +309,7 @@ func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.A
 	var userID int64
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
-	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, _, teachingID, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return 0, "", 0, status.Error(codes.Internal, "failed to resolve user role")
 	}
@@ -341,7 +341,7 @@ func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int
                 ELSE 'unknown'
             END as role,
             COALESCE(s.album_nr, 0) as album_nr,
-            COALESCE(ts.teaching_staff_id, 0) as teaching_staff_id
+            COALESCE(ts.teaching_staff_id, 0) as teaching_staff_id,
 			COALESCE(a.administrative_staff_id, 0) as administrative_staff_id
         FROM users u
         LEFT JOIN students s ON u.user_id = s.user_id
@@ -349,7 +349,7 @@ func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int
         LEFT JOIN administrative_staff a ON u.user_id = a.user_id
         WHERE u.user_id = $1`
 
-	err = s.db.QueryRowContext(ctx, query, userID).Scan(&role, &albumNr, &teachingStaffID, administrativeStaffID)
+	err = s.db.QueryRowContext(ctx, query, userID).Scan(&role, &albumNr, &teachingStaffID, &administrativeStaffID)
 	if err != nil {
 		return "", 0, 0, 0, err
 	}
@@ -465,7 +465,7 @@ func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeReque
 	var userID int64
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
-	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, _, teachingID, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to resolve user role")
 	}
@@ -586,7 +586,7 @@ func (s *GradesServer) DeleteGrade(ctx context.Context, req *pb.DeleteGradeReque
 	var userID int64
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
-	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, _, teachingID, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to resolve user role")
 	}
@@ -655,17 +655,9 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 			return nil, status.Error(codes.PermissionDenied, "only teachers and administrative staff can access this endpoint")
 		}
 		if teachingID == 0 && administrativeStaffID == 0 {
-			var reasons []string
-			if teachingID == 0 {
-				reasons = append(reasons, "user is not a teacher")
-			}
-			if administrativeStaffID == 0 {
-				reasons = append(reasons, "user is not an administrative staff")
-			}
-			return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("%s", reasons))
+			return nil, status.Error(codes.PermissionDenied, "user is neither a teacher nor administrative staff")
 		}
 	}
-
 
 	query := `
 		SELECT 
@@ -739,7 +731,7 @@ func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdmi
 	var userID int64
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
-	role, _, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, _, _, _, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to resolve user role")
 	}
