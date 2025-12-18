@@ -1,3 +1,8 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Kontakt', 
+}
 export default function ContactPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">

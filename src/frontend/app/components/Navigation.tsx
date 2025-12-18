@@ -4,7 +4,7 @@ import ThemeToggleButton from "./ThemeToggleButton";
 import { motion } from "framer-motion";
 import { Transition } from "framer-motion";
 import { useEffect, useState } from "react";
-
+import { getApiBaseUrl } from "@/app/config/api";
 type UserRole = "student" | "teacher" | "admin";
 
 type MenuItem = {
@@ -16,11 +16,11 @@ type MenuItem = {
 export default function Navigation({ transition }: { transition: Transition }) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const API_BASE = getApiBaseUrl();
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const response = await fetch("http://localhost:8083/api/auth/role", {
+        const response = await fetch(`${API_BASE}/api/auth/role`, {
           method: "GET",
           credentials: "include",
         });

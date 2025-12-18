@@ -1,6 +1,11 @@
+import { Metadata } from "next";
 import Image from "next/image";
 import { FaDocker, FaReact, FaDatabase, FaServer, FaGithub } from "react-icons/fa";
 import { SiKubernetes, SiGo, SiTypescript, SiNextdotjs, SiTailwindcss, SiPostgresql, SiRedis } from "react-icons/si";
+
+export const metadata: Metadata = {
+  title: 'O nas', 
+}
 
 export default function AboutPage() {
   return (

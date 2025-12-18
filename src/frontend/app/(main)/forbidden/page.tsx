@@ -1,3 +1,8 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Dostęp zabroniony', 
+}
 export default function ForbiddenPage() {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-[var(--color-bg)] text-[var(--color-text)]">

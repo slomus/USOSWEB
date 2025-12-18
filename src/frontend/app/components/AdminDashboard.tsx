@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { UserData } from "@/app/hooks/useUserRole";
 import ScheduleCalendar, { CalendarEvent } from "@/app/components/ScheduleCalendar";
+import { getApiBaseUrl } from "@/app/config/api";
 import { 
   FaUsers, 
   FaUserGraduate, 
@@ -37,6 +38,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
   const [dashboardEvents, setDashboardEvents] = useState<CalendarEvent[]>([]);
   const [currentEvent, setCurrentEvent] = useState<CalendarEvent | null>(null);
 
+  const API_BASE = getApiBaseUrl();
   // Fetch Logic
   useEffect(() => {
     // Funkcja pobierająca wszystkie wnioski z paginacją
@@ -48,7 +50,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
 
       while (true) {
         const res = await fetch(
-          `http://localhost:8083/api/applications?page=${page}&pageSize=${pageSize}`,
+          `${API_BASE}/api/applications?page=${page}&pageSize=${pageSize}`,
           { credentials: "include" }
         );
 
@@ -68,7 +70,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
 
     const fetchDashboardData = async () => {
       try {
-        const usersRes = await fetch("http://localhost:8083/api/auth/users", { credentials: "include" });
+        const usersRes = await fetch(`${API_BASE}/api/auth/users`, { credentials: "include" });
         if (!usersRes.ok) throw new Error("Failed to fetch users");
 
         const usersData = await usersRes.json();

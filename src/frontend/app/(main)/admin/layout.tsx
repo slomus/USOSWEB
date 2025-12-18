@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getApiBaseUrl } from "@/app/config/api";
 
 type UserRole = "student" | "teacher" | "admin";
 
@@ -13,11 +14,11 @@ export default function AdminLayout({
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
+  const API_BASE = getApiBaseUrl();
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        const response = await fetch("http://localhost:8083/api/auth/role", {
+        const response = await fetch(`${API_BASE}/api/auth/role`, {
           method: "GET",
           credentials: "include",
           headers: {

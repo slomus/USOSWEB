@@ -16,10 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zaloguj się do USOSWEB",
-  keywords: ["USOSWEB", "logowanie", "system uczelniany", "studia"],
-  description: "Zaloguj się do systemu USOSWEB, aby uzyskać dostęp do planu zajęć, ocen i innych funkcji.",
-  authors: [{ name: "USOSWEB Team ZPI", url: "https://usosweb.example.com" }],
+  title: {
+    template: '%s | ASOSWEB',
+    default: 'ASOSWEB - Akademicki system obsługi studiów',
+  },
+  keywords: ["ASOSWEB", "Akademicki system obsługi studiów", "system uczelniany", "studia"],
+  description: "ASOSWEB to nowoczesny akademicki system obsługi studiów, który upraszcza zarządzanie danymi studentów, kursami i administracją uczelni.",
+  authors: [{ name: "ASOSWEB Team ZPI", url: "https://asos.elmar.pro" }],
+  manifest: '/site.webmanifest',
+  
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png' },
+    ],
+  },
 };
 
 export default function RootLayout({
