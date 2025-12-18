@@ -1,4 +1,4 @@
-import CalendarPage from "../calendar/page";
+import CalendarPage from "../calendar/calendarView";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
