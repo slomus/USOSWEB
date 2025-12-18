@@ -50,7 +50,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
 
       while (true) {
         const res = await fetch(
-          `http://${API_BASE}/api/applications?page=${page}&pageSize=${pageSize}`,
+          `${API_BASE}/api/applications?page=${page}&pageSize=${pageSize}`,
           { credentials: "include" }
         );
 
@@ -70,7 +70,7 @@ export default function AdminDashboard({ userData }: AdminDashboardProps) {
 
     const fetchDashboardData = async () => {
       try {
-        const usersRes = await fetch(`http://${API_BASE}/api/auth/users`, { credentials: "include" });
+        const usersRes = await fetch(`${API_BASE}/api/auth/users`, { credentials: "include" });
         if (!usersRes.ok) throw new Error("Failed to fetch users");
 
         const usersData = await usersRes.json();
