@@ -61,7 +61,7 @@ export default function Home() {
           />
         </div>
         {/* Linki */}
-        <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
+        <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)] items-center">
           <a href="/about">o aplikacji</a>
           <ThemeToggleButton />
         </nav>
@@ -73,7 +73,7 @@ export default function Home() {
       <main className="flex justify-center items-center mt-10">
         <div className="w-full max-w-md p-4">
           <h4 className="text-xl font-semibold mb-6 text-center">
-            Zaloguj się do systemu USOSWEB
+            Zaloguj się do systemu ASOSWEB
           </h4>
 
           <form className="space-y-2" onSubmit={handleClick}>

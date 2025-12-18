@@ -21,7 +21,7 @@ export function useUserRole() {
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const response = await fetch(`http://${API_BASE}/api/auth/user`, {
+        const response = await fetch(`${API_BASE}/api/auth/user`, {
           credentials: "include",
         });
         

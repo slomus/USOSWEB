@@ -20,7 +20,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const response = await fetch(`http://${API_BASE}/api/auth/role`, {
+        const response = await fetch(`${API_BASE}/api/auth/role`, {
           method: "GET",
           credentials: "include",
         });

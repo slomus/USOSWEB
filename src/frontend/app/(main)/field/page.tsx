@@ -1,3 +1,8 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Informacje o kierunku', 
+}
 export default function KierunekPage() {
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">

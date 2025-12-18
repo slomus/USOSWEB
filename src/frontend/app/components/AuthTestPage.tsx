@@ -49,7 +49,7 @@ const AuthTestPage: React.FC = () => {
       config.body = JSON.stringify(body);
     }
 
-    return fetch(`http://${API_BASE}${endpoint}`, config);
+    return fetch(`${API_BASE}${endpoint}`, config);
   };
 
   const handleLogin = async () => {
