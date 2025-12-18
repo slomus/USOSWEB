@@ -5,8 +5,13 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
+	"mime"
+	"mime/multipart"
+	"mime/quotedprintable"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"sort"
 	"strings"
@@ -296,6 +301,134 @@ func connectToIMAP(email, password string) (*client.Client, error) {
 	return c, nil
 }
 
+// parseEmailBody - extracts plain text content from email body
+func parseEmailBody(body io.Reader) (string, error) {
+	msg, err := mail.ReadMessage(body)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse email: %v", err)
+	}
+
+	contentType := msg.Header.Get("Content-Type")
+	if contentType == "" {
+		// No Content-Type header, treat as plain text
+		bodyBytes, err := io.ReadAll(msg.Body)
+		if err != nil {
+			return "", fmt.Errorf("failed to read body: %v", err)
+		}
+		return string(bodyBytes), nil
+	}
+
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		appLog.LogWarn(fmt.Sprintf("Failed to parse Content-Type: %v", err))
+		bodyBytes, err := io.ReadAll(msg.Body)
+		if err != nil {
+			return "", fmt.Errorf("failed to read body: %v", err)
+		}
+		return string(bodyBytes), nil
+	}
+
+	// Handle multipart messages
+	if strings.HasPrefix(mediaType, "multipart/") {
+		boundary := params["boundary"]
+		if boundary == "" {
+			return "", fmt.Errorf("no boundary found in multipart message")
+		}
+		return parseMultipartBody(msg.Body, boundary)
+	}
+
+	// Handle single-part messages
+	return decodeSinglePart(msg.Body, mediaType, params)
+}
+
+// parseMultipartBody - handles multipart email bodies
+func parseMultipartBody(body io.Reader, boundary string) (string, error) {
+	mr := multipart.NewReader(body, boundary)
+	var textPlain, textHTML string
+
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to read multipart: %v", err)
+		}
+
+		contentType := part.Header.Get("Content-Type")
+		mediaType, params, err := mime.ParseMediaType(contentType)
+		if err != nil {
+			appLog.LogWarn(fmt.Sprintf("Failed to parse part Content-Type: %v", err))
+			continue
+		}
+
+		// Recursively handle nested multipart
+		if strings.HasPrefix(mediaType, "multipart/") {
+			nestedBoundary := params["boundary"]
+			if nestedBoundary != "" {
+				content, err := parseMultipartBody(part, nestedBoundary)
+				if err == nil && content != "" {
+					return content, nil
+				}
+			}
+			continue
+		}
+
+		content, err := decodeSinglePart(part, mediaType, params)
+		if err != nil {
+			appLog.LogWarn(fmt.Sprintf("Failed to decode part: %v", err))
+			continue
+		}
+
+		// Prioritize text/plain over text/html
+		if mediaType == "text/plain" {
+			textPlain = content
+		} else if mediaType == "text/html" && textHTML == "" {
+			textHTML = content
+		}
+	}
+
+	// Return text/plain if available, otherwise text/html
+	if textPlain != "" {
+		return textPlain, nil
+	}
+	if textHTML != "" {
+		return textHTML, nil
+	}
+
+	return "", fmt.Errorf("no text content found in multipart message")
+}
+
+// decodeSinglePart - decodes a single part based on Content-Transfer-Encoding
+func decodeSinglePart(body io.Reader, mediaType string, params map[string]string) (string, error) {
+	// Only process text parts
+	if !strings.HasPrefix(mediaType, "text/") {
+		return "", nil
+	}
+
+	// Get transfer encoding (default is 7bit)
+	var reader io.Reader = body
+	
+	// Note: Content-Transfer-Encoding is not available in params
+	// We need to handle common encodings. For now, try quoted-printable
+	// which is very common, and if that fails, read as-is
+	
+	// Try reading as quoted-printable first
+	qpReader := quotedprintable.NewReader(body)
+	content, err := io.ReadAll(qpReader)
+	
+	if err != nil {
+		// If quoted-printable fails, try reading directly
+		reader = body
+		content, err = io.ReadAll(reader)
+		if err != nil {
+			return "", fmt.Errorf("failed to read body: %v", err)
+		}
+	}
+
+	return string(content), nil
+}
+
 // GetEmail - fetches a single email by UID from IMAP
 func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.GetEmailResponse, error) {
 	appLog.LogInfo(fmt.Sprintf("Getting email UID: %s", req.EmailUid))
@@ -381,6 +514,19 @@ func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.Get
 		senderName = env.From[0].PersonalName
 	}
 
+	// Parse email body content
+	emailContent := "Email content could not be retrieved"
+	if body := msg.GetBody(section); body != nil {
+		parsedContent, err := parseEmailBody(body)
+		if err != nil {
+			appLog.LogWarn(fmt.Sprintf("Failed to parse email body: %v", err))
+		} else {
+			emailContent = parsedContent
+		}
+	} else {
+		appLog.LogWarn("Email body is empty")
+	}
+
 	return &pb.GetEmailResponse{
 		Success:     true,
 		Message:     "Email retrieved successfully",
@@ -388,7 +534,7 @@ func (s *server) GetEmail(ctx context.Context, req *pb.GetEmailRequest) (*pb.Get
 		SenderEmail: senderEmail,
 		SenderName:  senderName,
 		Title:       env.Subject,
-		Content:     "Email content (MIME parsing TBD)",
+		Content:     emailContent,
 		SendDate:    env.Date.Format(time.RFC3339),
 		IsRead:      isRead,
 	}, nil
