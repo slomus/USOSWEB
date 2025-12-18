@@ -657,10 +657,11 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 		if teachingID == 0 && administrativeStaffID == 0 {
 			return nil, status.Error(codes.PermissionDenied, "user is neither a teacher nor administrative staff")
 		}
+		return nil, status.Error(codes.PermissionDenied, "only teachers and administrative staff can access this endpoint")
 	}
 
 	query := `
-		SELECT 
+		SELECT DISTINCT
 			c.class_id,
 			c.subject_id,
 			s.name as subject_name,
@@ -671,15 +672,15 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 			c.capacity,
 			c.classroom,
 			b.name as building_name
-		FROM course_instructors ci
-		JOIN classes c ON ci.class_id = c.class_id
+		FROM classes c
 		JOIN subjects s ON c.subject_id = s.subject_id
 		JOIN buildings b ON c.building_id = b.building_id
-		WHERE (ci.teaching_staff_id = $1 OR ci.administrative_staff_id = $2)
+		LEFT JOIN course_instructors ci ON c.class_id = ci.class_id
+		WHERE $1 = 0 OR ci.teaching_staff_id = $1
 		ORDER BY s.name, c.class_type, c.group_nr
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, teachingID, administrativeStaffID)
+	rows, err := s.db.QueryContext(ctx, query, teachingID)
 	if err != nil {
 		gradesLog.LogError("Failed to query teacher classes", err)
 		return nil, status.Error(codes.Internal, "failed to fetch classes")
