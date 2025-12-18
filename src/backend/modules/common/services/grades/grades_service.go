@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 	"strings"
+	"time"
+
 	pb "github.com/slomus/USOSWEB/src/backend/modules/common/gen/grades"
 	"github.com/slomus/USOSWEB/src/backend/pkg/cache"
 	"github.com/slomus/USOSWEB/src/backend/pkg/logger"
@@ -144,7 +145,7 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 			return nil, status.Error(codes.InvalidArgument, "invalid as_teaching_staff_id")
 		}
 		teachingStaffID = int64(*req.AsTeachingStaffId)
-		
+
 		var teaches bool
 		err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", req.ClassId, teachingStaffID).Scan(&teaches)
 		if err != nil || !teaches {
@@ -227,7 +228,6 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 		CreatedAt:              createdAt.Format("2006-01-02 15:04:05"),
 	}
 
-
 	var subjectName, addedByName, studentName, classType string
 	enrichQuery := `
 			SELECT 
@@ -247,7 +247,7 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 
 	err = s.db.QueryRowContext(ctx, enrichQuery, gradeID).Scan(&subjectName, &addedByName, &studentName, &classType)
 	if err != nil {
-			gradesLog.LogError("Failed to enrich grade data", err)
+		gradesLog.LogError("Failed to enrich grade data", err)
 	}
 
 	g.SubjectName = &subjectName
@@ -257,7 +257,6 @@ func (s *GradesServer) AddGrade(ctx context.Context, req *pb.AddGradeRequest) (*
 
 	return &pb.AddGradeResponse{Grade: g, Message: "Grade added"}, nil
 }
-
 
 func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGradesRequest) (albumNr int32, role string, teachingStaffID int64, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -298,7 +297,6 @@ func (s *GradesServer) resolveCallerContext(ctx context.Context, req *pb.ListGra
 	}
 }
 
-
 func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.AddGradeRequest) (albumNr int32, role string, teachingStaffID int64, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -328,12 +326,12 @@ func (s *GradesServer) resolveCallerContextForAdd(ctx context.Context, req *pb.A
 		if req.AsTeachingStaffId == nil {
 			return 0, "", 0, status.Error(codes.InvalidArgument, "admin must provide as_teaching_staff_id")
 		}
-		return req.AlbumNr, role, 0, nil 
+		return req.AlbumNr, role, 0, nil
 	}
-	
+
 	return req.AlbumNr, role, teachingID, nil
 }
-func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int64) (role string, albumNr int64, teachingStaffID int64, err error) {
+func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int64) (role string, albumNr int64, teachingStaffID int64, administrativeStaffID int64, err error) {
 	query := `
         SELECT
             CASE
@@ -344,17 +342,18 @@ func (s *GradesServer) getUserRoleAndIdentifiers(ctx context.Context, userID int
             END as role,
             COALESCE(s.album_nr, 0) as album_nr,
             COALESCE(ts.teaching_staff_id, 0) as teaching_staff_id
+			COALESCE(a.administrative_staff_id, 0) as administrative_staff_id
         FROM users u
         LEFT JOIN students s ON u.user_id = s.user_id
         LEFT JOIN teaching_staff ts ON u.user_id = ts.user_id
         LEFT JOIN administrative_staff a ON u.user_id = a.user_id
         WHERE u.user_id = $1`
 
-	err = s.db.QueryRowContext(ctx, query, userID).Scan(&role, &albumNr, &teachingStaffID)
+	err = s.db.QueryRowContext(ctx, query, userID).Scan(&role, &albumNr, &teachingStaffID, administrativeStaffID)
 	if err != nil {
-		return "", 0, 0, err
+		return "", 0, 0, 0, err
 	}
-	return role, albumNr, teachingStaffID, nil
+	return role, albumNr, teachingStaffID, administrativeStaffID, nil
 }
 
 func stringsContains(s, sub string) bool { return (len(s) >= len(sub)) && (indexOf(s, sub) >= 0) }
@@ -436,14 +435,14 @@ func (s *GradesServer) GetRecentGrades(ctx context.Context, req *pb.GetRecentGra
 			gradesLog.LogError("Failed to scan grade row", err)
 			continue
 		}
-		
+
 		g.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
 		g.SubjectName = &subjectName
 		g.AddedByName = &addedByName
 		if comment.Valid {
 			g.Comment = comment.String
-		} 
-		
+		}
+
 		result = append(result, g)
 	}
 
@@ -453,7 +452,6 @@ func (s *GradesServer) GetRecentGrades(ctx context.Context, req *pb.GetRecentGra
 		Message: "Recent grades retrieved successfully",
 	}, nil
 }
-
 
 func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeRequest) (*pb.UpdateGradeResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -478,8 +476,8 @@ func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeReque
 
 	var classID int32
 	var addedBy int64
-	err = s.db.QueryRowContext(ctx, 
-		"SELECT class_id, added_by_teaching_staff_id FROM grades WHERE grade_id = $1", 
+	err = s.db.QueryRowContext(ctx,
+		"SELECT class_id, added_by_teaching_staff_id FROM grades WHERE grade_id = $1",
 		req.GradeId).Scan(&classID, &addedBy)
 	if err == sql.ErrNoRows {
 		return nil, status.Error(codes.NotFound, "grade not found")
@@ -491,8 +489,8 @@ func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeReque
 
 	if role == "teacher" {
 		var teaches bool
-		err = s.db.QueryRowContext(ctx, 
-			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", 
+		err = s.db.QueryRowContext(ctx,
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)",
 			classID, teachingID).Scan(&teaches)
 		if err != nil || !teaches {
 			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
@@ -531,7 +529,7 @@ func (s *GradesServer) UpdateGrade(ctx context.Context, req *pb.UpdateGradeReque
 	}
 
 	args = append(args, req.GradeId)
-	updateQuery := fmt.Sprintf("UPDATE grades SET %s WHERE grade_id = $%d", 
+	updateQuery := fmt.Sprintf("UPDATE grades SET %s WHERE grade_id = $%d",
 		strings.Join(updates, ", "), argPos)
 
 	_, err = s.db.ExecContext(ctx, updateQuery, args...)
@@ -598,8 +596,8 @@ func (s *GradesServer) DeleteGrade(ctx context.Context, req *pb.DeleteGradeReque
 	}
 
 	var classID int32
-	err = s.db.QueryRowContext(ctx, 
-		"SELECT class_id FROM grades WHERE grade_id = $1", 
+	err = s.db.QueryRowContext(ctx,
+		"SELECT class_id FROM grades WHERE grade_id = $1",
 		req.GradeId).Scan(&classID)
 	if err == sql.ErrNoRows {
 		return nil, status.Error(codes.NotFound, "grade not found")
@@ -611,8 +609,8 @@ func (s *GradesServer) DeleteGrade(ctx context.Context, req *pb.DeleteGradeReque
 
 	if role == "teacher" {
 		var teaches bool
-		err = s.db.QueryRowContext(ctx, 
-			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)", 
+		err = s.db.QueryRowContext(ctx,
+			"SELECT EXISTS(SELECT 1 FROM course_instructors WHERE class_id = $1 AND teaching_staff_id = $2)",
 			classID, teachingID).Scan(&teaches)
 		if err != nil || !teaches {
 			return nil, status.Error(codes.PermissionDenied, "teacher does not teach this class")
@@ -647,18 +645,27 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 	fmt.Sscanf(userIDs[0], "%d", &userID)
 
 	// Sprawdź rolę
-	role, _, teachingID, err := s.getUserRoleAndIdentifiers(ctx, userID)
+	role, _, teachingID, administrativeStaffID, err := s.getUserRoleAndIdentifiers(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to resolve user role")
 	}
 
-	if role != "teacher" && role != "admin" {
-		return nil, status.Error(codes.PermissionDenied, "only teachers can access this endpoint")
+	if (role != "teacher" && role != "admin") || (teachingID == 0 && administrativeStaffID == 0) {
+		if role != "teacher" && role != "admin" {
+			return nil, status.Error(codes.PermissionDenied, "only teachers and administrative staff can access this endpoint")
+		}
+		if teachingID == 0 && administrativeStaffID == 0 {
+			var reasons []string
+			if teachingID == 0 {
+				reasons = append(reasons, "user is not a teacher")
+			}
+			if administrativeStaffID == 0 {
+				reasons = append(reasons, "user is not an administrative staff")
+			}
+			return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("%s", reasons))
+		}
 	}
 
-	if teachingID == 0 {
-		return nil, status.Error(codes.PermissionDenied, "user is not a teacher")
-	}
 
 	query := `
 		SELECT 
@@ -676,11 +683,11 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 		JOIN classes c ON ci.class_id = c.class_id
 		JOIN subjects s ON c.subject_id = s.subject_id
 		JOIN buildings b ON c.building_id = b.building_id
-		WHERE ci.teaching_staff_id = $1
+		WHERE (ci.teaching_staff_id = $1 OR ci.administrative_staff_id = $2)
 		ORDER BY s.name, c.class_type, c.group_nr
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, teachingID)
+	rows, err := s.db.QueryContext(ctx, query, teachingID, administrativeStaffID)
 	if err != nil {
 		gradesLog.LogError("Failed to query teacher classes", err)
 		return nil, status.Error(codes.Internal, "failed to fetch classes")
@@ -709,7 +716,7 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 		// Ustaw wartości domyślne dla brakujących pól
 		tc.Semester = "zimowy"
 		tc.AcademicYear = "2024/2025"
-		
+
 		classes = append(classes, tc)
 	}
 
@@ -719,7 +726,6 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 		Message: "Teacher classes retrieved successfully",
 	}, nil
 }
-
 
 func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdminGradeOptionsRequest) (*pb.GetAdminGradeOptionsResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -780,7 +786,7 @@ func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdmi
 	defer teachersRows.Close()
 
 	var teachers []*pb.TeacherOption
-	
+
 	for teachersRows.Next() {
 		to := &pb.TeacherOption{}
 		if err := teachersRows.Scan(&to.TeachingStaffId, &to.Name); err != nil {
@@ -888,7 +894,7 @@ func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdmi
 		classes = append(classes, co)
 	}
 
-	gradesLog.LogInfo(fmt.Sprintf("Admin grade options: %d students, %d teachers, %d subjects, %d classes", 
+	gradesLog.LogInfo(fmt.Sprintf("Admin grade options: %d students, %d teachers, %d subjects, %d classes",
 		len(students), len(teachers), len(subjects), len(classes)))
 
 	return &pb.GetAdminGradeOptionsResponse{
@@ -900,29 +906,22 @@ func (s *GradesServer) GetAdminGradeOptions(ctx context.Context, req *pb.GetAdmi
 	}, nil
 }
 
-
-
-
-
-
 func getUserIDFromContext(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return 0, fmt.Errorf("no metadata in context")
 	}
-	
+
 	userIDs := md.Get("user_id")
 	if len(userIDs) == 0 {
 		return 0, fmt.Errorf("no user_id in metadata")
 	}
-	
+
 	var userID int64
 	_, err := fmt.Sscanf(userIDs[0], "%d", &userID)
 	if err != nil {
 		return 0, fmt.Errorf("invalid user_id format: %w", err)
 	}
-	
+
 	return userID, nil
 }
-
-
