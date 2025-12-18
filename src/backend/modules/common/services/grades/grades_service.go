@@ -655,14 +655,7 @@ func (s *GradesServer) GetTeacherClasses(ctx context.Context, req *pb.GetTeacher
 			return nil, status.Error(codes.PermissionDenied, "only teachers and administrative staff can access this endpoint")
 		}
 		if teachingID == 0 && administrativeStaffID == 0 {
-			var reasons []string
-			if teachingID == 0 {
-				reasons = append(reasons, "user is not a teacher")
-			}
-			if administrativeStaffID == 0 {
-				reasons = append(reasons, "user is not an administrative staff")
-			}
-			return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("%s", reasons))
+			return nil, status.Error(codes.PermissionDenied, "user is neither a teacher nor administrative staff")
 		}
 	}
 
