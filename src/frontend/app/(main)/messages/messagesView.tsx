@@ -1,39 +1,38 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
 import { getApiBaseUrl } from "@/app/config/api";
-
 
 // --- KONFIGURACJA API ---
 const API_BASE = getApiBaseUrl();
 
 // --- TYPY DANYCH ---
-type Folder = "inbox" | "sent" | "trash";
+// Typ folderu jest teraz stringiem, ponieważ nazwy przychodzą z API
+type FolderName = string;
 
-// Zaktualizowany typ obsługujący camelCase (z logów) i snake_case (z dok)
+// Zaktualizowany typ obsługujący camelCase i snake_case
 type EmailSummary = {
   // ID
-  emailUid?: string;    // camelCase (widoczne w Twoich logach)
-  email_uid?: string;   // snake_case
+  emailUid?: string;    
+  email_uid?: string;   
   id?: string | number; 
   message_id?: string;
   uid?: string;
 
   // Nadawca
-  senderEmail?: string; // camelCase
-  sender_email?: string; // snake_case
+  senderEmail?: string; 
+  sender_email?: string; 
   senderName?: string;
   sender_name?: string;
 
   // Inne pola
   title: string;
-  sendDate?: string;    // camelCase
-  send_date?: string;   // snake_case
-  isRead?: boolean;     // camelCase
-  is_read?: boolean;    // snake_case
+  sendDate?: string;    
+  send_date?: string;   
+  isRead?: boolean;     
+  is_read?: boolean;    
 
-  [key: string]: any;   // Pozostałe pola
+  [key: string]: any;   
 };
 
 type EmailDetails = EmailSummary & {
@@ -46,7 +45,7 @@ const getEmailId = (email: EmailSummary): string => {
   return id ? String(id) : "";
 };
 
-// --- POMOCNICZE FUNKCJE DO PÓL (Adaptery camelCase/snake_case) ---
+// --- POMOCNICZE FUNKCJE DO PÓL ---
 const getSenderEmail = (e: EmailSummary) => e.senderEmail || e.sender_email || "";
 const getSenderName = (e: EmailSummary) => e.senderName || e.sender_name || "";
 const getSendDate = (e: EmailSummary) => e.sendDate || e.send_date || "";
@@ -148,9 +147,15 @@ function EmailSuggestInput({
 
 // --- GŁÓWNY KOMPONENT STRONY ---
 export default function MessagesPage() {
-  const [folder, setFolder] = useState<Folder>("inbox");
+  // Lista folderów pobrana z API
+  const [availableFolders, setAvailableFolders] = useState<string[]>([]);
+  // Aktualnie wybrany folder (domyślnie pusty string, ustawiany po fetchu)
+  const [currentFolder, setCurrentFolder] = useState<FolderName>("");
+
   const [emails, setEmails] = useState<EmailSummary[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<EmailDetails | null>(null);
+  
+  const [isLoadingFolders, setIsLoadingFolders] = useState(true);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
@@ -178,22 +183,81 @@ export default function MessagesPage() {
     }
   };
 
+  // Helper do ikon folderów
+  const getFolderIcon = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes("inbox") || lower.includes("odebrane")) return "📥";
+    if (lower.includes("sent") || lower.includes("wysłane")) return "📤";
+    if (lower.includes("trash") || lower.includes("kosz") || lower.includes("deleted")) return "🗑️";
+    if (lower.includes("draft") || lower.includes("robocze")) return "📝";
+    return "📁";
+  };
+
+  // Helper do nazwy wyświetlanej
+  const getFolderLabel = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower === "inbox") return "Odebrane";
+    if (lower === "sent") return "Wysłane";
+    if (lower === "trash") return "Kosz";
+    // Capitalize first letter for others
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
   // --- API ACTIONS ---
 
-  // 1. Pobieranie listy maili
+  // 0. Pobieranie listy folderów
+  const fetchFolders = async () => {
+    setIsLoadingFolders(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/messaging/list-folders`, {
+        method: "GET",
+        credentials: "include",
+        headers: formatHeaders,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Zakładamy, że API zwraca obiekt { folders: ["inbox", "sent", ...] } lub tablicę
+        const foldersList = Array.isArray(data) ? data : (data.folders || data.items || []);
+        
+        setAvailableFolders(foldersList);
+
+        // Ustaw domyślny folder, jeśli żaden nie jest wybrany
+        if (!currentFolder && foldersList.length > 0) {
+            // Preferuj "inbox" jeśli istnieje, w przeciwnym razie pierwszy
+            const inbox = foldersList.find((f: string) => f.toLowerCase() === 'inbox');
+            setCurrentFolder(inbox || foldersList[0]);
+        }
+      } else {
+        console.error("Błąd pobierania folderów", res.status);
+      }
+    } catch (err) {
+      console.error("Błąd sieci przy pobieraniu folderów:", err);
+    } finally {
+      setIsLoadingFolders(false);
+    }
+  };
+
+  // 1. Pobieranie listy maili (get_all_emails)
   const fetchEmails = async () => {
+    if (!currentFolder) return;
+
     setIsLoadingList(true);
     try {
       const res = await fetch(`${API_BASE}/api/messaging/get_all_emails`, {
         method: "POST",
         credentials: "include",
         headers: formatHeaders,
-        body: JSON.stringify({ limit, offset, folder }),
+        body: JSON.stringify({ 
+            limit, 
+            offset, 
+            folder: currentFolder // Dynamiczny folder
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.success) {
+        if (data.success || Array.isArray(data.emails)) {
           const fetchedEmails = data.emails || [];
           setEmails(fetchedEmails);
           setTotalCount(data.total_count || 0);
@@ -208,13 +272,12 @@ export default function MessagesPage() {
     }
   };
 
-  // 2. Pobieranie szczegółów maila
+  // 2. Pobieranie szczegółów maila (get_email)
   const openEmail = async (summary: EmailSummary) => {
     const uid = getEmailId(summary);
     
     if (!uid) {
-      console.error("❌ BŁĄD: Brak ID wiadomości. Otrzymany obiekt:", summary);
-      alert("Błąd integracji: Nie znaleziono ID wiadomości (sprawdź konsolę).");
+      alert("Błąd integracji: Nie znaleziono ID wiadomości.");
       return;
     }
 
@@ -227,14 +290,14 @@ export default function MessagesPage() {
         credentials: "include",
         headers: formatHeaders,
         body: JSON.stringify({
-          email_uid: uid, // Wysyłamy poprawne ID wyciągnięte helperem
-          folder: folder,
+          email_uid: uid,
+          folder: currentFolder, // Dynamiczny folder
         }),
       });
 
       const data = await res.json();
 
-      if (res.ok && data.success) {
+      if (res.ok && (data.success || data.content)) {
         const fullEmail = {
           ...summary,
           ...data,
@@ -242,7 +305,7 @@ export default function MessagesPage() {
         };
         setSelectedEmail(fullEmail);
 
-        // Oznacz jako przeczytane
+        // Automatyczne oznaczanie jako przeczytane przy otwarciu
         if (!getIsRead(fullEmail)) {
           markAsRead(uid);
         }
@@ -258,25 +321,58 @@ export default function MessagesPage() {
     }
   };
 
-  // 3. Oznaczanie jako przeczytane
+  // 3. Oznaczanie jako przeczytane (set_email_read)
   const markAsRead = async (uid: string) => {
     try {
       await fetch(`${API_BASE}/api/messaging/set_email_read`, {
         method: "POST",
         credentials: "include",
         headers: formatHeaders,
-        body: JSON.stringify({ email_uid: uid, folder: folder }),
+        body: JSON.stringify({ 
+            email_uid: uid, 
+            folder: currentFolder // Dynamiczny folder
+        }),
       });
       
+      // Aktualizacja stanu lokalnego
       setEmails((prev) =>
         prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: true, is_read: true } : e))
       );
+      if (selectedEmail && getEmailId(selectedEmail) === uid) {
+          setSelectedEmail(prev => prev ? ({ ...prev, isRead: true, is_read: true }) : null);
+      }
     } catch (e) {
       console.error(e);
     }
   };
 
-  // 4. Wysyłanie maila
+  // 3b. Oznaczanie jako NIEprzeczytane (set_email_unread)
+  const markAsUnread = async (uid: string) => {
+    try {
+      await fetch(`${API_BASE}/api/messaging/set_email_unread`, {
+        method: "POST",
+        credentials: "include",
+        headers: formatHeaders,
+        body: JSON.stringify({ 
+            email_uid: uid, 
+            folder: currentFolder // Dynamiczny folder
+        }),
+      });
+
+      // Aktualizacja stanu lokalnego
+      setEmails((prev) =>
+        prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: false, is_read: false } : e))
+      );
+      if (selectedEmail && getEmailId(selectedEmail) === uid) {
+          setSelectedEmail(prev => prev ? ({ ...prev, isRead: false, is_read: false }) : null);
+      }
+    } catch (e) {
+        console.error(e);
+        alert("Nie udało się oznaczyć jako nieprzeczytane.");
+    }
+  };
+
+  // 4. Wysyłanie maila (send-email)
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
@@ -295,11 +391,12 @@ export default function MessagesPage() {
       
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success || res.ok) {
         alert("Wiadomość wysłana pomyślnie!");
         setIsComposeOpen(false);
         setComposeData({ to: "", subject: "", body: "" });
-        if (folder === "sent") fetchEmails();
+        // Jeśli jesteśmy w folderze wysłane, odśwież
+        if (currentFolder.toLowerCase().includes('sent')) fetchEmails();
       } else {
         alert("Błąd wysyłania: " + (data.message || "Nieznany błąd"));
       }
@@ -311,7 +408,7 @@ export default function MessagesPage() {
     }
   };
 
-  // 5. Usuwanie maila
+  // 5. Usuwanie maila (delete_email)
   const handleDelete = async () => {
     if (!selectedEmail) return;
     const uid = getEmailId(selectedEmail);
@@ -326,13 +423,14 @@ export default function MessagesPage() {
         headers: formatHeaders,
         body: JSON.stringify({ 
             email_uid: uid,
-            folder: folder
+            folder: currentFolder // Dynamiczny folder
         }),
       });
       const data = await res.json();
-      if(data.success) {
+      
+      if(data.success || res.ok) {
           setSelectedEmail(null);
-          fetchEmails();
+          fetchEmails(); // Odśwież listę
       } else {
           alert("Nie udało się usunąć wiadomości.");
       }
@@ -341,14 +439,23 @@ export default function MessagesPage() {
     }
   };
 
+  // Inicjalizacja: Pobierz foldery
   useEffect(() => {
-    fetchEmails();
-    setSelectedEmail(null);
-  }, [folder, offset]);
+    fetchFolders();
+  }, []);
 
+  // Gdy zmienia się folder lub offset, pobierz maile
+  useEffect(() => {
+    if (currentFolder) {
+        fetchEmails();
+        setSelectedEmail(null);
+    }
+  }, [currentFolder, offset]);
+
+  // Reset offsetu przy zmianie folderu
   useEffect(() => {
     setOffset(0);
-  }, [folder]);
+  }, [currentFolder]);
 
   // --- RENDER ---
   return (
@@ -356,7 +463,7 @@ export default function MessagesPage() {
       
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 h-[calc(100vh-8rem)] flex gap-6">
         
-        {/* LEWA KOLUMNA */}
+        {/* LEWA KOLUMNA - FOLDERY */}
         <aside className="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
             <button
                 onClick={() => setIsComposeOpen(true)}
@@ -368,35 +475,33 @@ export default function MessagesPage() {
                 Nowa wiadomość
             </button>
 
-            <nav className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden p-2 flex flex-col gap-1">
-                {[
-                    { id: "inbox", label: "Odebrane", icon: "📥" },
-                    { id: "sent", label: "Wysłane", icon: "📤" },
-                    { id: "trash", label: "Kosz", icon: "🗑️" },
-                ].map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setFolder(item.id as Folder)}
-                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 ${
-                            folder === item.id
-                                ? "bg-[var(--color-accent)] text-white shadow-md font-semibold"
-                                : "hover:bg-white/10 text-[var(--color-text-secondary)]"
-                        }`}
-                    >
-                        <span>{item.icon}</span>
-                        {item.label}
-                    </button>
-                ))}
+            <nav className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden p-2 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-16rem)]">
+                {isLoadingFolders ? (
+                   <div className="p-4 text-center opacity-50 text-sm">Ładowanie folderów...</div> 
+                ) : (
+                    availableFolders.map((folderName) => (
+                        <button
+                            key={folderName}
+                            onClick={() => setCurrentFolder(folderName)}
+                            className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 ${
+                                currentFolder === folderName
+                                    ? "bg-[var(--color-accent)] text-white shadow-md font-semibold"
+                                    : "hover:bg-white/10 text-[var(--color-text-secondary)]"
+                            }`}
+                        >
+                            <span>{getFolderIcon(folderName)}</span>
+                            {getFolderLabel(folderName)}
+                        </button>
+                    ))
+                )}
             </nav>
         </aside>
 
-        {/* ŚRODKOWA KOLUMNA */}
+        {/* ŚRODKOWA KOLUMNA - LISTA MAILI */}
         <div className={`flex-1 flex flex-col bg-[var(--color-bg-secondary)] rounded-2xl shadow-lg overflow-hidden ${selectedEmail ? 'hidden md:flex md:w-1/3 md:flex-none' : 'w-full'}`}>
             <div className="p-4 border-b border-[var(--color-text-secondary)]/10 flex justify-between items-center bg-[var(--color-bg)]/5">
                 <h2 className="text-xl font-bold">
-                    {folder === 'inbox' && 'Odebrane'}
-                    {folder === 'sent' && 'Wysłane'}
-                    {folder === 'trash' && 'Kosz'}
+                    {currentFolder ? getFolderLabel(currentFolder) : "Wiadomości"}
                 </h2>
                 <span className="text-sm opacity-60">{totalCount} wiadomości</span>
             </div>
@@ -407,10 +512,12 @@ export default function MessagesPage() {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent)]"></div>
                     </div>
                 ) : emails.length === 0 ? (
-                    <div className="text-center p-10 opacity-60">Brak wiadomości w tym folderze.</div>
+                    <div className="text-center p-10 opacity-60">
+                        {currentFolder ? "Brak wiadomości w tym folderze." : "Wybierz folder."}
+                    </div>
                 ) : (
                     emails.map((email, idx) => {
-                        const uid = getEmailId(email) || idx;
+                        const uid = getEmailId(email) || String(idx);
                         const isRead = getIsRead(email);
                         const senderName = getSenderName(email);
                         const senderEmail = getSenderEmail(email);
@@ -421,7 +528,7 @@ export default function MessagesPage() {
                               key={uid}
                               onClick={() => openEmail(email)}
                               className={`p-4 rounded-xl cursor-pointer transition-all border border-transparent ${
-                                  selectedEmail && getEmailId(selectedEmail) === getEmailId(email)
+                                  selectedEmail && getEmailId(selectedEmail) === uid
                                       ? "bg-[var(--color-bg)] border-[var(--color-accent)] shadow-md"
                                       : isRead
                                       ? "bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)]/60"
@@ -462,7 +569,7 @@ export default function MessagesPage() {
             </div>
         </div>
 
-        {/* PRAWA KOLUMNA */}
+        {/* PRAWA KOLUMNA - TREŚĆ MAILA */}
         <div className={`flex-[1.5] bg-[var(--color-bg)] border border-[var(--color-bg-secondary)] rounded-2xl shadow-xl overflow-hidden flex flex-col ${!selectedEmail ? 'hidden md:flex justify-center items-center bg-opacity-50' : ''}`}>
             {selectedEmail ? (
                 <>
@@ -470,12 +577,19 @@ export default function MessagesPage() {
                         <div className="flex justify-between items-start mb-4">
                             <h1 className="text-2xl font-bold leading-tight">{selectedEmail.title}</h1>
                             <div className="flex gap-2">
+                                <button
+                                    onClick={() => markAsUnread(getEmailId(selectedEmail))}
+                                    className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors text-sm font-semibold"
+                                    title="Oznacz jako nieprzeczytane"
+                                >
+                                    ✉️ Nieprzeczytane
+                                </button>
                                 <button 
                                     onClick={handleDelete}
                                     className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors" 
                                     title="Usuń do kosza"
                                 >
-                                    🗑️
+                                    🗑️ Usuń
                                 </button>
                                 <button 
                                     onClick={() => setSelectedEmail(null)}
