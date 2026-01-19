@@ -2602,28 +2602,46 @@ curl http://localhost:9090/metrics
 4. Zoptymalizuj zapytania do bazy danych
 5. Rozważ skalowanie poziome
 
-## Najlepsze Praktyki
+## Konfiguracja Bezpieczeństwa i Wydajności
 
 ### Bezpieczeństwo
 
-1. **Hasła:**
-   - Używaj silnych haseł (min. 8 znaków, wielkie/małe litery, cyfry, znaki specjalne)
-   - Nigdy nie commituj haseł do repozytorium
-   - Używaj Secrets w Kubernetes
+**Walidacja Haseł:**
 
-2. **JWT:**
-   - Używaj długich, losowych kluczy JWT_SECRET_KEY
-   - Rotuj klucze okresowo
-   - Ustaw odpowiedni czas wygaśnięcia tokenów
+System wymusza następujące zasady dla haseł:
+- Minimalna długość: 8 znaków
+- Wymagane: wielka litera, mała litera, cyfra, znak specjalny
+- Hasła są hashowane przy użyciu bcrypt przed zapisaniem w bazie danych
 
-3. **HTTPS:**
-   - Zawsze używaj HTTPS w produkcji
-   - Skonfiguruj cert-manager z Let's Encrypt
-   - Wymuś HTTPS przez Ingress
+**Przechowywanie Haseł:**
 
-4. **CORS:**
-   - Ogranicz ALLOWED_ORIGINS tylko do potrzebnych domen
-   - Nie używaj "*" w produkcji
+- Hasła nie są przechowywane w postaci jawnej
+- W bazie danych przechowywane są tylko hashe bcrypt
+- Wrażliwe dane (hasła, klucze) przechowywane są w Kubernetes Secrets
+- Hasła nie są commitujowane do repozytorium
+
+**JWT (JSON Web Tokens):**
+
+- System wykorzystuje JWT do uwierzytelniania użytkowników
+- Klucz JWT jest konfigurowany przez zmienną środowiskową `JWT_SECRET_KEY`
+- Tokeny mają czas wygaśnięcia konfigurowalny w kodzie
+- Refresh tokens są przechowywane w bazie danych i mogą być unieważniane
+- Tokeny są przechowywane w cookies HttpOnly dla bezpieczeństwa
+
+**HTTPS/SSL:**
+
+- W środowisku produkcyjnym system wykorzystuje HTTPS
+- Certyfikaty SSL są zarządzane przez cert-manager
+- Cert-manager automatycznie generuje i odnawia certyfikaty Let's Encrypt
+- Ingress jest skonfigurowany do wymuszania HTTPS
+
+**CORS (Cross-Origin Resource Sharing):**
+
+- System implementuje CORS z konfigurowalną listą dozwolonych originów
+- Lista originów jest konfigurowana przez zmienną `ALLOWED_ORIGINS`
+- System nie używa wildcard "*" w produkcji
+- Dozwolone metody: GET, POST, PUT, DELETE, OPTIONS
+- Credentials (cookies) są dozwolone dla skonfigurowanych originów
 
 ### Wydajność
 
@@ -2632,32 +2650,43 @@ curl http://localhost:9090/metrics
    - Ustaw odpowiednie TTL
    - Invaliduj cache przy aktualizacji danych
 
-2. **Baza Danych:**
-   - Używaj indeksów na często wyszukiwanych kolumnach
-   - Optymalizuj zapytania (używaj EXPLAIN)
-   - Używaj connection pooling
+**Baza Danych:**
 
-3. **Monitoring:**
-   - Monitoruj metryki (CPU, pamięć, czas odpowiedzi)
-   - Ustaw alerty dla krytycznych metryk
-   - Regularnie przeglądaj logi
+- System wykorzystuje indeksy na często wyszukiwanych kolumnach (email, album_nr, status, daty)
+- Indeksy są tworzone przez migracje bazy danych
+- System wykorzystuje connection pooling przez standardowy pakiet `database/sql` w Go
+- Zapytania są optymalizowane przez użycie odpowiednich indeksów i JOIN-ów
 
-### Deployment
+**Monitoring:**
 
-1. **Wersjonowanie:**
-   - Używaj semantycznego wersjonowania
-   - Taguj obrazy Docker z wersjami
-   - Nie używaj `latest` w produkcji
+- System eksportuje metryki Prometheus przez API Gateway (port 9090)
+- Metryki obejmują: liczbę żądań, czas odpowiedzi, błędy
+- Wszystkie serwisy logują operacje do plików logów
+- Poziomy logowania: DEBUG, INFO, WARN, ERROR
+- Health checks są skonfigurowane dla wszystkich serwisów (liveness i readiness probes)
 
-2. **Rollout:**
-   - Używaj rolling updates w Kubernetes
-   - Testuj deploymenty w środowisku staging
-   - Miej plan rollback
+### Deployment i Wersjonowanie
 
-3. **Backup:**
-   - Regularnie rób backup bazy danych
-   - Przechowuj backupi w bezpiecznym miejscu
-   - Testuj restore z backupów
+**Wersjonowanie:**
+
+- System wykorzystuje semantyczne wersjonowanie dla obrazów Docker
+- Obrazy są tagowane w formacie: `v1.0.0`, `latest`, `<branch-name>`
+- Obrazy są przechowywane w GitHub Container Registry (ghcr.io)
+- W produkcji można używać konkretnych wersji zamiast `latest`
+
+**Rollout:**
+
+- System wykorzystuje rolling updates w Kubernetes
+- Rolling updates zapewniają zero-downtime deployment
+- Kubernetes automatycznie zarządza replikami podczas aktualizacji
+- System wspiera rollback przez `kubectl rollout undo`
+
+**Backup:**
+
+- System wspiera backup bazy danych przez standardowe narzędzia PostgreSQL (`pg_dump`)
+- Backupi mogą być wykonywane ręcznie lub przez skrypty automatyzacji
+- System nie implementuje automatycznego backupu - wymaga konfiguracji zewnętrznej
+- Restore z backupów jest możliwy przez `psql` lub skrypty
 
 ## Kontakt i Wsparcie
 
