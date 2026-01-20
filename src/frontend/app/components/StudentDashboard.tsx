@@ -36,23 +36,28 @@ type DashboardClassInfo = {
   building?: string;
 };
 
+type ApiAcademicEvent = {
+  eventType: string;
+  title: string;
+  startDate: string; 
+  endDate: string;   
+};
+
 export default function StudentMainPage() {
-  // Stan danych
   const [recentGrades, setRecentGrades] = useState<Grade[]>([]);
   const [todayStats, setTodayStats] = useState({ count: 0, hours: 0 });
   const [currentClass, setCurrentClass] = useState<DashboardClassInfo | null>(null);
   const [nextClass, setNextClass] = useState<DashboardClassInfo | null>(null);
   const [todaysScheduleRaw, setTodaysScheduleRaw] = useState<ScheduleItem[]>([]);
   
-  // Stan UI
+  const [dayOffName, setDayOffName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setDashboardEvents] = useState<CalendarEvent[]>([]); // Placeholder na eventy z kalendarza
+  const [_, setDashboardEvents] = useState<CalendarEvent[]>([]); 
 
   // --- HELPERY CZASOWE ---
 
   const getWarsawDate = () => {
-    // Tworzy obiekt daty przesunięty do strefy Europe/Warsaw
     const now = new Date();
     const plString = now.toLocaleString("en-US", { timeZone: "Europe/Warsaw" });
     return new Date(plString);
@@ -69,56 +74,85 @@ export default function StudentMainPage() {
 
   const fetchData = async () => {
     setIsLoading(true);
+    setDayOffName(null);
     try {
       const nowPL = getWarsawDate();
-      
-      // 1. Oceny
-      const gradesRes = await fetch(`${API_BASE}/api/student/grades/recent`, {
-        credentials: "include",
-      });
-      const gradesData = await gradesRes.json();
-      if (gradesData.grades) setRecentGrades(gradesData.grades);
-
-      // 2. Plan zajęć (na tydzień -> filtrujemy na dziś)
       const year = nowPL.getFullYear();
       const month = String(nowPL.getMonth() + 1).padStart(2, "0");
       const day = String(nowPL.getDate()).padStart(2, "0");
-      
-      const scheduleRes = await fetch(
-        `${API_BASE}/api/student/schedule/week?date=${year}-${month}-${day}`,
-        { credentials: "include" }
-      );
-      const scheduleData = await scheduleRes.json();
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (scheduleData.success && Array.isArray(scheduleData.schedule)) {
-        const scheduleList: ScheduleItem[] = scheduleData.schedule;
-        
-        // Dzień tygodnia (1=Pon ... 7=Niedz)
-        const currentDayJS = nowPL.getDay();
-        const currentDayAPI = currentDayJS === 0 ? 7 : currentDayJS;
-
-        const todaysClasses = scheduleList.filter(
-          (item) => item.dayOfWeek === currentDayAPI
-        );
-        todaysClasses.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-        setTodaysScheduleRaw(todaysClasses);
-
-        // Statystyki
-        let totalMinutes = 0;
-        todaysClasses.forEach((item) => {
-          const start = parseTimeToday(item.startTime, nowPL);
-          const end = parseTimeToday(item.endTime, nowPL);
-          totalMinutes += (end.getTime() - start.getTime()) / (1000 * 60);
-        });
-
-        setTodayStats({
-          count: todaysClasses.length,
-          hours: parseFloat((totalMinutes / 60).toFixed(1)),
-        });
-
-        updateCurrentAndNext(todaysClasses);
+      // 1. OCENY
+      const gradesRes = await fetch(`${API_BASE}/api/student/grades/recent`, {
+        credentials: "include",
+      });
+      if (gradesRes.ok) {
+        const gradesData = await gradesRes.json();
+        if (gradesData.grades) setRecentGrades(gradesData.grades);
       }
+
+      // 2. KALENDARZ AKADEMICKI (DZIEŃ WOLNY)
+      let isHoliday = false;
+      const academicRes = await fetch(`${API_BASE}/api/calendar/academic`, {
+        credentials: "include",
+      });
+      
+      if (academicRes.ok) {
+        const acadData = await academicRes.json();
+        if (acadData.success && Array.isArray(acadData.events)) {
+          const blockingEvent = acadData.events.find((evt: ApiAcademicEvent) => {
+            const isBlockingType = ["holiday", "break", "rector_day", "exam_session"].includes(evt.eventType);
+            const isDateMatch = todayStr >= evt.startDate && todayStr <= (evt.endDate || evt.startDate);
+            return isBlockingType && isDateMatch;
+          });
+
+          if (blockingEvent) {
+            isHoliday = true;
+            setDayOffName(blockingEvent.title);
+            setTodaysScheduleRaw([]);
+            setTodayStats({ count: 0, hours: 0 });
+            setCurrentClass(null);
+            setNextClass(null);
+          }
+        }
+      }
+
+      // 3. PLAN ZAJĘĆ
+      if (!isHoliday) {
+        const scheduleRes = await fetch(
+          `${API_BASE}/api/student/schedule/week?date=${todayStr}`,
+          { credentials: "include" }
+        );
+        const scheduleData = await scheduleRes.json();
+
+        if (scheduleData.success && Array.isArray(scheduleData.schedule)) {
+          const scheduleList: ScheduleItem[] = scheduleData.schedule;
+          const currentDayJS = nowPL.getDay();
+          const currentDayAPI = currentDayJS + 1; 
+
+          const todaysClasses = scheduleList.filter(
+            (item) => item.dayOfWeek === currentDayAPI
+          );
+          todaysClasses.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+          setTodaysScheduleRaw(todaysClasses);
+
+          let totalMinutes = 0;
+          todaysClasses.forEach((item) => {
+            const start = parseTimeToday(item.startTime, nowPL);
+            const end = parseTimeToday(item.endTime, nowPL);
+            totalMinutes += (end.getTime() - start.getTime()) / (1000 * 60);
+          });
+
+          setTodayStats({
+            count: todaysClasses.length,
+            hours: parseFloat((totalMinutes / 60).toFixed(1)),
+          });
+
+          updateCurrentAndNext(todaysClasses);
+        }
+      }
+      
     } catch (error) {
       console.error("Błąd pobierania danych:", error);
     } finally {
@@ -127,6 +161,7 @@ export default function StudentMainPage() {
   };
 
   const updateCurrentAndNext = (todaysClasses: ScheduleItem[]) => {
+    if (dayOffName) return;
     const now = getWarsawDate();
     let foundCurrent: DashboardClassInfo | null = null;
     let foundNext: DashboardClassInfo | null = null;
@@ -164,47 +199,33 @@ export default function StudentMainPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Odświeżanie statusu co minutę
   useEffect(() => {
     const interval = setInterval(() => {
-      if (todaysScheduleRaw.length > 0) updateCurrentAndNext(todaysScheduleRaw);
+      if (todaysScheduleRaw.length > 0 && !dayOffName) {
+        updateCurrentAndNext(todaysScheduleRaw);
+      }
     }, 60000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todaysScheduleRaw]);
-
-  // --- WIDOK ---
+  }, [todaysScheduleRaw, dayOffName]);
 
   return (
     <main className="min-h-screen p-4 md:p-6 text-[var(--color-text)] bg-[var(--color-bg)]">
       
-      {/* Grid Layout: 
-          Mobile: Flex Column (Sidebar first logic via order classes is tricky with 2 cols, so we duplicate or stack nicely).
-          Desktop: 3 Columns (Calendar 2, Sidebar 1). 
-      */}
       <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 mb-10 relative">
         
-        {/* === KOLUMNA LEWA (KALENDARZ) === 
-            Na mobile: order-2 (pod spodem), Desktop: domyślnie po lewej
-        */}
+        {/* KOLUMNA LEWA */}
         <div className="order-2 lg:order-1 lg:col-span-2 flex flex-col gap-6">
            <h2 className="text-xl font-bold text-[var(--color-text)] hidden lg:block">Plan zajęć</h2>
            <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-sm border border-[var(--color-text)]/5 overflow-hidden">
-             {/* Przekazujemy setDashboardEvents jeśli chcesz wyciągać dane z kalendarza, 
-                 ale tutaj dashboard ma swoje dane. */}
              <StudentCalendar onEventsLoaded={setDashboardEvents} />
            </div>
         </div>
 
-        {/* === KOLUMNA PRAWA (SIDEBAR) === 
-            Na mobile: order-1 (na górze), Desktop: order-2 (po prawej)
-        */}
+        {/* KOLUMNA PRAWA */}
         <div className="order-1 lg:order-2 flex flex-col gap-6">
-          
-          {/* Kontener Sticky - działa tylko na desktopie (lg) */}
           <div className="lg:sticky lg:top-[90px] flex flex-col gap-5">
 
-            {/* SKELETON LOADING */}
             {isLoading ? (
                <div className="space-y-4 animate-pulse">
                   <div className="h-32 bg-[var(--color-bg-secondary)] rounded-xl"></div>
@@ -214,29 +235,38 @@ export default function StudentMainPage() {
             ) : (
               <>
                 {/* 1. KARTA: TERAZ */}
-                <div className="bg-[var(--color-bg-secondary)] p-5 rounded-xl shadow-md border-l-4 border-[var(--color-accent)] relative overflow-hidden group">
+                <div className={`bg-[var(--color-bg-secondary)] p-5 rounded-xl shadow-md border-l-4 relative overflow-hidden group ${dayOffName ? 'border-green-500' : 'border-[var(--color-accent)]'}`}>
                   <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    {dayOffName ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-green-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
                   </div>
 
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-accent)] mb-2">Teraz</h3>
-                  {currentClass ? (
+                  <h3 className={`text-xs font-bold uppercase tracking-widest mb-2 ${dayOffName ? 'text-green-500' : 'text-[var(--color-accent)]'}`}>
+                    {dayOffName ? "Dzień wolny" : "Teraz"}
+                  </h3>
+                  
+                  {dayOffName ? (
+                    <div className="py-2">
+                      <h4 className="text-xl md:text-2xl font-bold leading-tight mb-1 text-[var(--color-text)]">{dayOffName}</h4>
+                      <p className="text-sm font-medium text-[var(--color-text-secondary)] opacity-80 mt-1">Brak zajęć dydaktycznych.</p>
+                    </div>
+                  ) : currentClass ? (
                     <div>
                       <h4 className="text-xl md:text-2xl font-bold leading-tight mb-1">{currentClass.title}</h4>
                       <p className="text-sm font-medium text-[var(--color-text-secondary)] uppercase">{currentClass.type}</p>
-                      
                       <div className="mt-4 flex flex-wrap gap-3 text-sm">
                          <div className="flex items-center gap-1 bg-[var(--color-bg)] px-2 py-1 rounded">
-                           <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m8-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2m7-2a2 2 0 01-2-2h-5a2 2 0 01-2 2" /></svg>
                            <span>{currentClass.room}</span>
                          </div>
                          <div className="flex items-center gap-1 bg-[var(--color-bg)] px-2 py-1 rounded">
-                           <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                           <span>
-                             {currentClass.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {currentClass.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                           </span>
+                           <span>{currentClass.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {currentClass.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                          </div>
                       </div>
                     </div>
@@ -251,7 +281,9 @@ export default function StudentMainPage() {
                 {/* 2. KARTA: NASTĘPNIE */}
                 <div className="bg-[var(--color-bg-secondary)] p-5 rounded-xl shadow-sm border border-[var(--color-text)]/5">
                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">Następnie</h3>
-                   {nextClass ? (
+                   {dayOffName ? (
+                      <p className="text-sm italic text-[var(--color-text-secondary)]">Odpoczywaj!</p>
+                   ) : nextClass ? (
                      <div className="flex items-start gap-3">
                        <div className="bg-[var(--color-bg)] p-2 rounded-lg text-center min-w-[60px]">
                           <span className="block text-sm font-bold">{nextClass.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
@@ -268,19 +300,19 @@ export default function StudentMainPage() {
                    )}
                 </div>
 
-                {/* 3. KARTA: STATYSTYKI DZISIAJ */}
+                {/* 3. KARTA: STATYSTYKI */}
                 <div className="bg-[var(--color-bg-secondary)] p-4 rounded-xl shadow-sm flex items-center justify-between">
                    <div className="text-center flex-1 border-r border-[var(--color-text)]/10">
                       <span className="block text-2xl font-bold text-[var(--color-accent)]">{todayStats.count}</span>
-                      <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)]">Zajęć</span>
+                      <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)]">Zajęć dzisiaj</span>
                    </div>
                    <div className="text-center flex-1">
                       <span className="block text-2xl font-bold text-[var(--color-accent)]">{todayStats.hours}h</span>
-                      <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)]">Godzin</span>
+                      <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-secondary)]">Godzin dzisiaj</span>
                    </div>
                 </div>
 
-                {/* 4. OSTATNIE OCENY */}
+                {/* 4. OSTATNIE OCENY (ZMIANA TUTAJ) */}
                 <div className="bg-[var(--color-bg-secondary)] p-5 rounded-xl shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">Ostatnie oceny</h3>
@@ -289,18 +321,29 @@ export default function StudentMainPage() {
                   
                   {recentGrades.length > 0 ? (
                     <div className="space-y-3">
-                      {recentGrades.slice(0, 3).map((grade) => (
-                        <div
-                          key={grade.gradeId}
-                          className="flex justify-between items-center bg-[var(--color-bg)] hover:bg-[var(--color-bg)]/80 p-3 rounded-lg transition-colors cursor-default border-l-[3px] border-teal-500"
-                        >
-                          <div className="overflow-hidden mr-2">
-                            <p className="font-semibold text-xs truncate">{grade.subjectName}</p>
-                            <p className="text-[10px] text-[var(--color-text-secondary)] truncate">{grade.addedByName}</p>
+                      {recentGrades.slice(0, 3).map((grade) => {
+                        // Sprawdzamy, czy ocena to 2.0 (lub NZAL)
+                        const isFail = grade.value === "2.0" || grade.value === "2" || grade.value === "2,0" || grade.value === "NZAL";
+
+                        return (
+                          <div
+                            key={grade.gradeId}
+                            className={`flex justify-between items-center p-3 rounded-lg transition-colors cursor-default border-l-[3px] 
+                            ${isFail 
+                                ? "bg-red-500/10 hover:bg-red-500/20 border-red-500" // STYL DLA 2.0
+                                : "bg-[var(--color-bg)] hover:bg-[var(--color-bg)]/80 border-teal-500" // STYL NORMALNY
+                            }`}
+                          >
+                            <div className="overflow-hidden mr-2">
+                              <p className="font-semibold text-xs truncate">{grade.subjectName}</p>
+                              <p className="text-[10px] text-[var(--color-text-secondary)] truncate">{grade.addedByName}</p>
+                            </div>
+                            <span className={`text-lg font-bold ${isFail ? "text-red-500" : "text-teal-500"}`}>
+                              {grade.value}
+                            </span>
                           </div>
-                          <span className="text-lg font-bold text-teal-500">{grade.value}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs italic text-[var(--color-text-secondary)] text-center py-2">Brak nowych ocen.</p>
