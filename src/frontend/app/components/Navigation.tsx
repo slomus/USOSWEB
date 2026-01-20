@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import ThemeToggleButton from "./ThemeToggleButton";
-import { motion } from "framer-motion";
-import { Transition } from "framer-motion";
+import { motion, Transition } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getApiBaseUrl } from "@/app/config/api";
+
 type UserRole = "student" | "teacher" | "admin";
 
 type MenuItem = {
@@ -13,10 +13,18 @@ type MenuItem = {
   disabled?: boolean;
 };
 
-export default function Navigation({ transition }: { transition: Transition }) {
+// Dodajemy prop onClose, aby móc zamknąć menu po kliknięciu (opcjonalne, ale zalecane na mobile)
+export default function Navigation({ 
+  transition, 
+  onClose 
+}: { 
+  transition: Transition,
+  onClose?: () => void 
+}) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const API_BASE = getApiBaseUrl();
+
   useEffect(() => {
     const fetchRole = async () => {
       try {
@@ -39,7 +47,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     fetchRole();
   }, []);
 
-  // Menu dla studentów
+  // Menu items (bez zmian w definicji)
   const studentMenuItems: MenuItem[] = [
     { label: "Strona główna", href: "/MainPage" },
     { label: "Plan zajęć", href: "/scheduleLesson" },
@@ -55,7 +63,6 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "O nas", href: "/aboutUs" },
   ];
 
-  // Menu dla adminów
   const adminMenuItems: MenuItem[] = [
     { label: "Strona główna", href: "/MainPage" },
     { label: " ZARZĄDZANIE ", href: "#", disabled: true },
@@ -71,7 +78,6 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "O nas", href: "/aboutUs" },
   ];
 
-  // Menu dla wykładowców
   const teacherMenuItems: MenuItem[] = [
     { label: "Strona główna", href: "/MainPage" },
     { label: "Moje zajęcia", href: "/teacher/subjects" },
@@ -85,13 +91,16 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "O nas", href: "/aboutUs" },
   ];
 
-  // Wybierz odpowiednie menu na podstawie roli
   let menuItems = studentMenuItems;
   if (role === "admin") {
     menuItems = adminMenuItems;
   } else if (role === "teacher") {
     menuItems = teacherMenuItems;
   }
+
+  // Wspólne style dla nav (loading i loaded)
+  // ZMIANA: w-full na mobile, md:w-64 na desktopie
+  const navClasses = "fixed top-[72px] left-0 w-full md:w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40 overflow-y-auto";
 
   if (loading) {
     return (
@@ -100,7 +109,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -300, opacity: 0 }}
         transition={transition}
-        className="fixed top-[72px] left-0 w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40"
+        className={navClasses}
       >
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent)]"></div>
@@ -115,9 +124,9 @@ export default function Navigation({ transition }: { transition: Transition }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -300, opacity: 0 }}
       transition={transition}
-      className="fixed top-[72px] left-0 w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40 overflow-y-auto"
+      className={navClasses}
     >
-      <ul className="space-y-3">
+      <ul className="space-y-3 pb-20"> {/* pb-20 dodane, aby ostatnie elementy nie były ucięte na mobile */}
         <ThemeToggleButton />
         
         {menuItems.map((item, index) => (
@@ -130,6 +139,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
               <Link href={item.href} legacyBehavior passHref>
                 <a
                   rel="noopener noreferrer"
+                  onClick={onClose} // Zamykamy menu po kliknięciu
                   className="block px-3 py-2 rounded hover:bg-[var(--color-bg)] transition-all text-sm"
                 >
                   {item.label}

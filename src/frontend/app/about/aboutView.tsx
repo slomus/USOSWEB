@@ -21,7 +21,6 @@ export default function AboutPage() {
         </div>
         <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)] items-center">
           <span className="text-[var(--color-accent)]">o aplikacji</span>
-          <a href="#">dokumentacja</a>
           <ThemeToggleButton />
         </nav>
         <div className="md:hidden text-[var(--color-accent)] text-3xl">☰</div>
