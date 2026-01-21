@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import ThemeToggleButton from "./ThemeToggleButton";
-import { motion } from "framer-motion";
-import { Transition } from "framer-motion";
+import { motion, Transition } from "framer-motion";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation"; // <--- NOWY IMPORT
 import { getApiBaseUrl } from "@/app/config/api";
+
 type UserRole = "student" | "teacher" | "admin";
 
 type MenuItem = {
@@ -13,10 +14,19 @@ type MenuItem = {
   disabled?: boolean;
 };
 
-export default function Navigation({ transition }: { transition: Transition }) {
+// Dodajemy prop onClose, aby móc zamknąć menu po kliknięciu (opcjonalne, ale zalecane na mobile)
+export default function Navigation({ 
+  transition, 
+  onClose 
+}: { 
+  transition: Transition,
+  onClose?: () => void 
+}) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname(); // <--- POBIERAMY AKTUALNĄ ŚCIEŻKĘ
   const API_BASE = getApiBaseUrl();
+
   useEffect(() => {
     const fetchRole = async () => {
       try {
@@ -65,7 +75,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "Przedmioty", href: "/admin/subjects" },
     { label: " DLA WSZYSTKICH ", href: "#", disabled: true },
     { label: "Wiadomości", href: "/messages" },
-    { label: "Plan zajęć", href: "admin/scheduleLesson" },
+    { label: "Plan zajęć", href: "/admin/scheduleLesson" },
     { label: "Kalendarz", href: "/admin/calendar" },
     { label: "Kontakt", href: "/contact" },
     { label: "O nas", href: "/aboutUs" },
@@ -85,13 +95,14 @@ export default function Navigation({ transition }: { transition: Transition }) {
     { label: "O nas", href: "/aboutUs" },
   ];
 
-  // Wybierz odpowiednie menu na podstawie roli
   let menuItems = studentMenuItems;
   if (role === "admin") {
     menuItems = adminMenuItems;
   } else if (role === "teacher") {
     menuItems = teacherMenuItems;
   }
+
+  const navClasses = "fixed top-[72px] left-0 w-full md:w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40 overflow-y-auto";
 
   if (loading) {
     return (
@@ -100,7 +111,7 @@ export default function Navigation({ transition }: { transition: Transition }) {
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -300, opacity: 0 }}
         transition={transition}
-        className="fixed top-[72px] left-0 w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40"
+        className={navClasses}
       >
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent)]"></div>
@@ -115,29 +126,39 @@ export default function Navigation({ transition }: { transition: Transition }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -300, opacity: 0 }}
       transition={transition}
-      className="fixed top-[72px] left-0 w-64 bg-[var(--color-bg-secondary)] text-[var(--color-text)] px-4 py-6 shadow-md h-[calc(100vh-72px)] z-40 overflow-y-auto"
+      className={navClasses}
     >
-      <ul className="space-y-3">
+      <ul className="space-y-3 pb-20">
         <ThemeToggleButton />
         
-        {menuItems.map((item, index) => (
-          <li key={index}>
-            {item.disabled ? (
-              <div className="px-3 py-2 text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
-                {item.label}
-              </div>
-            ) : (
-              <Link href={item.href} legacyBehavior passHref>
-                <a
-                  rel="noopener noreferrer"
-                  className="block px-3 py-2 rounded hover:bg-[var(--color-bg)] transition-all text-sm"
-                >
+        {menuItems.map((item, index) => {
+          // Sprawdzamy, czy obecna ścieżka jest taka sama jak href w menu
+          const isActive = pathname === item.href;
+
+          return (
+            <li key={index}>
+              {item.disabled ? (
+                <div className="mt-4 mb-2 px-3 text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider opacity-70 border-b border-[var(--color-text)]/10 pb-1">
                   {item.label}
-                </a>
-              </Link>
-            )}
-          </li>
-        ))}
+                </div>
+              ) : (
+                <Link href={item.href} legacyBehavior passHref>
+                  <a
+                    rel="noopener noreferrer"
+                    onClick={onClose}
+                    className={`block px-3 py-2 rounded transition-all text-sm ${
+                      isActive 
+                        ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-bold border-l-4 border-[var(--color-accent)] pl-2" // Styl Aktywny
+                        : "hover:bg-[var(--color-bg)] text-[var(--color-text)] border-l-4 border-transparent pl-2" // Styl Nieaktywny
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </motion.nav>
   );

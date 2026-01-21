@@ -61,8 +61,7 @@ export default function ForgotPassword() {
           />
         </div>
         <nav className="hidden md:flex gap-6 text-sm text-[var(--color-text)]">
-          <a href="#">o aplikacji</a>
-          <a href="#">dokumentacja</a>
+          <a href="/about">o aplikacji</a>
           <ThemeToggleButton />
         </nav>
         <div className="md:hidden text-[var(--color-accent)] text-3xl">☰</div>
