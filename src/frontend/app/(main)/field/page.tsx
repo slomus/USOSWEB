@@ -33,18 +33,18 @@ export default function KierunekPage() {
               <InfoRow label="Opiekun kierunku" value="dr inż. Karol Kudłaty" />
             </div>
 
-            <div className="mt-6">
+            {/*<div className="mt-6">
               <a
                 href="/plan-zajec"
                 className="inline-block text-sm px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg shadow hover:bg-[var(--color-accent-hover)] transition"
               >
                 Zobacz plan zajęć
               </a>
-            </div>
+            </div>*/}
           </section>
-
+          
           {/* Filtry wyszukiwania */}
-          <section>
+          {/*<section>
             <h2 className="text-2xl font-semibold mb-4">
               Wyszukaj innego kierunku
             </h2>
@@ -83,7 +83,8 @@ export default function KierunekPage() {
                 Wyszukaj
               </a>
             </div>
-          </section>
+          </section>*/}
+          
         </main>
       </div>
     </div>

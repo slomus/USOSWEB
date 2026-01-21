@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
 import { getApiBaseUrl } from "@/app/config/api";
-
 
 // --- KONFIGURACJA API ---
 const API_BASE = getApiBaseUrl();
@@ -11,42 +9,33 @@ const API_BASE = getApiBaseUrl();
 // --- TYPY DANYCH ---
 type Folder = "inbox" | "sent" | "trash";
 
-// Zaktualizowany typ obsługujący camelCase (z logów) i snake_case (z dok)
 type EmailSummary = {
-  // ID
-  emailUid?: string;    // camelCase (widoczne w Twoich logach)
-  email_uid?: string;   // snake_case
+  emailUid?: string;
+  email_uid?: string;
   id?: string | number; 
   message_id?: string;
   uid?: string;
-
-  // Nadawca
-  senderEmail?: string; // camelCase
-  sender_email?: string; // snake_case
+  senderEmail?: string;
+  sender_email?: string;
   senderName?: string;
   sender_name?: string;
-
-  // Inne pola
   title: string;
-  sendDate?: string;    // camelCase
-  send_date?: string;   // snake_case
-  isRead?: boolean;     // camelCase
-  is_read?: boolean;    // snake_case
-
-  [key: string]: any;   // Pozostałe pola
+  sendDate?: string;
+  send_date?: string;
+  isRead?: boolean;
+  is_read?: boolean;
+  [key: string]: any;
 };
 
 type EmailDetails = EmailSummary & {
   content: string;
 };
 
-// --- POMOCNICZA FUNKCJA DO WYCIĄGANIA ID ---
+// --- HELPERY ---
 const getEmailId = (email: EmailSummary): string => {
   const id = email.emailUid || email.email_uid || email.id || email.message_id || email.uid;
   return id ? String(id) : "";
 };
-
-// --- POMOCNICZE FUNKCJE DO PÓL (Adaptery camelCase/snake_case) ---
 const getSenderEmail = (e: EmailSummary) => e.senderEmail || e.sender_email || "";
 const getSenderName = (e: EmailSummary) => e.senderName || e.sender_name || "";
 const getSendDate = (e: EmailSummary) => e.sendDate || e.send_date || "";
@@ -80,9 +69,7 @@ function EmailSuggestInput({
   const fetchSuggestions = async (query: string) => {
     try {
       const res = await fetch(
-        `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(
-          query
-        )}&limit=5&scope=all`,
+        `${API_BASE}/api/messaging/suggest-email?q=${encodeURIComponent(query)}&limit=5&scope=all`,
         {
           method: "GET",
           credentials: "include",
@@ -101,10 +88,7 @@ function EmailSuggestInput({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setVisible(false);
       }
     }
@@ -148,6 +132,11 @@ function EmailSuggestInput({
 
 // --- GŁÓWNY KOMPONENT STRONY ---
 export default function MessagesPage() {
+  // Stan użytkownika
+  const [username, setUsername] = useState<string | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  // Stan poczty
   const [folder, setFolder] = useState<Folder>("inbox");
   const [emails, setEmails] = useState<EmailSummary[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<EmailDetails | null>(null);
@@ -162,9 +151,7 @@ export default function MessagesPage() {
   const limit = 20;
   const [totalCount, setTotalCount] = useState(0);
 
-  const formatHeaders = {
-    "Content-Type": "application/json",
-  };
+  const formatHeaders = { "Content-Type": "application/json" };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Brak daty";
@@ -178,10 +165,31 @@ export default function MessagesPage() {
     }
   };
 
-  // --- API ACTIONS ---
+  // --- KROK 1: POBRANIE NAZWY UŻYTKOWNIKA ---
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/username`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUsername(data.username);
+        }
+      } catch (error) {
+        console.error("Błąd pobierania użytkownika", error);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
-  // 1. Pobieranie listy maili
+  // --- API ACTIONS (Poczta) ---
   const fetchEmails = async () => {
+    // Blokada wewnątrz funkcji (na wszelki wypadek)
+    if (username === "Jan") return;
+
     setIsLoadingList(true);
     try {
       const res = await fetch(`${API_BASE}/api/messaging/get_all_emails`, {
@@ -194,12 +202,9 @@ export default function MessagesPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          const fetchedEmails = data.emails || [];
-          setEmails(fetchedEmails);
+          setEmails(data.emails || []);
           setTotalCount(data.total_count || 0);
         }
-      } else {
-        console.error("Błąd pobierania listy maili", res.status);
       }
     } catch (err) {
       console.error(err);
@@ -208,15 +213,9 @@ export default function MessagesPage() {
     }
   };
 
-  // 2. Pobieranie szczegółów maila
   const openEmail = async (summary: EmailSummary) => {
     const uid = getEmailId(summary);
-    
-    if (!uid) {
-      console.error("❌ BŁĄD: Brak ID wiadomości. Otrzymany obiekt:", summary);
-      alert("Błąd integracji: Nie znaleziono ID wiadomości (sprawdź konsolę).");
-      return;
-    }
+    if (!uid) return;
 
     setSelectedEmail(null);
     setIsLoadingDetails(true);
@@ -226,39 +225,22 @@ export default function MessagesPage() {
         method: "POST",
         credentials: "include",
         headers: formatHeaders,
-        body: JSON.stringify({
-          email_uid: uid, // Wysyłamy poprawne ID wyciągnięte helperem
-          folder: folder,
-        }),
+        body: JSON.stringify({ email_uid: uid, folder: folder }),
       });
 
       const data = await res.json();
-
       if (res.ok && data.success) {
-        const fullEmail = {
-          ...summary,
-          ...data,
-          content: data.content || "Brak treści wiadomości.",
-        };
+        const fullEmail = { ...summary, ...data, content: data.content || "Brak treści." };
         setSelectedEmail(fullEmail);
-
-        // Oznacz jako przeczytane
-        if (!getIsRead(fullEmail)) {
-          markAsRead(uid);
-        }
-      } else {
-        console.error("Błąd API:", data);
-        alert("Błąd serwera: " + (data.message || "Nie udało się pobrać treści."));
+        if (!getIsRead(fullEmail)) markAsRead(uid);
       }
     } catch (err) {
       console.error(err);
-      alert("Błąd połączenia.");
     } finally {
       setIsLoadingDetails(false);
     }
   };
 
-  // 3. Oznaczanie jako przeczytane
   const markAsRead = async (uid: string) => {
     try {
       await fetch(`${API_BASE}/api/messaging/set_email_read`, {
@@ -267,93 +249,90 @@ export default function MessagesPage() {
         headers: formatHeaders,
         body: JSON.stringify({ email_uid: uid, folder: folder }),
       });
-      
-      setEmails((prev) =>
-        prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: true, is_read: true } : e))
-      );
-    } catch (e) {
-      console.error(e);
-    }
+      setEmails((prev) => prev.map((e) => (getEmailId(e) === uid ? { ...e, isRead: true, is_read: true } : e)));
+    } catch (e) { console.error(e); }
   };
 
-  // 4. Wysyłanie maila
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
-
     try {
       const res = await fetch(`${API_BASE}/api/messaging/send-email`, {
         method: "POST",
         credentials: "include",
         headers: formatHeaders,
-        body: JSON.stringify({
-            to: composeData.to,
-            subject: composeData.subject,
-            body: composeData.body
-        }),
+        body: JSON.stringify(composeData),
       });
-      
       const data = await res.json();
-
       if (data.success) {
         alert("Wiadomość wysłana pomyślnie!");
         setIsComposeOpen(false);
         setComposeData({ to: "", subject: "", body: "" });
         if (folder === "sent") fetchEmails();
       } else {
-        alert("Błąd wysyłania: " + (data.message || "Nieznany błąd"));
+        alert("Błąd: " + (data.message || "Nieznany błąd"));
       }
-    } catch (err) {
-      console.error(err);
-      alert("Błąd połączenia z serwerem.");
-    } finally {
-      setIsSending(false);
-    }
+    } catch (err) { console.error(err); } finally { setIsSending(false); }
   };
 
-  // 5. Usuwanie maila
   const handleDelete = async () => {
-    if (!selectedEmail) return;
+    if (!selectedEmail || !confirm("Czy usunąć wiadomość?")) return;
     const uid = getEmailId(selectedEmail);
-    if (!uid) return;
-
-    if (!confirm("Czy na pewno chcesz usunąć tę wiadomość?")) return;
-
     try {
       const res = await fetch(`${API_BASE}/api/messaging/delete_email`, {
         method: "POST",
         credentials: "include",
         headers: formatHeaders,
-        body: JSON.stringify({ 
-            email_uid: uid,
-            folder: folder
-        }),
+        body: JSON.stringify({ email_uid: uid, folder: folder }),
       });
-      const data = await res.json();
-      if(data.success) {
+      if((await res.json()).success) {
           setSelectedEmail(null);
           fetchEmails();
-      } else {
-          alert("Nie udało się usunąć wiadomości.");
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
+  // Uruchomienie pobierania maili dopiero gdy wiemy, że to NIE jest Jan
   useEffect(() => {
-    fetchEmails();
-    setSelectedEmail(null);
-  }, [folder, offset]);
+    if (!userLoading && username !== "Jan") {
+      fetchEmails();
+      setSelectedEmail(null);
+    }
+  }, [folder, offset, userLoading, username]);
 
-  useEffect(() => {
-    setOffset(0);
-  }, [folder]);
+  useEffect(() => { setOffset(0); }, [folder]);
 
-  // --- RENDER ---
+  // --- RENDEROWANIE ---
+
+  // 1. Loading użytkownika (podczas weryfikacji)
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center pt-24">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent)]"></div>
+      </div>
+    );
+  }
+
+  // 2. BLOKADA DLA UŻYTKOWNIKA "Jan"
+  if (username === "Jan") {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center pt-24 px-4">
+        <div className="bg-[var(--color-bg-secondary)] border border-red-500/30 p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-red-500 mx-auto mb-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <h2 className="text-xl md:text-2xl font-bold mb-2">Brak dostępu</h2>
+            <p className="text-[var(--color-text-secondary)] font-medium">
+                użytkownik testowy nie ma dostępu do skrzynki pocztowej
+            </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. STANDARDOWY INTERFEJS POCZTY (Dla reszty)
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col font-sans pt-24 pb-12">
-      
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 h-[calc(100vh-8rem)] flex gap-6">
         
         {/* LEWA KOLUMNA */}

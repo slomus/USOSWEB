@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -20,7 +20,7 @@ type ScheduleClass = {
   subjectName: string;
   classType: string;
   dayOfWeek: number; // 1 = Poniedziałek, 7 = Niedziela
-  startTime: string; // Format: "HH:MM:SS" lub "YYYY-MM-DDTHH:MM:SS"
+  startTime: string; 
   endTime: string;
   room: string;
   building: string;
@@ -69,14 +69,11 @@ const getClassColor = (type: string) => {
 
 // --- HELPERY ---
 
-// Funkcja wyciągająca sam czas "HH:MM:SS" z różnych formatów API
 const extractTime = (timeStr: string): string => {
   if (!timeStr) return "00:00:00";
-  // Jeśli format to ISO (zawiera 'T'), bierzemy część po 'T'
   if (timeStr.includes("T")) {
-    return timeStr.split("T")[1].substring(0, 8); // np. "09:00:00"
+    return timeStr.split("T")[1].substring(0, 8);
   }
-  // Jeśli format to po prostu "09:00:00"
   return timeStr.substring(0, 8);
 };
 
@@ -89,12 +86,22 @@ export default function StudentSchedule() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
 
-  // Pobieranie planu dla danego tygodnia
-  // FullCalendar wywołuje datesSet przy zmianie widoku, co pozwala nam pobrać dane dla konkretnego zakresu
+  // Stan responsywności
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Wykrywanie mobile
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // Init check
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const fetchSchedule = useCallback(async (startRangeDate: Date) => {
     setLoading(true);
     try {
-      // API oczekuje parametru ?date=YYYY-MM-DD
       const dateParam = startRangeDate.toISOString().split("T")[0];
       
       const response = await fetch(
@@ -110,23 +117,16 @@ export default function StudentSchedule() {
       if (data.success && Array.isArray(data.schedule)) {
         const scheduleList: ScheduleClass[] = data.schedule;
 
-        // Obliczamy poniedziałek dla aktualnie wyświetlanego tygodnia w kalendarzu
-        // (startRangeDate z FullCalendar zwykle wskazuje na początek widoku, czyli np. Poniedziałek lub Niedzielę)
-        // Dla pewności wymuszamy znalezienie poniedziałku w tygodniu wybranej daty.
         const currentMonday = new Date(startRangeDate);
         const day = currentMonday.getDay();
-        const diff = currentMonday.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        const diff = currentMonday.getDate() - day + (day === 0 ? -6 : 1);
         currentMonday.setDate(diff);
         currentMonday.setHours(0,0,0,0);
 
         const formattedEvents: CalendarEvent[] = scheduleList.map((item) => {
           const color = getClassColor(item.classType);
           
-          // Obliczanie rzeczywistej daty na podstawie dayOfWeek (1=Pon, 7=Niedz)
-          // i aktualnie wyświetlanego tygodnia.
-          // API zwraca dane generyczne lub z "dummy date", więc musimy je nałożyć na kalendarz.
           const targetDate = new Date(currentMonday);
-          // dayOfWeek w API: 1=Pon, w JS Date: 1=Pon (jeśli dodajemy do Poniedziałku, to offset = dayOfWeek - 1)
           targetDate.setDate(currentMonday.getDate() + (item.dayOfWeek - 1));
           
           const dateIso = targetDate.toISOString().split("T")[0];
@@ -139,7 +139,7 @@ export default function StudentSchedule() {
             start: `${dateIso}T${startTime}`,
             end: `${dateIso}T${endTime}`,
             backgroundColor: color,
-            borderColor: color, // Można lekko przyciemnić funkcją, tu uproszczone
+            borderColor: color,
             textColor: "#ffffff",
             extendedProps: {
               classType: item.classType,
@@ -162,9 +162,7 @@ export default function StudentSchedule() {
     }
   }, []);
 
-  // Handler zmiany dat w kalendarzu (np. kliknięcie "Następny tydzień")
   const handleDatesSet = (arg: DatesSetArg) => {
-    // Pobieramy środek widoku, aby mieć pewność, że jesteśmy w dobrym tygodniu
     const midDate = new Date((arg.start.getTime() + arg.end.getTime()) / 2);
     fetchSchedule(midDate);
   };
@@ -183,59 +181,77 @@ export default function StudentSchedule() {
     setShowEventModal(true);
   };
 
-  const goToToday = () => {
-    const calendarApi = calendarRef.current?.getApi();
-    calendarApi?.today();
-  };
-
   const refreshData = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
-        // Pobierz datę z obecnego widoku
-        const currentDate = calendarApi.getDate();
-        fetchSchedule(currentDate);
+        fetchSchedule(calendarApi.getDate());
     }
   };
 
   return (
     <div className="flex flex-col gap-6">
-      {/* PASEK NARZĘDZI */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={refreshData}
-          disabled={loading}
-          className="px-4 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-accent)] text-[var(--color-text)] rounded hover:bg-[var(--color-accent)] hover:text-white transition-colors text-sm"
-        >
-          {loading ? "Odświeżanie..." : "Odśwież plan"}
-        </button>
-        <button
-          onClick={goToToday}
-          className="px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] text-sm transition-colors"
-        >
-          Aktualny tydzień
-        </button>
+      {/* NAGŁÓWEK Z AKCJAMI */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-[var(--color-text)]">Mój Plan</h2>
+          <p className="text-xs md:text-sm text-[var(--color-text-secondary)] mt-1">
+             Kliknij na zajęcia, aby zobaczyć szczegóły.
+          </p>
+        </div>
+        
+        <div className="flex gap-2 w-full md:w-auto">
+          <button
+            onClick={refreshData}
+            disabled={loading}
+            className="flex-1 md:flex-none justify-center px-4 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-text)]/20 text-[var(--color-text)] rounded hover:bg-[var(--color-bg)] transition-colors text-sm"
+          >
+            {loading ? "Ładowanie..." : "Odśwież"}
+          </button>
+          <button
+            onClick={() => calendarRef.current?.getApi()?.today()}
+            className="flex-1 md:flex-none justify-center px-4 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] text-sm transition-colors"
+          >
+            Dziś
+          </button>
+        </div>
       </div>
 
       {/* KALENDARZ */}
-      <div className="bg-[var(--color-bg-secondary)] p-6 rounded-xl shadow-md calendar-wrapper border border-[var(--color-accent)]/20">
+      <div className="bg-[var(--color-bg-secondary)] p-2 md:p-6 rounded-xl shadow-md calendar-wrapper border border-[var(--color-text)]/5">
         <FullCalendar
+          // Kluczowe dla poprawnego przełączania widoków przy zmianie orientacji/rozmiaru
+          key={isMobile ? "mobile" : "desktop"}
           ref={calendarRef}
           plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
+          
+          // Domyślny widok zależny od urządzenia
+          initialView={isMobile ? "timeGridDay" : "timeGridWeek"}
+          
           locale={plLocale}
-          firstDay={1} // Poniedziałek
-          slotMinTime="08:00:00" // Początek dnia w widoku
-          slotMaxTime="21:00:00" // Koniec dnia w widoku
-          allDaySlot={false} // Ukrycie paska "całodniowe" dla planu lekcji
-          weekends={true} // Pokaż weekendy (studia zaoczne)
+          firstDay={1}
+          slotMinTime="07:00:00"
+          slotMaxTime="21:30:00"
+          allDaySlot={false}
+          weekends={true}
           events={events}
           datesSet={handleDatesSet}
           eventClick={handleEventClick}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "timeGridWeek,timeGridDay",
-          }}
+          
+          // Responsywny Toolbar
+          headerToolbar={
+            isMobile
+              ? {
+                  left: "prev,next",
+                  center: "title",
+                  right: "today", // Tylko "Dziś" na mobile
+                }
+              : {
+                  left: "prev,next today",
+                  center: "title",
+                  right: "timeGridWeek,timeGridDay", // Pełne opcje na desktopie
+                }
+          }
+          
           buttonText={{
             today: "Dziś",
             week: "Tydzień",
@@ -244,42 +260,39 @@ export default function StudentSchedule() {
           height="auto"
           contentHeight="auto"
           dayMaxEvents={true}
-          slotLabelFormat={{
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }}
-          eventTimeFormat={{
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }}
+          slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+          eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+          nowIndicator={true}
         />
       </div>
 
-      {/* MODAL SZCZEGÓŁÓW ZAJĘĆ */}
+      {/* RESPONSYWNY MODAL */}
       {showEventModal && selectedEvent && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 text-[var(--color-text)]"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 text-[var(--color-text)]"
           onClick={() => setShowEventModal(false)}
         >
           <div
-            className="bg-[var(--color-bg-secondary)] rounded-xl p-6 max-w-md w-full shadow-2xl border border-[var(--color-accent)]"
+            className="bg-[var(--color-bg-secondary)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl border border-[var(--color-text)]/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-bold pr-4">{selectedEvent.title}</h2>
+            {/* Header Modala */}
+            <div className="p-5 border-b border-[var(--color-text)]/10 flex justify-between items-start bg-[var(--color-bg)] rounded-t-xl">
+              <h2 className="text-lg md:text-xl font-bold pr-4 leading-tight">{selectedEvent.title}</h2>
               <button
                 onClick={() => setShowEventModal(false)}
-                className="text-gray-400 hover:text-white transition-colors text-xl font-bold"
+                className="p-1 hover:bg-[var(--color-text)]/10 rounded transition-colors"
               >
-                ✕
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-[var(--color-text-secondary)]">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
+            {/* Content Scrollowany */}
+            <div className="p-5 overflow-y-auto custom-scrollbar">
               <div
-                className="p-3 rounded border text-white font-medium mb-3 flex justify-center text-center uppercase tracking-wide text-xs"
+                className="inline-block px-3 py-1 rounded text-xs font-bold text-white mb-4 uppercase tracking-wider"
                 style={{
                   backgroundColor: selectedEvent.backgroundColor,
                   borderColor: selectedEvent.borderColor,
@@ -288,38 +301,47 @@ export default function StudentSchedule() {
                 {selectedEvent.extendedProps.classType}
               </div>
 
-              <div className="grid grid-cols-[100px_1fr] gap-3">
-                <span className="text-[var(--color-text-secondary)] font-semibold">Data:</span>
-                <span>
-                  {new Date(selectedEvent.start).toLocaleDateString("pl-PL", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
+              <div className="space-y-4 text-sm">
+                
+                {/* Data i czas */}
+                <div className="flex gap-3">
+                    <div className="min-w-[24px]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[var(--color-accent)]"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <div>
+                        <p className="font-semibold">{new Date(selectedEvent.start).toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" })}</p>
+                        <p className="text-[var(--color-text-secondary)]">
+                           {new Date(selectedEvent.start).toLocaleTimeString("pl-PL", { hour: '2-digit', minute: '2-digit' })} - 
+                           {new Date(selectedEvent.end).toLocaleTimeString("pl-PL", { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                    </div>
+                </div>
 
-                <span className="text-[var(--color-text-secondary)] font-semibold">Godzina:</span>
-                <span>
-                  {new Date(selectedEvent.start).toLocaleTimeString("pl-PL", { hour: '2-digit', minute: '2-digit' })} - 
-                  {new Date(selectedEvent.end).toLocaleTimeString("pl-PL", { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                {/* Lokalizacja */}
+                <div className="flex gap-3">
+                    <div className="min-w-[24px]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[var(--color-accent)]"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg></div>
+                    <div>
+                        <p className="text-xs text-[var(--color-text-secondary)] uppercase">Lokalizacja</p>
+                        <p className="font-bold text-[var(--color-accent)] text-lg">{selectedEvent.extendedProps.room}</p>
+                        <p className="opacity-80">{selectedEvent.extendedProps.building}</p>
+                    </div>
+                </div>
 
-                <span className="text-[var(--color-text-secondary)] font-semibold">Budynek:</span>
-                <span>{selectedEvent.extendedProps.building}</span>
+                {/* Prowadzący */}
+                <div className="flex gap-3">
+                    <div className="min-w-[24px]"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[var(--color-accent)]"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></div>
+                    <div>
+                        <p className="text-xs text-[var(--color-text-secondary)] uppercase">Prowadzący</p>
+                        <p className="font-medium">{selectedEvent.extendedProps.instructor}</p>
+                    </div>
+                </div>
 
-                <span className="text-[var(--color-text-secondary)] font-semibold">Sala:</span>
-                <span className="font-bold text-[var(--color-accent)]">{selectedEvent.extendedProps.room}</span>
-
-                <span className="text-[var(--color-text-secondary)] font-semibold">Prowadzący:</span>
-                <span>{selectedEvent.extendedProps.instructor}</span>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            {/* Footer Modala */}
+            <div className="p-4 bg-[var(--color-bg)] border-t border-[var(--color-text)]/10 flex justify-end rounded-b-xl">
               <button
                 onClick={() => setShowEventModal(false)}
-                className="px-6 py-2 bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent-hover)] transition-colors"
+                className="px-6 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-text)]/20 text-[var(--color-text)] rounded hover:bg-[var(--color-text)]/10 transition-colors text-sm"
               >
                 Zamknij
               </button>
@@ -328,61 +350,85 @@ export default function StudentSchedule() {
         </div>
       )}
 
-      {/* Global styles for FullCalendar overrides (reused from AcademicCalendar) */}
+      {/* STYLIZACJA FULLCALENDAR */}
       <style jsx global>{`
-        .calendar-wrapper .fc {
-          --fc-border-color: rgba(128, 128, 128, 0.3);
-          --fc-page-bg-color: transparent;
-          --fc-neutral-bg-color: rgba(128, 128, 128, 0.1);
-          --fc-today-bg-color: rgba(var(--color-accent-rgb), 0.1) !important;
+        .calendar-wrapper {
+            --fc-border-color: rgba(128, 128, 128, 0.2);
+            --fc-page-bg-color: transparent;
+            --fc-neutral-bg-color: rgba(128, 128, 128, 0.05);
+            --fc-today-bg-color: rgba(var(--color-accent-rgb), 0.15) !important;
         }
-        .calendar-wrapper .fc-col-header-cell {
-          background-color: var(--color-bg);
-          color: var(--color-text);
-          padding: 8px 0;
-          border-bottom: 2px solid var(--color-accent);
+
+        /* Tekst w nagłówkach */
+        .fc-col-header-cell-cushion {
+            color: var(--color-text);
+            font-weight: 600;
+            padding: 8px 0;
+            text-transform: capitalize;
+            text-decoration: none !important;
         }
-        .calendar-wrapper .fc-col-header-cell-cushion {
-          color: var(--color-text);
-          font-weight: 700;
-          text-transform: uppercase;
-          font-size: 0.9rem;
-          text-decoration: none;
-        }
-        .calendar-wrapper .fc-timegrid-slot-label-cushion {
+        
+        /* Godziny po lewej */
+        .fc-timegrid-slot-label-cushion {
             color: var(--color-text-secondary);
+            font-size: 0.75rem;
         }
-        .calendar-wrapper .fc-scrollgrid {
-          border: 1px solid var(--fc-border-color);
-          border-radius: 8px;
-          overflow: hidden;
+
+        /* Toolbar Responsywny - Mobile First */
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 1.5rem !important;
         }
-        .calendar-wrapper .fc-event {
-          border: none;
-          box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-          border-radius: 4px;
-          padding: 2px;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: transform 0.1s;
+        .fc .fc-toolbar-title {
+            font-size: 1.2rem;
+            color: var(--color-text);
         }
-        .calendar-wrapper .fc-event:hover {
-          transform: scale(1.01);
-          filter: brightness(1.1);
-          z-index: 5;
+
+        /* Toolbar Desktop (md+) */
+        @media (min-width: 768px) {
+            .fc .fc-toolbar {
+                flex-direction: row;
+                align-items: center;
+            }
+            .fc .fc-toolbar-title {
+                font-size: 1.5rem;
+            }
         }
-        .calendar-wrapper .fc-button {
-          background-color: var(--color-accent) !important;
-          border-color: var(--color-accent) !important;
-          text-transform: capitalize;
+
+        /* Przyciski */
+        .fc .fc-button {
+            background-color: var(--color-bg) !important;
+            border-color: rgba(128, 128, 128, 0.3) !important;
+            color: var(--color-text) !important;
+            font-size: 0.8rem;
+            text-transform: capitalize;
+            box-shadow: none !important;
+            padding: 0.4rem 0.8rem;
         }
-        .calendar-wrapper .fc-button:hover {
-          background-color: var(--color-accent-hover) !important;
-          border-color: var(--color-accent-hover) !important;
+        .fc .fc-button:hover {
+            background-color: var(--color-bg-secondary) !important;
         }
-        .calendar-wrapper .fc-button-active {
-          background-color: var(--color-accent-hover) !important;
-          border-color: var(--color-accent-hover) !important;
+        .fc .fc-button-active {
+            background-color: var(--color-accent) !important;
+            border-color: var(--color-accent) !important;
+            color: white !important;
+        }
+
+        /* Eventy */
+        .fc-event {
+            border: none;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+            padding: 1px 2px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .fc-event:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            z-index: 10;
         }
       `}</style>
     </div>
